@@ -1,0 +1,8 @@
+
+Thumbs.db
+
+# CSI table definition file
+*.tdf
+
+# LibeOffice lock files
+*.ods#
