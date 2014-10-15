@@ -1,6 +1,20 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20111101_CFNT
+-------------
+
+**This release aggregates change made over three distinct deployed versions.
+The intermediate work is unrecoverable.**
+
+### Other Changes
+
+* Add support for Los Gatos N2O/CO analyzer and Picarro CH4/CO2 analyzer but
+  leave not enabled
+* Remove support for ATI sonic anemometer, which had been disabled anyway
+* Remove cruft associated with unused sensors
+
+
 20111011_CFNT
 -------------
 

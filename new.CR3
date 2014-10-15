@@ -8,12 +8,11 @@
 
 'The following sensors are measured:
 '
-Const SENSOR_CSAT3       = FALSE  'CSAT3           three dimensional sonic anemometer
+
 Const SENSOR_EC150       = TRUE   'EC150 AND(CSAT3A)  open path infrared gas analyzer (CO2 and H2O) and three dimensional sonic anemometer head
-Const SENSOR_ATI         = false  'ATI             three dimensional sonic anemometer
-Const SENSOR_KH20        = FALSE  'KH20            krypton hygrometer (H2O)
-Const SENSOR_FW          = FALSE  'FW05            finewire thermocouple
-Const SENSOR_LI7500      = FALSE  'LI-7500(A)      open path infrared gas analyzer (CO2 and H2O)
+Const sensor_n2o         = false
+Const sensor_ch4         = false
+
 Const SENSOR_HMP         = TRUE  'HMP155A/HMP45C  temperature and relative humidity
 
 Const ANALOG_INTEGRATION = _60Hz  'Slowsequence analog measurement integration time, _60Hz or _50Hz.
@@ -62,29 +61,12 @@ Const SENSOR_5tm         = false  '5tm         decagon soil temp&moisture
 'W        Watts
 
 
-#If ( SENSOR_CSAT3 = TRUE ) Then
-Const CSAT3_SDM_ADDR = 3               'Unique SDM address for CSAT3.
-#EndIf
 
 
 #If ( SENSOR_EC150 = TRUE ) Then
 Const EC100_SDM_ADDR = 1               'Unique SDM address for EC100.
 #EndIf
 
-
-#If ( SENSOR_LI7500 = TRUE ) Then
-Const LI7500_SDM_ADDR = 7              'Unique SDM address for LI-7500(A).
-#EndIf
-
-
-#If ( SENSOR_KH20 = TRUE ) Then
-Const KH_ANALOG_INPUT = 1              'Unique analog input channel.
-#EndIf
-
-
-#If ( SENSOR_FW = TRUE ) Then
-Const FW_ANALOG_INPUT = 6              'Unique analog input channel.
-#EndIf
 
 
 #If ( SENSOR_HMP = TRUE ) Then
@@ -151,7 +133,6 @@ Const 5tm_sdi_input = 1             'Unique sdi input channel.
 
 Const PAR_ANALOG_INPUT = 5             'Unique: PAR diff input chan #
 Const WIND_034B_SE_INPUT = 11          'Unique: 034B single ended input = D6H
-Const ATI_COM = Com3                   'Unique: serial inport for ATI
 
 PipeLineMode
 
@@ -195,139 +176,8 @@ Dim n = {1}
 Units n = samples
 
 
-#If ( SENSOR_CSAT3 = TRUE ) Then
-'*** Beginning of CSAT3(A) constants, variables, and working data table ***
-#If ( (SCAN_INTERVAL = 100) OR (SCAN_INTERVAL = 50 ) ) Then
-Const CSAT_OPT = INT (1000/SCAN_INTERVAL)  'Compute CSAT3 Execution Parameter.
-#EndIf
-#If ( SCAN_INTERVAL = 40 ) Then
-Const CSAT_OPT = 20                        'Use 20 Hz Execution Parameter with a 40 ms Scan Interval.
-#EndIf
-Const DELAY_CSAT3 = 2                      'Fixed CSAT3 delay.
-Const CSAT3_REC_BCK = OFFSET-DELAY_CSAT3   'Number of records back to align CSAT3 data.
-
-Const CP = 1004.67                         'Estimate of heat capacity of air [J/(kg K)].
-Const ati_azimuth = 176
-Public sonic(5)
-Alias sonic(1) = Ux
-Alias sonic(2) = Uy
-Alias sonic(3) = Uz
-Alias sonic(4) = Ts
-Alias sonic(5) = diag_sonic
-
-Public diag_bits_sonic(4) As Boolean       'Sonic warning flags.
-Public sonic_azimuth                       'Enter sonic azimuth using keyboard after program has compiled (azimuth of the CSAT3(A) negative x-axis see Section 3.2.1 CSAT3A Azimuth in the OPEC manual).
-Public ati_azimuth
-'Const ati_azimuth=176
-Alias diag_bits_sonic(1) = amp_l_f         'Amplitude low warning flag.
-Alias diag_bits_sonic(2) = amp_h_f         'Amplitude high warning flag.
-Alias diag_bits_sonic(3) = sig_lck_f       'Poor signal lock warning flag.
-Alias diag_bits_sonic(4) = del_T_f         'Delta temperature warning flag.
-Units diag_bits_sonic = arb
-Units sonic_azimuth = degrees
-Units ati_azimuth = degrees
-
-Dim sonic_irga_raw(12)                     'CSAT3 and EC150 (not lagged).
-
-Dim diag_sonic_tmp As Long                 'Temporary variable used to break out the CSAT3(A) diagnostic bits.
-Dim mask_sonic As Long
-Dim sonic_disable_f As Boolean             'TRUE when CSAT3(A) diagnostic warning flags are on or CSAT3(A) has not sent data or an SDM signature error is reported.
-Dim Ts_absolute                            'Sonic temperature (K).
-Dim sonic_azimuth_prev
-Dim cov_array_sonic(1,4)                   'Arrays used to hold the input data for the covariance instructions (CSAT3(A)).
-Dim cov_out_sonic(18)                      'CSAT3(A) statistics.
-Alias cov_out_sonic(1) = Hs                'Sensible heat flux using sonic temperature.
-Alias cov_out_sonic(2) = tau               'Momentum flux.
-Alias cov_out_sonic(3) = u_star            'Friction velocity.
-Alias cov_out_sonic(4) = Ts_stdev
-Alias cov_out_sonic(5) = Ts_Ux_cov
-Alias cov_out_sonic(6) = Ts_Uy_cov
-Alias cov_out_sonic(7) = Ts_Uz_cov
-Alias cov_out_sonic(8) = Ux_stdev
-Alias cov_out_sonic(9) = Ux_Uy_cov
-Alias cov_out_sonic(10) = Ux_Uz_cov
-Alias cov_out_sonic(11) = Uy_stdev
-Alias cov_out_sonic(12) = Uy_Uz_cov
-Alias cov_out_sonic(13) = Uz_stdev
-Alias cov_out_sonic(14) = wnd_spd
-Alias cov_out_sonic(15) = rslt_wnd_spd
-Alias cov_out_sonic(16) = wnd_dir_sonic
-Alias cov_out_sonic(17) = std_wnd_dir
-Alias cov_out_sonic(18) = wnd_dir_compass
-Units Hs = W/m^2
-Units tau = kg/(m s^2)
-Units u_star = m/s
-Units Ts_stdev = C
-Units Ts_Ux_cov = C m/s
-Units Ts_Uy_cov = C m/s
-Units Ts_Uz_cov = C m/s
-Units Ux_stdev = m/s
-Units Ux_Uy_cov = (m/s)^2
-Units Ux_Uz_cov = (m/s)^2
-Units Uy_stdev = m/s
-Units Uy_Uz_cov = (m/s)^2
-Units Uz_stdev = m/s
-Units wnd_spd = m/s
-Units rslt_wnd_spd = m/s
-Units wnd_dir_sonic = degrees
-Units std_wnd_dir = degrees
-Units wnd_dir_compass = degrees
 
 
-
-DataTable (delay_3d,TRUE,OFFSET)
-  TableHide
-
-  Sample (5,sonic_irga_raw(1),IEEE4)
-EndTable
-
-DataTable (comp_cov_3d,TRUE,1)
-  TableHide
-  DataInterval (0,OUTPUT_INTERVAL,Min,1)
-
-  'Compute covariances from CSAT3(A) data.
-  Covariance (4,cov_array_sonic(1,1),IEEE4,sonic_disable_f,10)
-  WindVector (1,Uy,Ux,IEEE4,sonic_disable_f,0,1,2)
-EndTable
-
-#If (SENSOR_EC150 = FALSE) Then
-DisplayMenu ("System Control",TRUE)
-  MenuItem ("Sonic Azmth",sonic_azimuth)
-  'MenuItem("ati azmth",ati_azimuth)
-EndMenu
-#EndIf
-'*** End of CSAT3(A) constants, variables, and working data table ***
-#EndIf
-
-#If(SENSOR_ATI=true)Then
-Public ati1(4) As Float
-Alias ati1(1) = atiUx
-Alias ati1(2) = atiUy
-Alias ati1(3) = atiUz
-Alias ati1(4) = atiTs
-Units atiUx = m/s
-Units atiUy = m/s
-Units atiUz = m/s
-Units atiTs = degC
-Dim son1_in_str As String * 20
-Dim son1_in_parts(4) As String * 5
-Dim bytes_back_1
-Dim ati1_flag(4) As Boolean
-
-Dim j 
-Const DperR = 180/3.14159
-'Dim n
-'Units n = records
-Public max_temp = 25
-Units max_temp = degC
-Const Vaz = 90
-
-Public atiWD
-Public atiWS
-Units atiWD = degrees
-Units atiWS = m/s
-
-#EndIf
 
 #If ( SENSOR_EC150 = TRUE ) Then
 '*** Beginning of EC100 configure, zero, and span constants and variables, and subroutine ***
@@ -377,7 +227,7 @@ EndSub
 #EndIf
 
 
-#If ( SENSOR_CSAT3 <> TRUE ) Then
+#If ( SENSOR_EC150 = TRUE ) Then
 '*** Beginning of CSAT3A sonic head constants, variables, and working data table ***
 Const CP = 1004.67                         'Estimate of heat capacity of air [J/(kg K)].
 
@@ -622,209 +472,9 @@ EndMenu
 #EndIf
 
 
-#If ( SENSOR_KH20 = TRUE ) Then
-'*** Beginning of KH20 constants, variables, and working data table. ***
-Const XKW = -0.150                    'Unique path length times absorption coefficient for water vapor [m^3 / g].
-Const X = 1                           'Unique path length of the KH20 [cm].
-Const KW = -0.150                     'Unique absorption coefficient for water vapor [m^3 / (g cm)].
-Const CO = 0.2095                     'Fraction concentration of oxygen in the atmosphere.
-Const MO = 32                         'Molecular weight of oxygen [g/mol].
-Const KO = 0.0045                     'Absorption coefficient for oxygen [m^3/(g cm)].
-
-Public kh
-
-Dim ln_kh                             'Natural log of KH20 output signal.
-Dim sigma_wpl_kh                      'Webb et al. sigma = density of water vapor / density of dry air.
-
-'Raw and not lagged KH20 data.
-Dim kh_raw
-
-Dim cov_array_kh(5)                   'Arrays used to hold the input data for the covariance instructions (sonic and KH20).
-Dim cov_out_kh(11)                    'KH20 statistics.
-Alias cov_out_kh(1) = LE_kh_wpl       'Latent heat flux (KH20), with Webb et al. term.
-Alias cov_out_kh(2) = H2O_kh_stdev
-Alias cov_out_kh(3) = H2O_kh_Ux_cov
-Alias cov_out_kh(4) = H2O_kh_Uy_cov
-Alias cov_out_kh(5) = H2O_kh_Uz_cov
-Alias cov_out_kh(6) = H2O_kh_Ts_cov
-Alias cov_out_kh(7) = LE_kh           'Latent heat flux from KH20.
-Alias cov_out_kh(8) = oc_LE           'Oxygen correction to the KH20 Latent heat flux.
-Alias cov_out_kh(9) = oc_var          'Oxygen correction to the KH20 variance.
-Alias cov_out_kh(10) = H2O_wpl_LE_kh  'Latent heat flux (KH20), Webb et al. term due to latent heat flux.
-Alias cov_out_kh(11) = H2O_wpl_H_kh   'Latent heat flux (KH20), Webb et al. term due to sensible heat flux.
-Units LE_kh_wpl = W/m^2
-Units H2O_kh_stdev = g/m^3
-Units H2O_kh_Ux_cov = g/(m^2 s)
-Units H2O_kh_Uy_cov = g/(m^2 s)
-Units H2O_kh_Uz_cov = g/(m^2 s)
-Units H2O_kh_Ts_cov = g C/m^3
-Units LE_kh = W/m^2
-Units oc_LE = W/m^2
-Units oc_var = (g/m^3)^2
-Units H2O_wpl_LE_kh = W/m^2
-Units H2O_wpl_H_kh = W/m^2
-
-DataTable (delay_kh,TRUE,OFFSET)
-  TableHide
-
-  Sample (1,kh_raw,IEEE4)
-EndTable
-
-DataTable (comp_cov_kh,TRUE,1)
-  TableHide
-  DataInterval (0,OUTPUT_INTERVAL,Min,1)
-
-  'Compute covariance of KH20 against sonic wind data.
-  Covariance (5,cov_array_kh(1),IEEE4,sonic_disable_f OR (kh <= 0),5)
-EndTable
-'*** End of KH20 constants, variables, and working data table ***
-#EndIf
 
 
-#If ( SENSOR_FW = TRUE ) Then
-'*** Beginning of FW05 constants, variables, and working data table ***
-Public fw
 
-'Raw and not lagged FW05 data.
-Public fw_raw
-
-Dim cov_array_fw(4)             'Arrays used to hold the input data for the covariance instructions (CSAT3(A) and FW05).
-Dim cov_out_fw(5)               'FW05 statistics.
-Alias cov_out_fw(1) = H         'Sensible heat flux.
-Alias cov_out_fw(2) = fw_stdev
-Alias cov_out_fw(3) = fw_Ux_cov
-Alias cov_out_fw(4) = fw_Uy_cov
-Alias cov_out_fw(5) = fw_Uz_cov
-Units H = W/m^2
-Units fw_stdev = C
-Units fw_Ux_cov = C m/s
-Units fw_Uy_cov = C m/s
-Units fw_Uz_cov = C m/s
-
-DataTable (delay_fw,TRUE,OFFSET)
-  TableHide
-
-  Sample (1,fw_raw,IEEE4)
-EndTable
-
-DataTable (comp_cov_fw,TRUE,1)
-  TableHide
-  DataInterval (0,OUTPUT_INTERVAL,Min,1)
-
-  'Compute covariance of FW05 against CSAT3(A) wind data.
-  Covariance (4,cov_array_fw(1),IEEE4,sonic_disable_f,4)
-EndTable
-'*** End of FW05 constants, variables, and working data table ***
-#EndIf
-
-
-#If ( SENSOR_LI7500 = TRUE ) Then
-'*** Beginning of LI-7500(A) constants, variables, and working data table ***
-'Set bandwidth to 20 Hz.
-Const AGC_THRESHOLD = 99                     'Unique value - filter LI-7500(A) data with AGC greater than AGC_THRESHOLD.
-#If ( (SCAN_INTERVAL = 100) OR (SCAN_INTERVAL = 50) ) Then
-'Fixed inherent lag, set delay as close as possible to 300 ms.
-Const DELAY_LI7500 = INT (300/SCAN_INTERVAL) 'Fixed inherent lag of the LI-7500(A) data (three scans at 10 Hz or six scans at 20 Hz).
-#EndIf
-#If ( SCAN_INTERVAL = 40 ) Then
-'Fixed inherent lag, set delay as close as possible to 240 ms.
-Const DELAY_LI7500 = INT (200/SCAN_INTERVAL) 'Fixed inherent lag of the LI-7500(A) data (six scans at 25 Hz).
-#EndIf
-Const LI7500_REC_BCK = OFFSET-DELAY_LI7500   'Number of records back to align LI-7500(A) data.
-
-Public irga_li(5)
-Alias irga_li(1) = CO2_li
-Alias irga_li(2) = H2O_li
-Alias irga_li(3) = amb_press_li
-Alias irga_li(4) = agc_li
-Alias irga_li(5) = Tc_li
-
-Public CO2_li_um_m                  'CO2 concentration in micromoles/mole.
-Public H2O_li_mm_m                  'H2O concentration in millimoles/mole.
-Dim irga_li_disable_f As Boolean    'TRUE when LI-7500(A) or CSAT3(A) sends bad data.
-Dim rho_d_li_mean                   'Density of dry air used in Webb et al. term [kg / m^3].
-Dim sigma_wpl_li                    'Webb et al. sigma = density of water vapor / density of dry air.
-
-'Raw and not lagged LI-7500(A) data.
-Dim irga_li_raw(4)
-
-'LI-7500(A) output variables.
-Dim cov_array_li(3,4)                'Arrays used to hold the input data for the covariance instructions (sonic and LI-7500(A)).
-Dim cov_out_li(26)                   'LI-7500(A) statistics.
-Alias cov_out_li(1) = Fc_li_wpl      'Carbon dioxide flux (LI-7500(A)), with Webb et al. term.
-Alias cov_out_li(2) = LE_li_wpl      'Latent heat flux (LI-7500(A)), with Webb et al. term.
-Alias cov_out_li(3) = Hc_li          'Sensible heat flux using sonic temperature corrected for water vapor measured by the LI-7500(A).
-Alias cov_out_li(4) = CO2_li_stdev
-Alias cov_out_li(5) = CO2_li_Ux_cov
-Alias cov_out_li(6) = CO2_li_Uy_cov
-Alias cov_out_li(7) = CO2_li_Uz_cov
-Alias cov_out_li(8) = H2O_li_stdev
-Alias cov_out_li(9) = H2O_li_Ux_cov
-Alias cov_out_li(10) = H2O_li_Uy_cov
-Alias cov_out_li(11) = H2O_li_Uz_cov
-Alias cov_out_li(12) = Tc_li_stdev
-Alias cov_out_li(13) = Tc_li_Ux_cov
-Alias cov_out_li(14) = Tc_li_Uy_cov
-Alias cov_out_li(15) = Tc_li_Uz_cov
-Alias cov_out_li(16) = CO2_li_mean
-Alias cov_out_li(17) = H2O_li_mean
-Alias cov_out_li(18) = amb_press_li_mean
-Alias cov_out_li(19) = Tc_li_mean    'Sonic temperature corrected for humidity.
-Alias cov_out_li(20) = rho_a_li_mean
-Alias cov_out_li(21) = Fc_li_irga    'Carbon dioxide flux (LI-7500(A)), without Webb et al. term.
-Alias cov_out_li(22) = LE_li_irga    'Latent heat flux (LI-7500(A)), without Webb et al. term.
-Alias cov_out_li(23) = CO2_wpl_LE_li 'Carbon dioxide flux (LI-7500(A)), Webb et al. term due to latent heat flux.
-Alias cov_out_li(24) = CO2_wpl_H_li  'Carbon dioxide flux (LI-7500(A)), Webb et al. term due to sensible heat flux.
-Alias cov_out_li(25) = H2O_wpl_LE_li 'Latent heat flux (LI-7500(A)), Webb et al. term due to latent heat flux.
-Alias cov_out_li(26) = H2O_wpl_H_li  'Latent heat flux (LI-7500(A)), Webb et al. term due to sensible heat flux.
-Units Fc_li_wpl = mg/(m^2 s)
-Units LE_li_wpl = W/m^2
-Units Hc_li = W/m^2
-Units CO2_li_stdev = mg/m^3
-Units CO2_li_Ux_cov = mg/(m^2 s)
-Units CO2_li_Uy_cov = mg/(m^2 s)
-Units CO2_li_Uz_cov = mg/(m^2 s)
-Units H2O_li_stdev = g/m^3
-Units H2O_li_Ux_cov = g/(m^2 s)
-Units H2O_li_Uy_cov = g/(m^2 s)
-Units H2O_li_Uz_cov = g/(m^2 s)
-Units Tc_li_stdev = C
-Units Tc_li_Ux_cov = C m/s
-Units Tc_li_Uy_cov = C m/s
-Units Tc_li_Uz_cov = C m/s
-Units CO2_li_mean = mg/m^3
-Units H2O_li_mean = g/m^3
-Units amb_press_li_mean = kPa
-Units Tc_li_mean = C
-Units rho_a_li_mean = kg/m^3
-Units Fc_li_irga = mg/(m^2 s)
-Units LE_li_irga = W/m^2
-Units CO2_wpl_LE_li = mg/(m^2 s)
-Units CO2_wpl_H_li = mg/(m^2 s)
-Units H2O_wpl_LE_li = W/m^2
-Units H2O_wpl_H_li = W/m^2
-
-DataTable (delay_li,TRUE,OFFSET)
-  TableHide
-
-  Sample (4,irga_li_raw(1),IEEE4)
-EndTable
-
-DataTable (comp_cov_li,TRUE,1)
-  TableHide
-  DataInterval (0,OUTPUT_INTERVAL,Min,1)
-
-  'Compute covariance of CO2_li against sonic wind data.
-  Covariance (4,cov_array_li(1,1),IEEE4,irga_li_disable_f,4)
-  'Compute covariance of H2O_li against sonic wind data.
-  Covariance (4,cov_array_li(2,1),IEEE4,irga_li_disable_f,4)
-  'Compute covariance of Tc_li (computed fast response temperature) against sonic wind data.
-  Covariance (4,cov_array_li(3,1),IEEE4,irga_li_disable_f,4)
-  Average (3,CO2_li,IEEE4,irga_li_disable_f)
-  Average (1,Tc_li,IEEE4,irga_li_disable_f)
-EndTable
-'*** End of LI-7500(A) constants, variables, and working data table ***
-#EndIf
 
 
 #If ( SENSOR_HMP = TRUE ) Then
@@ -869,13 +519,10 @@ EndTable
 #EndIf
 
 
-#If ( (SENSOR_CSAT3 = TRUE) OR (SENSOR_KH20 = TRUE) ) Then
-'*** Beginning of user entered site density and pressure constants ***
-Const SITE_RHO_A = 1.1 'Unique value for site air density (kg/m^3).
-#EndIf
 
 
-#If ( (SENSOR_KH20 = TRUE) OR (SENSOR_HMP = TRUE)) Then
+
+#If (SENSOR_HMP = TRUE) Then
 Const SITE_PRESS = 100
 '*** End of user entered site density and pressure constants ***
 #EndIf
@@ -1125,35 +772,30 @@ Units max_clock_change = ms
 Units nmbr_clock_change = samples
 '*** End of GPS16X-HVS constants and variables ***
 
+#If (sensor_n2o=true) Then
+Public n2o
+Public c_monoxide
+Units n2o=ppm
+Units c_monoxide=ppm
+#EndIf
+
+#If (sensor_ch4=true) Then
+Public ch4
+Public co2_picarro
+Units ch4=ppm
+Units co2_picarro=ppm
+#EndIf
+
+
 
 '*** Output data tables ***
 DataTable (flux,TRUE,FLUX_SIZE_CPU)
   DataInterval (0,OUTPUT_INTERVAL,Min,10)
   CardOut (0,-1)
 
-  #If ( SENSOR_CSAT3 = TRUE ) Then
-  '*** Beginning of CSAT3 output data ***
-  Sample (18,Hs,IEEE4)
-  Average (4,Ux,IEEE4,sonic_disable_f)
-  Sample (1,sonic_azimuth,IEEE4)
-  Totalize (1,n,IEEE4,sonic_disable_f)
-  FieldNames ("sonic_samples_Tot")
-  Totalize (1,n,IEEE4,(diag_sonic<>NAN) OR (diag_sonic<>61503))
-  FieldNames ("no_new_sonic_data_Tot")
-  Totalize (1,n,IEEE4,diag_sonic<>61441)
-  FieldNames ("sig_error_Tot")
-  Totalize (1,n,IEEE4,amp_l_f IMP (diag_sonic=NAN))
-  FieldNames ("amp_l_f_Tot")
-  Totalize (1,n,IEEE4,amp_h_f IMP (diag_sonic=NAN))
-  FieldNames ("amp_h_f_Tot")
-  Totalize (1,n,IEEE4,sig_lck_f IMP (diag_sonic=NAN))
-  FieldNames ("sig_lck_f_Tot")
-  Totalize (1,n,IEEE4,del_T_f IMP (diag_sonic=NAN))
-  FieldNames ("del_T_f_Tot")
-  '*** End of CSAT3 output data ***
-  #EndIf
+  
 
-  #If ( SENSOR_CSAT3 = FALSE ) Then
+  #If ( SENSOR_EC150 = true ) Then
   '*** Beginning of CSAT3A sonic head output data ***
   Sample(1,l,ieee4)                         'monin obu length output
   Sample (18,Hs,IEEE4)
@@ -1236,38 +878,10 @@ DataTable (flux,TRUE,FLUX_SIZE_CPU)
   '*** End of EC150 output data ***
   #EndIf
 
-  #If ( SENSOR_KH20 = TRUE ) Then
-  '*** Beginning of KH20 output data ***
-  Sample (11,LE_kh_wpl,IEEE4)
-  Average (1,kh,IEEE4,kh<=0)
-  Totalize (1,n,IEEE4,sonic_disable_f OR (kh<=0))
-  FieldNames ("kh_samples_Tot")
-  Totalize (1,n,IEEE4,kh<=0)
-  FieldNames ("kh_no_signal_Tot")
-  '*** End of KH20 output data ***
-  #EndIf
+  
+ 
 
-  #If ( SENSOR_FW = TRUE ) Then
-  '*** Beginning of FW05 output data ***
-  Sample (5,H,IEEE4)
-  Average (1,fw,IEEE4,FALSE)
-  Totalize (1,n,IEEE4,sonic_disable_f)
-  FieldNames ("fw_samples_Tot")
-  '*** End of FW05 output data ***
-  #EndIf
-
-  #If ( SENSOR_LI7500 = TRUE ) Then
-  '*** Beginning of LI-7500(A) output data ***
-  Sample (26,Fc_li_wpl,IEEE4)
-  Totalize (1,n,IEEE4,CO2_li<>NAN)
-  FieldNames ("no_new_data_li_Tot")
-  Totalize (1,n,IEEE4,CO2_li<>-99999)
-  FieldNames ("sig_error_li_Tot")
-  Average (1,agc_li,IEEE4,H2O_li=NAN)
-  Totalize (1,n,IEEE4,(agc_li>=AGC_THRESHOLD) IMP (H2O_li=NAN))
-  FieldNames ("agc_thrshld_excded_Tot")
-  '*** End of LI-7500(A) output data ***
-  #EndIf
+  
 
   #If ( SENSOR_HMP = TRUE ) Then
   '*** Beginning of HMP output data ***
@@ -1275,11 +889,7 @@ DataTable (flux,TRUE,FLUX_SIZE_CPU)
   '*** End of HMP output data ***
   #EndIf
 
-  #If ( SENSOR_Q7_1 = TRUE ) Then
-  '*** Beginning of Q7.1 output data ***
-  Average (2,Rn,IEEE4,slowsequence_disable_f)
-  '*** End of Q7.1 output data ***
-  #EndIf
+  
 
   #If ( SENSOR_NR_LITE = TRUE ) Then
   '*** Beginning of NR Lite output data ***
@@ -1352,23 +962,7 @@ DataTable (flux,TRUE,FLUX_SIZE_CPU)
     
   '*** End of 034B output data ***
   
- #If ( SENSOR_ATI = TRUE ) Then
-  '*** Beginning of ATI_sonic output data ***
-  Sample (1,ati_azimuth,IEEE4)
-  WindVector (1,atiWS,atiWD,ieee4,ati1_flag,0,0,0)
-    FieldNames("ati_ws,ati_wd,ati_stdwd")
-    Units ati_ws=m/s
-    Units ati_wd=degrees
-    Units ati_stdwd=degrees
-    Average(4,ati1(1),ieee4,ati1_flag)
-    FieldNames("atiUavg,atiVavg,atiWavg,atitmpavg")
-    Units atiUavg=m/s
-    Units atiVavg=m/s
-    Units atiWavg=m/s
-    Units atitmpavg=C
-    
-'*** End of ati_sonic output data ***
-  #EndIf
+ 
 
   '*** Beginning of TE525 output data ***
   Totalize(1,Rain_mm,FP2,False)
@@ -1395,32 +989,19 @@ DataTable (ts_data,TRUE,-1)
   CardOut (0,-1)
 
   '*** Beginning of CSAT3(A) time series output ***
-  Sample (5,sonic_irga_raw(1),IEEE4)
-  FieldNames ("Ux,Uy,Uz,Ts,diag_sonic")
+  Sample (3,sonic_irga_raw(1),IEEE4)
+  FieldNames ("Ux,Uy,Uz")
   Units Ux = m/s
   Units Uy = m/s
   Units Uz = m/s
+  Sample(2,sonic_irga_raw(4),ieee4)
+  FieldNames ("Ts,diag_sonic")
   Units Ts = C
   Units diag_sonic = arb  
  'WindVector (1,Uy,Ux,IEEE4,sonic_disable_f,0,1,0)
 '*** End of CSAT3(A) time series output ***
  
- #If (SENSOR_ATI=true) Then
-'*** Beginning of ATI_sonic time series output ***
-  Sample (4,ati1(1),IEEE4)
-  FieldNames ("atiUx,atiUy,atiUz,atiTs")
-  Units atiUx = m/s
-  Units atiUy = m/s
-  Units atiUz = m/s
-  Units atiTs = C
-  'Units diag_sonic = arb
-  'WindVector (1,atiWS,atiWD,FP2,False,0,0,0)
-  'FieldNames("ati_ws,ati_wd,ati_stdwd")
-   ' Units ati_ws=m/s
-    'Units ati_wd=degrees
-    'Units ati_stdwd=degrees
-'*** End of ATI_sonic time series output ***
-#endif
+ 
  
  #If ( SENSOR_EC150 = TRUE ) Then
   '*** Beginning of EC150 time series output ***
@@ -1434,17 +1015,17 @@ DataTable (ts_data,TRUE,-1)
   FieldNames("h2o_molar_density")
   Units h2o_molar_density=mmol/m^3
   
-     ' co2_mix_ratio = sonic_irga_raw(6)/44*R*Tc/amb_press*1000
-    '  Sample (1,co2_mix_ratio,ieee4)
- ' FieldNames("CO2_mix_ratio")
-'  Units co2_mix_ratio=umol/mol
+  #If(sensor_n2o=true)Then
+  Sample(1,n2o,fp2)
+   Sample(1,c_monoxide,ieee4)
+  #EndIf
+  #If(sensor_ch4=true)Then
+  Sample(1,ch4,fp2)
+   Sample(1,co2_picarro,ieee4)
+   #EndIf
+  
  
-' h2o_mix_ratio = sonic_irga_raw(7)/0.018*R*Tc/amb_press
-' Sample(1,h2o_mix_ratio,ieee4)
-'  FieldNames("H2O_mix_ratio")
-'  Units h2o_mix_ratio=mmol/mol
- 
-  Sample (7,sonic_irga_raw(6),IEEE4)
+  Sample (7,sonic_irga_raw(6),ieee4)
   FieldNames ("CO2,H2O,diag_irga,amb_tmpr,amb_press,CO2_sig_strgth,H2O_sig_strgth")
   Units CO2 = mg/m^3
   Units H2O = g/m^3
@@ -1455,35 +1036,7 @@ DataTable (ts_data,TRUE,-1)
   Units H2O_sig_strgth = arb
   '*** End of EC150 time series output ***
   #EndIf
-
-  #If ( SENSOR_KH20 = TRUE ) Then
-  '*** Beginning of KH20 time series output ***
-  Sample (1,kh_raw,IEEE4)
-  FieldNames ("kh")
-  Units kh = mV
-  Sample (1,T_hmp,IEEE4)
-  Sample (1,e_hmp,IEEE4)
-  '*** End of KH20 time series output ***
-  #EndIf
-
-  #If ( SENSOR_FW = TRUE ) Then
-  '*** Beginning of FW05 time series output ***
-  Sample (1,fw_raw,IEEE4)
-  FieldNames ("fw")
-  Units fw = C
-  '*** End of FW05 time series output ***
-  #EndIf
-
-  #If ( SENSOR_LI7500 = TRUE ) Then
-  '*** Beginning of LI-7500(A) time series output ***
-  Sample (4,irga_li_raw(1),IEEE4)
-  FieldNames ("CO2_li,H2O_li,amb_press_li,agc_li")
-  Units CO2_li = mg/m^3
-  Units H2O_li = g/m^3
-  Units amb_press_li = kPa
-  Units agc_li = %
-  '*** End LI-7500(A) time series output ***
-  #EndIf
+  
 EndTable
 
 
@@ -1491,9 +1044,7 @@ EndTable
 '*** Program ***
 
 BeginProg
-  'SerialOpen(ATI_COM,9600,10,0,40)        'Open up serial ports to ATI sonics
-
-  #If ( (SENSOR_HFT3 = TRUE) OR (SENSOR_HFP01 = TRUE) OR (SENSOR_HFP01SC = TRUE) ) Then
+    #If ( (SENSOR_HFT3 = TRUE) OR (SENSOR_HFP01 = TRUE) OR (SENSOR_HFP01SC = TRUE) ) Then
   'Load NMBR_SHF plate calibration.
   For i = 1 To NMBR_SHF
     Read shf_cal(i)
@@ -1514,6 +1065,20 @@ BeginProg
   Scan (SCAN_INTERVAL,mSec,SCAN_BUFFER_SIZE,0)
     'Datalogger panel temperature.
     PanelTemp (panel_tmpr,250)
+
+   'Begin n2o/co measurements
+   #If(sensor_n2o=true)Then
+   VoltDiff(n2o,1,mv5000,6,true,0,250,.0001,0)
+   VoltDiff(c_monoxide,1,mv5000,7,true,0,250,.0001,0)
+   #EndIf
+   
+  'Begin ch2/co2 measurements
+   #If(sensor_ch4=true)Then
+   VoltDiff(ch4,1,mv5000,8,true,0,250,1,0)
+   VoltDiff(co2_picarro,1,mv5000,9,true,0,250,1,0)
+   #EndIf
+    
+
 
     '*** Begining of 034B measurements ***
     PulseCount(WS_ms,1,1,2,1,0.799,0.2811)
@@ -1558,84 +1123,10 @@ BeginProg
     CallTable delay_cs
     '*** End of EC150 w/ CSAT3A sonic head measurements ***
     #EndIf
-  
-    
-    'EXTRACT NUMERIC VALUES FROM ATI STRING INPUT
-    #If ( SENSOR_ATI = TRUE) Then
-     ati_azimuth=176
-    SerialInRecord(ATI_COM,son1_in_str,0,20,&h0D,bytes_back_1,01)
-    If NOT(son1_in_str = NAN) Then
-  		MoveBytes (son1_in_parts(1),0,son1_in_str,0,5)
-		  MoveBytes (son1_in_parts(2),0,son1_in_str,5,5)
-		  MoveBytes (son1_in_parts(3),0,son1_in_str,10,5)
-		  MoveBytes (son1_in_parts(4),0,son1_in_str,15,5)
-  		For j = 1 To 4
-  			ati1(j) = son1_in_parts(j)	  'Convert from a string to float
-  			If NOT(ABS(ati1(j))=9999) Then
-    			ati1(j) = ati1(j)/100	        'Scale the ATI data.
-    			ati1_flag(j) = FALSE
-    		Else
-    		  ati1_flag(j) = TRUE
-    		EndIf
-  		Next j	
-  	Else
-  	  Move(atiUx,4,NAN,1)
-  	  Move(ati1_flag(1),4,TRUE,1)
-  	EndIf
-  	
-     'INSTANT WIND SPEED/DIRECTION CALCULATIONS
-        If NOT(ati1_flag(1) OR ati1_flag(2)) Then
-  	   atiWD = (360 + ATN2(-1*atiUx,-1*atiUy)*DperR + Vaz + ati_azimuth) MOD 360
-		  atiWS = SQR(atiUx^2+atiUy^2)
-		Else
-		  atiWD = NAN
-		  atiWS = NAN
-		EndIf
-		#EndIf
+      
    
-    #If ( SENSOR_CSAT3 = TRUE ) Then
-    '*** Beginning of CSAT3 measurements ***
-    'Get CSAT3 data.
-    CSAT3 (sonic_irga_raw(1),1,CSAT3_SDM_ADDR,91,CSAT_OPT)
 
-    CallTable delay_3d
-    '*** End of CSAT3 measurements ***
-    #EndIf
-
-
-    #If ( SENSOR_KH20 = TRUE ) Then
-    '*** Beginning of KH20 measurements ***
-    VoltDiff (kh_raw,1,mV5000,KH_ANALOG_INPUT,TRUE,450,250,1,0)
-    CallTable delay_kh
-    '*** End of KH20 measurements ***
-    #EndIf
-
-
-    #If ( SENSOR_FW = TRUE ) Then
-    '*** Beginning of FW05 measurements ***
-    TCDiff (fw_raw,1,mV20,FW_ANALOG_INPUT,TypeE,panel_tmpr,TRUE,450,250,1,0)
-    CallTable delay_fw
-    '*** End of FW05 measurements ***
-    #EndIf
-
-
-    #If ( SENSOR_LI7500 = TRUE ) Then
-    '*** Beginning of LI-7500(A) measurements ***
-    CS7500 (irga_li_raw(1),1,LI7500_SDM_ADDR,6)
-
-    'Convert LI-7500(A) data from molar density [mmol/m^3] to mass density.
-    ' 44 [g/mol] - molecular weight of carbon dioxide
-    ' 0.018 [g/mmol] - molecular weight of water vapor
-    If ( irga_li_raw(1) <> -99999 ) Then ( irga_li_raw(1) = irga_li_raw(1)*44 )
-    irga_li_raw(2) = irga_li_raw(2)*0.018
-
-    'Compute the AGC.
-    irga_li_raw(4) = INT ((irga_li_raw(4) AND &hf)*6.25+0.5)
-
-    CallTable delay_li
-    '*** End of LI-7500(A) measurements ***
-    #EndIf
-
+   
 
     #If ( SENSOR_CS616 = TRUE ) Then
     '*** Beginning of CS616 measurements ***
@@ -1653,55 +1144,10 @@ BeginProg
     CallTable ts_data
 
     If ( scan_count >= OFFSET ) Then
-      #If ( SENSOR_CSAT3 = TRUE ) Then
-      '*** Beginning of CSAT3 processing ***
-      'Load in CSAT3 data that has been lagged by CSAT3_REC_BCK scans.
-      GetRecord (dly_data_out(1),delay_3d,CSAT3_REC_BCK)
-
-      Move (Ux,5,dly_data_out(1),5) 'Ux, Uy, Uz, Ts, diag_sonic
-
-      'Extract the four warning flags from the sonic diagnostic word.
-      If ( diag_sonic <> NAN ) Then ( diag_sonic_tmp = diag_sonic ) Else ( diag_sonic_tmp = &hf000)
-      mask_sonic = &h1000
-      For i = 1 To 4
-        diag_bits_sonic(i) = diag_sonic_tmp AND mask_sonic
-        mask_sonic = mask_sonic*2
-      Next i
-
-      'Turn on the intermediate processing disable flag when any CSAT3
-      'warning flag is high.
-      sonic_disable_f = diag_sonic_tmp AND &hf000
-
-      Ts_absolute = Ts+273.15
-
-      'Load the arrays that hold the input data for the covariance instructions.
-      cov_array_sonic(1,1) = Ts
-      Move (cov_array_sonic(1,2),3,Ux,3)
-      CallTable comp_cov_3d
-      If ( comp_cov_3d.Output(1,1) ) Then
-        GetRecord (Ts_stdev,comp_cov_3d,1)
-
-        'Rotate the CSAT3 RHC system so the negative x-axis points north.
-        wnd_dir_compass = (360+sonic_azimuth-wnd_dir_sonic) MOD 360
-
-        'Make the CSAT3 wind direction fall between 0 to 180 degrees and 0 to -180 degrees.
-        If ( wnd_dir_sonic > 180 ) Then ( wnd_dir_sonic = wnd_dir_sonic-360 )
-
-        'Compute online fluxes.
-        tau = SQR ((Ux_Uz_cov*Ux_Uz_cov)+(Uy_Uz_cov*Uy_Uz_cov))
-        u_star = SQR (tau)
-
-        'Compute the standard deviation from the variance.
-        Ts_stdev = SQR (Ts_stdev)
-        Ux_stdev = SQR (Ux_stdev)
-        Uy_stdev = SQR (Uy_stdev)
-        Uz_stdev = SQR (Uz_stdev)
-      EndIf
-      '*** End of CSAT3 processing ***
-      #EndIf
+      
 
 
-      #If ( SENSOR_CSAT3 = FALSE ) Then
+      #If ( SENSOR_EC150 = true ) Then
       '*** Beginning of CSAT3A sonic head processing ***
       'Load in CSAT3A sonic head data that has been lagged by EC150_REC_BCK scans.
       GetRecord (dly_data_out(1),delay_3d,EC150_REC_BCK)
@@ -1739,7 +1185,7 @@ BeginProg
         tau = SQR ((Ux_Uz_cov*Ux_Uz_cov)+(Uy_Uz_cov*Uy_Uz_cov))
         u_star = SQR (tau)
         
-        L=-u_star^3*(Tc_mean+273.15)/(0.4*9.8*Ts_Uz_cov)   'obukohov length
+        l=-u_star^3*(Tc_mean+273.15)/(0.4*9.8*Ts_Uz_cov)   'obukohov length
 
         'Compute the standard deviation from the variance.
         Ts_stdev = SQR (Ts_stdev)
@@ -1781,8 +1227,7 @@ BeginProg
       Xc=CO2/(0.044*divisor)
       Xv=H2O/(0.018*divisor)
 
-      'co2_molar=sonic_irga_raw(6)/(0.044*divisor)
-      'h2o_molar=sonic_irga_raw(7)/(0.018*divisor)
+      
       co2_mix_ratio = sonic_irga_raw(6)/44*R*Tc/amb_press*1000
       h2o_mix_ratio = sonic_irga_raw(7)/0.018*R*Tc/amb_press
 
@@ -1843,18 +1288,7 @@ BeginProg
       #EndIf
 
 
-      #If ( (SENSOR_HMP = TRUE) AND (SENSOR_LI7500 = TRUE) ) Then
-      CallTable stats_hmp
-      If ( stats_hmp.Output(1,1) ) Then
-        GetRecord (T_hmp_mean,stats_hmp,1)
-
-        H2O_hmp_mean = e_hmp_mean/((T_hmp_mean+273.15)*RV)
-        rho_d_mean_hmp = (amb_press_li_mean-e_hmp_mean)/((T_hmp_mean+273.15)*RD)
-        rho_a_mean_hmp = (rho_d_mean_hmp+H2O_hmp_mean)/1000
-        RH_hmp_mean = 100*e_hmp_mean/e_sat_hmp_mean
-      EndIf
-      #EndIf
-
+      
 
       #If ( (SENSOR_HMP = TRUE) AND (SENSOR_EC150 = TRUE) ) Then
       CallTable stats_hmp
@@ -1867,155 +1301,19 @@ BeginProg
       '*** End of HMP processing ***
       #EndIf
 
-      #If ( SENSOR_KH20 = TRUE ) Then
-      '*** Beginning of KH20 processing ***
-      'Load in the KH20 data that has been lagged by OFFSET scans.
-      GetRecord (dly_data_out(1),delay_kh,OFFSET)
-
-      Move (kh,1,dly_data_out(1),1) 'kh
-      ln_kh = LOG (kh)
-
-      'Load the arrays that hold the input data for the covariance instructions.
-      cov_array_kh(1) = ln_kh
-      Move (cov_array_kh(2),3,Ux,3)
-      cov_array_kh(5) = Ts
-      CallTable comp_cov_kh
-      If ( comp_cov_kh.Output(1,1) ) Then
-        GetRecord (H2O_kh_stdev,comp_cov_kh,1)
-
-        H2O_hmp_mean = e_hmp_mean/((T_hmp_mean+273.15)*RV)
-        rho_d_mean_hmp = (SITE_PRESS-e_hmp_mean)/((T_hmp_mean+273.15)*RD)
-        rho_a_mean_hmp = (rho_d_mean_hmp+H2O_hmp_mean)/1000
-        RH_hmp_mean = 100*e_hmp_mean/e_sat_hmp_mean
-
-        'Scale the KH20 cross products.
-        H2O_kh_Ux_cov = H2O_kh_Ux_cov/XKW
-        H2O_kh_Uy_cov = H2O_kh_Uy_cov/XKW
-        H2O_kh_Uz_cov = H2O_kh_Uz_cov/XKW
-        H2O_kh_Ts_cov = H2O_kh_Ts_cov/XKW
-        H2O_kh_stdev = H2O_kh_stdev/(XKW*XKW)
-
-        'Compute online fluxes.
-        LE_kh = LV*H2O_kh_Uz_cov
-
-        'Compute the KH20 oxygen correction for latent heat flux and water
-        ' vapor density variance.
-        oc_LE = LV*KO*CO*MO*SITE_PRESS/(KW*R*(T_hmp_mean+273.15)*(T_hmp_mean+273.15))*Ts_Uz_cov
-        oc_var = -2*KO*CO*MO*SITE_PRESS/(X*KW*KW*R*(T_hmp_mean+273.15)*(T_hmp_mean+273.15))*H2O_kh_Ts_cov
-
-        'Compute the standard deviation from the variance.
-        H2O_kh_stdev = SQR (H2O_kh_stdev+oc_var)
-
-        sigma_wpl_kh = H2O_hmp_mean/rho_d_mean_hmp
-
-        'KH20 Webb et al. term for water vapor Eq. (25).
-        H2O_wpl_LE_kh = MU_WPL*sigma_wpl_kh*(LE_kh-oc_LE)
-        H2O_wpl_H_kh = (1+(MU_WPL*sigma_wpl_kh))*H2O_hmp_mean/(T_hmp_mean+273.15)*LV*Ts_Uz_cov
-
-        LE_kh_wpl = LE_kh-oc_LE+H2O_wpl_LE_kh+H2O_wpl_H_kh
-      EndIf
-      '*** End of KH20 processing ***
-      #EndIf
-
-
-      #If ( SENSOR_FW = TRUE ) Then
-      '*** Beginning of FW05 processing ***
-      'Load in the FW05 data that has been lagged by OFFSET scans.
-      GetRecord (dly_data_out(1),delay_fw,OFFSET)
-
-      Move (fw,1,dly_data_out(1),1) 'fw
-
-      'Load the arrays that hold the input data for the covariance instructions.
-      cov_array_fw(1) = fw
-      Move (cov_array_fw(2),3,Ux,3)
-      CallTable comp_cov_fw
-      If ( comp_cov_fw.Output(1,1) ) Then
-        GetRecord (fw_stdev,comp_cov_fw,1)
-
-        'Compute the standard deviation from the variance.
-        fw_stdev = SQR (fw_stdev)
-      EndIf
-      '*** End of FW05 processing ***
-      #EndIf
-
-
-      #If ( SENSOR_LI7500 = TRUE ) Then
-      '*** Beginning of LI-7500(A) processing ***
-      'Load in the LI-7500(A) data that has been lagged by IRGA_REC_BCK scans.
-      GetRecord (dly_data_out(1),delay_li,LI7500_REC_BCK)
-
-      Move (CO2_li,4,dly_data_out(1),4) 'CO2, H2O, press, agc
-
-      'Compute fast response air temperature from sonic temperature and IRGA
-      ' vapor density (see CSAT3 manual).
-      Tc_li = Ts_absolute/(1+0.32*H2O_li*R*Ts_absolute/(amb_press_li*18)) 'Kaimal and Gaynor (1991) Eq. 3
+     
       
-      'Convert the fast response air temperature to degrees C.
-      Tc_li = Tc_li-273.15
      
       'Compute the molar concentration of CO2 and H2O.
-      CO2_li_um_m = CO2_li/44*R*Tc_li/amb_press_li*1000
-      H2O_li_mm_m = H2O_li/0.018*R*Tc_li/amb_press_li
+      'CO2_li_um_m = CO2_li/44*R*Tc_li/amb_press_li*1000
+     ' H2O_li_mm_m = H2O_li/0.018*R*Tc_li/amb_press_li
 
-            'Filter data in the covariance instruction if the CSAT3(A) or LI-7500(A)
-      ' reports bad data.
-      irga_li_disable_f = (sonic_disable_f) OR (agc_li > AGC_THRESHOLD) OR (H2O_li = NAN)
-
-      'Load the arrays that hold the input data for the covariance instructions.
-      cov_array_li(1,1) = CO2_li
-      Move (cov_array_li(1,2),3,Ux,3)
-      cov_array_li(2,1) = H2O_li
-      Move (cov_array_li(2,2),3,Ux,3)
-      cov_array_li(3,1) = Tc_li
-      Move (cov_array_li(3,2),3,Ux,3)
-      CallTable comp_cov_li
-
-      If ( comp_cov_li.Output(1,1) ) Then
-        GetRecord (CO2_li_stdev,comp_cov_li,1)
-
-        rho_d_li_mean = (amb_press_li_mean/((Tc_li_mean+273.15)*RD))-(H2O_li_mean*MU_WPL)
-        rho_a_li_mean = (rho_d_li_mean+H2O_li_mean)/1000
-
-        'Compute online fluxes.
-        Fc_li_irga = CO2_li_Uz_cov
-        LE_li_irga = LV*H2O_li_Uz_cov
-
-        'Compute the standard deviation from the variance.
-        CO2_li_stdev = SQR (CO2_li_stdev)
-        H2O_li_stdev = SQR (H2O_li_stdev)
-        Tc_li_stdev = SQR (Tc_li_stdev)
-
-        sigma_wpl_li = H2O_li_mean/rho_d_li_mean
-
-        'LI-7500(A) Webb et al. term for carbon dioxide Eq. (24).
-        CO2_wpl_LE_li = MU_WPL*CO2_li_mean/rho_d_li_mean*H2O_li_Uz_cov
-        CO2_wpl_H_li = (1+(MU_WPL*sigma_wpl_li))*CO2_li_mean/(Tc_li_mean+273.15)*Tc_li_Uz_cov
-        Fc_li_wpl = Fc_li_irga+CO2_wpl_LE_li+CO2_wpl_H_li
-
-        'LI-7500(A) Webb et al. term for water vapor Eq. (25).
-        H2O_wpl_LE_li = MU_WPL*sigma_wpl_li*LE_li_irga
-        H2O_wpl_H_li = (1+(MU_WPL*sigma_wpl_li))*H2O_li_mean/(Tc_li_mean+273.15)*LV*Tc_li_Uz_cov
-        LE_li_wpl = LE_li_irga+H2O_wpl_LE_li+H2O_wpl_H_li
-      EndIf
-      '*** End of LI-7500(A) processing ***
-      #EndIf
+         
 
 
       '*** Beginning of sonic sensible heat, momentum, and sensible heat flux processing ***
       If ( comp_cov_3d.Output(1,1) ) Then
-        #If ( SENSOR_CSAT3 = TRUE ) Then
-        'CSAT3 sensible heat flux using sonic temperature.
-        Hs = SITE_RHO_A*CP*Ts_Uz_cov           'Air density is a site attendant estimate.
-
-        'CSAT3 momentum flux.
-        tau = SITE_RHO_A*tau                   'Air density is a site attendant estimate.
-
-        #If ( SENSOR_FW = TRUE ) Then
-        'Sensible heat flux using finewire thermocouple temperature.
-        H = SITE_RHO_A*CP*fw_Uz_cov            'Air density is a site attendant estimate.
-        #EndIf
-        #EndIf
-
+        
 
         #If ( SENSOR_HMP = TRUE ) Then
         'CSAT3(A) sensible heat flux using sonic temperature.
@@ -2023,32 +1321,11 @@ BeginProg
 
         'CSAT3(A) momentum flux.
         tau = rho_a_mean_hmp*tau               'Air density computed from HMP.
-
-        #If ( SENSOR_FW = TRUE ) Then
-        'Sensible heat flux using finewire thermocouple temperature.
-        H = rho_a_mean_hmp*CP*fw_Uz_cov        'Air density computed from HMP.
-        #EndIf
+       
         #EndIf
 
 
-        #If ( SENSOR_LI7500 = TRUE ) Then
-        'CSAT3(A) sensible heat flux using sonic temperature.
-        Hs = rho_a_li_mean*CP*Ts_Uz_cov        'Air density computed from LI-7500(A).
-
-        'CSAT3(A) momentum flux.
-        tau = rho_a_li_mean*tau                'Air density computed from LI-7500(A).
-
-        'Sensible heat flux using sonic temperature corrected for water vapor measured by the LI-7500(A).
-        Hc_li = rho_a_li_mean*CP*Tc_li_Uz_cov  'Air density computed from LI-7500(A).
-
-        #If ( SENSOR_FW = TRUE ) Then
-        'Sensible heat flux using finewire thermocouple temperature.
-        H = rho_a_li_mean*CP*fw_Uz_cov         'Air density computed from LI-7500(A).
-        #EndIf
-        #EndIf
-
-
-        #If ( SENSOR_EC150 = TRUE ) Then
+               #If ( SENSOR_EC150 = TRUE ) Then
         'CSAT3(A) sensible heat flux using sonic temperature.
         Hs = rho_a_mean*CP*Ts_Uz_cov           'Air density computed from EC150.
 
@@ -2058,10 +1335,7 @@ BeginProg
         'Sensible heat flux using sonic temperature corrected for water vapor measured by the EC150.
         Hc = rho_a_mean*CP*Tc_Uz_cov           'Air density computed from EC150.
 
-        #If ( SENSOR_FW = TRUE ) Then
-        'Sensible heat flux using finewire thermocouple temperature.
-        H = rho_a_mean*CP*fw_Uz_cov            'Air density computed from EC150.
-        #EndIf
+        
         #EndIf
       EndIf
       '*** End of sensible heat flux processing ***
