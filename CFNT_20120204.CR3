@@ -1,50 +1,41 @@
-'CR3000 Series Datalogger
-
-'Copyright (c) 2002, 2006, 2010 Campbell Scientific, Inc. All rights reserved.
-
-'16 Feb 11
-'version 3.0
-
-
-'The following sensors are measured:
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+' REgional Approaches to Climate CHange 
+' Laboratory for Atmospheric Research
+' Washington State University
 '
-
-Const SENSOR_EC150       = TRUE   'EC150 AND(CSAT3A)  open path infrared gas analyzer (CO2 and H2O) and three dimensional sonic anemometer head
-Const sensor_n2o         = false
-Const sensor_ch4         = false
-
-Const SENSOR_HMP         = TRUE  'HMP155A/HMP45C  temperature and relative humidity
-
-Const ANALOG_INTEGRATION = _60Hz  'Slowsequence analog measurement integration time, _60Hz or _50Hz.
-Const SENSOR_Q7_1        = FALSE  'Q7.1            net radiometer
-Const SENSOR_NR_LITE     = TRUE  'NR Lite         net radiometer
-Const SENSOR_CNR_2       = FALSE  'CNR 2           net radiometer
-Const SENSOR_NR_01_CNR_1 = FALSE  'NR 01/CNR 1     net radiometer
-Const SENSOR_CNR_4       = FALSE  'CNR 4           net radiometer
-Const SENSOR_TCAV        = FALSE  'TCAV            type E thermocouple averaging soil temperature probes
-Const SENSOR_CS616       = FALSE  'CS616           water content reflectometers (volumetric soil moisture)
-Const SENSOR_HFT3        = FALSE  'HFT3            soil heat flux plates
-Const SENSOR_HFP01       = FALSE  'HFP01           soil heat flux plates
-Const SENSOR_HFP01SC     = false 'HFP01SC         soil heat flux plates
-Const SENSOR_5tm         = false  '5tm         decagon soil temp&moisture
-
-' The sign convention for the fluxes is positive away from the surface and
-'negative towards the surface.
+' Site: Cook Farm No-Till
+' Description: This program combines fast measurements of CO2 and H2O with 3D wind speeds to 
+'   generate near real-time surface fluxes of CO2, latent & sensible heat. Metereological 
+'   statistics are continuously generated in five and thirty minute intervals. 
+' 
+'Version history
+' 20120204  
+'   copied 30min flux table as a 5min flux table, removed extraneous variables, ensured each
+'   variable has units, no correctness checks; start file naming scheme; enclosed sensor
+'   statements in compilation condtionals where necessary to match original style; relocated 
+'   ANAL0G_INTEGRATION constant from sensor input mapping to program variable setup; 
+'   [pto, patrick.okeeffe@email.wsu.edu]
+' ....
+' backfill?
+' ...
+' 20110216  version 3.0
+'   Copyright (c) 2002, 2006, 2010 Campbell Scientific, Inc. All rights reserved.
 '
-' Before computing online fluxes, the datalogger will introduce lags into the
-'eddy covariance data to account for the fixed instrument delays. The lags are
-'dependent on the instrument setting and/or the scan interval. Search for "Fixed
-'inherent lag" and set the delay to the appropriate value. The raw data is not
-'lagged.
 '
-' The site attendant must load in several constants and calibration values.
-'Search for the text string "unique" to find the locations where unique
-'constants and calibration values are entered.
-
-
-'*** Unit Definitions ***
-
-'Symbol   Units
+'TODO 
+' - remove unused sensors
+' - remove extraneous variables from 30min flux table
+' - possibly create a lean 10hz table for download
+' -
+'
+' Flux sign convention is positive upwards, away from the surface and negative downwards, 
+' towards the surface. Before computing online fluxes, the datalogger will introduce lags 
+' into the eddy covariance data to account for the fixed instrument delays. The lags are
+' dependent on the instrument setting and/or the scan interval. Search for "Fixed inherent 
+' lag" and set the delay to the appropriate value. The raw data is not lagged. The site 
+' attendant must load in several constants and calibration values. Search for the text string 
+' "unique" to find the locations where unique constants and calibration values are entered.
+'   
 'C        Celsius
 'degrees  degrees (angle)
 'g        grams
@@ -61,78 +52,109 @@ Const SENSOR_5tm         = false  '5tm         decagon soil temp&moisture
 'W        Watts
 
 
+'== REACCH SENSOR CONFIGURATION ==
+Const SENSOR_EC150       = TRUE  'EC150/CSAT3A    OP-IRGA & 3d sonic anemometer/thermometer
+Const SENSOR_HMP         = TRUE  'HMP155A/HMP45C  temperature and relative humidity
+Const SENSOR_NR_LITE     = TRUE  'NR Lite         net radiometer
+Const SENSOR_190SB       = TRUE  'LI190SB         licor quantum sensor??
+Const SENSOR_034B        = TRUE  '034B            cup & vane
+Const SENSOR_TE525       = TRUE  'TE525           texas instruments rain gage
 
+
+'== OPTIONAL DEPLOYMENT SENSORS 
+Const SENSOR_N2O         = FALSE  'Los Gatos N2O/CO analyzer
+Const SENSOR_CH4         = FALSE  'Picarro CO2/CH4/H2O analyzer
+Const SENSOR_5TM         = FALSE  '5TM             decagon soil temp/moisture probe
+Const SENSOR_HFP01       = FALSE  'HFP01           soil heat flux plates
+
+
+'== SENSORS NOT USED ==
+Const SENSOR_Q7_1        = FALSE  'Q7.1            net radiometer
+Const SENSOR_CNR_2       = FALSE  'CNR 2           net radiometer
+Const SENSOR_NR_01_CNR_1 = FALSE  'NR 01/CNR 1     net radiometer
+Const SENSOR_CNR_4       = FALSE  'CNR 4           net radiometer
+Const SENSOR_TCAV        = FALSE  'TCAV            type E thermocouple averaging soil temperature probes
+Const SENSOR_CS616       = FALSE  'CS616           water content reflectometers (volumetric soil moisture)
+Const SENSOR_HFT3        = FALSE  'HFT3            soil heat flux plates
+Const SENSOR_HFP01SC     = FALSE  'HFP01SC         soil heat flux plates
+
+
+
+'== SENSOR INPUT MAP ==
 
 #If ( SENSOR_EC150 = TRUE ) Then
-Const EC100_SDM_ADDR = 1               'Unique SDM address for EC100.
+  Const EC100_SDM_ADDR = 1               'Unique SDM address for EC100.
 #EndIf
 
 
-
 #If ( SENSOR_HMP = TRUE ) Then
-Const HMP_ANALOG_T_INPUT = 2             'Unique analog input channel.
-Const HMP_ANALOG_RH_INPUT = 3           'Unique: HMP RH input
+  Const HMP_ANALOG_T_INPUT = 2             'Unique analog input channel.
+  Const HMP_ANALOG_RH_INPUT = 3           'Unique: HMP RH input
 #EndIf
 
 
 #If ( SENSOR_Q7_1 = TRUE ) Then
-Const NR_ANALOG_INPUT = 4              'Unique analog input channel.
+  Const NR_ANALOG_INPUT = 4              'Unique analog input channel.
 #EndIf
 
 
 #If ( SENSOR_NR_LITE = TRUE ) Then
-Const NR_ANALOG_INPUT = 4              'Unique analog input channel.
+  Const NR_ANALOG_INPUT = 4              'Unique analog input channel.
 #EndIf
 
 
 #If ( SENSOR_CNR_2 = TRUE ) Then
-Const NR_ANALOG_INPUT = 4              'Unique analog input channel.
+  Const NR_ANALOG_INPUT = 4              'Unique analog input channel.
 #EndIf
 
 
 #If ( SENSOR_NR_01_CNR_1 = TRUE ) Then
-Const T_NR_ANALOG_INPUT = 1            'Unique analog input channel.
-Const NR_ANALOG_INPUT = 2              'Unique analog input channel.
+  Const T_NR_ANALOG_INPUT = 1            'Unique analog input channel.
+  Const NR_ANALOG_INPUT = 2              'Unique analog input channel.
 #EndIf
 
 
 #If ( SENSOR_CNR_4 = TRUE ) Then
-Const T_NR_ANALOG_INPUT = 1            'Unique analog input channel.
-Const NR_ANALOG_INPUT = 2              'Unique analog input channel.
+  Const T_NR_ANALOG_INPUT = 1            'Unique analog input channel.
+  Const NR_ANALOG_INPUT = 2              'Unique analog input channel.
 #EndIf
 
 
 #If ( SENSOR_CS616 = TRUE ) Then
-Const CS616_ANALOG_INPUT = 11          'Unique analog input channel.
+  Const CS616_ANALOG_INPUT = 11          'Unique analog input channel.
 #EndIf
 
 
 #If ( SENSOR_TCAV = TRUE ) Then
-Const TCAV_ANALOG_INPUT = 7            'Unique analog input channel.
+  Const TCAV_ANALOG_INPUT = 7            'Unique analog input channel.
 #EndIf
 
 
 #If ( SENSOR_HFT3 = TRUE ) Then
-Const SHF_ANALOG_INPUT = 9            'Unique analog input channel.
+  Const SHF_ANALOG_INPUT = 9            'Unique analog input channel.
 #EndIf
 
 
 #If ( SENSOR_HFP01 = TRUE ) Then
-Const SHF_ANALOG_INPUT = 9           'Unique analog input channel.
+  Const SHF_ANALOG_INPUT = 9           'Unique analog input channel.
 #EndIf
 
 
 #If ( SENSOR_HFP01SC = TRUE ) Then
-Const SHF_ANALOG_INPUT = 9             'Unique analog input channel.
-Const SHF_HEATER_ANALOG_INPUT = 25     'Unique analog input channel.
+  Const SHF_ANALOG_INPUT = 9             'Unique analog input channel.
+  Const SHF_HEATER_ANALOG_INPUT = 25     'Unique analog input channel.
 #EndIf
  
-#If ( SENSOR_5tm = TRUE ) Then
-Const 5tm_sdi_input = 1             'Unique sdi input channel.
+#If ( SENSOR_5TM = TRUE ) Then
+  Const 5tm_sdi_input = 1             'Unique sdi input channel.
 #EndIf
 
+
 Const PAR_ANALOG_INPUT = 5             'Unique: PAR diff input chan #
-Const WIND_034B_SE_INPUT = 11          'Unique: 034B single ended input = D6H
+
+#If ( SENSOR_034B = TRUE ) Then
+  Const WIND_034B_SE_INPUT = 11          'Unique: 034B single ended input = D6H
+#EndIf
 
 PipeLineMode
 
@@ -140,6 +162,7 @@ PipeLineMode
 Const SCAN_INTERVAL = 100  'Unique value, measurement rate 100 ms (10 Hz), 40 ms (25 Hz), or 50 (20 Hz).
 Const OUTPUT_INTERVAL = 30 'Unique value, online flux data output interval in minutes.
 Const SDM_PER = 30         'Unique value, default SDM clock speed.
+Const ANALOG_INTEGRATION = _60Hz  'Slowsequence analog measurement integration time, _60Hz or _50Hz.
 
 Const OFFSET = 17                                        'An offset delay that will be introduced to the eddy covariance data used to compute online fluxes.
 Const SCAN_BUFFER_SIZE = 60*INT (1000/SCAN_INTERVAL)     'Compute a 60 second scan buffer.
@@ -163,7 +186,7 @@ Public co2_mix_ratio
 Public co2_molar_density
 Public h2o_mix_ratio
 Public h2o_molar_density
-Public l
+Public L
 
 'Program working variables.
 Dim scan_count As Long                                   'Number scans executed.
@@ -711,16 +734,16 @@ Units shf_cal = W/(m^2 mV)
 #EndIf
 
 '*** Beginning of LI190SB constants and variables ***
-Const par_cal = 6.26				'Unique calibration vlaue for LI190SB in uA/mmol/s/m^2
-Const par_mult_flxdens = 1000/(par_cal*0.604)	'multiplier for Flux Density_1 calculation
-Const par_mult_totflx = (1/(par_cal*0.604))*(SCAN_INTERVAL/1000)	'multiplier for Total Fluxes_1 calculation
-Public par(3)
-Alias par(1) = par_mV
-Alias par(2) = par_flxdens
-Alias par(3) = par_totflx
-Units par_mV = mV
-Units par_flxdens = umol/s/m^2
-Units par_totflx = mmol/m^2
+Const PAR_CAL = 6.26				'Unique calibration vlaue for LI190SB in uA/mmol/s/m^2
+Const PAR_MULT_FLXDENS = 1000/(PAR_CAL*0.604)	'multiplier for Flux Density_1 calculation
+Const PAR_MULT_TOTFLX = (1/(PAR_CAL*0.604))*(SCAN_INTERVAL/1000)	'multiplier for Total Fluxes_1 calculation
+Public PAR(3)
+Alias PAR(1) = PAR_mV
+Alias PAR(2) = PAR_flxdens
+Alias PAR(3) = PAR_totflx
+Units PAR_mV = mV
+Units PAR_flxdens = umol/s/m^2
+Units PAR_totflx = mmol/m^2
 '*** End of LI190SB constants and variables ***
 
 '*** Beginning of 034B constants and variables ***
@@ -785,6 +808,106 @@ Public co2_picarro
 Units ch4=ppm
 Units co2_picarro=ppm
 #EndIf
+
+
+
+'*** Duplicated flux table - converted to 5 minutes and only containing met ***
+DataTable (CFNT_met_5min,TRUE,FLUX_SIZE_CPU)
+  DataInterval (0,5,Min,10)
+  CardOut (0,-1)
+
+  #If ( SENSOR_EC150 = true ) Then
+    Sample(1,L,FP2)                       'monin obukhov length, meters
+      Units L = m
+    Sample(1,Hs,IEEE4)                    'sensible heat flux, W m-2
+    Sample(1,u_star,FP2)                  'friction velocity, m/s
+    Sample(1,Ts_stdev,FP2)                'stdev of sonic temp, degC
+    Sample(1,Uz_stdev,FP2)                'stdev of vertical wind, m/s
+    Sample(1,wnd_spd,FP2)                 'mean scalar wind speed, m/s
+    Sample(1,rslt_wnd_spd,FP2)            'vector mean wind speed, m/s
+    Sample(1,std_wnd_dir,FP2)             'scalar stdev of wind direction, degrees
+    Sample(1,wnd_dir_compass,FP2)         'mean wind direction rel2 north, degrees
+    Average(1,Ts,FP2,sonic_disable_f)     'mean sonic temperature, degC
+    Totalize(1,n,UINT2,sonic_disable_f)   'total of good sonic values
+      FieldNames ("sonic_samples_Tot")
+    Sample(1,Fc_wpl,FP2)                  'density-corrected (WPL) CO2 flux, mg/m3
+    Sample(1,LE_wpl,IEEE4)                'density-corrected (WPL) latent heat flux, W/m2
+    Sample(1,Hc,IEEE4)                    'vapor density-corrected sensible heat flux, W/m2
+    Sample(1,CO2_stdev,FP2)               'stdev of CO2 conc, mg/m3
+    Sample(1,H2O_stdev,FP2)               'stdev of H2O conc, g/m3
+    Sample(1,Tc_stdev,FP2)                'stdev of corrected sonic temp, degC
+    Sample(1,CO2_mean,FP2)                'mean of CO2 conc, mg/m3
+    Sample(1,H2O_mean,FP2)                'mean of H2O conc, g/m3
+    Sample(1,amb_press_mean,IEEE4)        'mean of ambient pressure, kPa
+    Sample(1,Tc_mean,FP2)                 'mean of corrected sonic temp, degC
+    Average(1,CO2_sig_strgth,FP2,irga_disable_f) 
+      FieldNames ("CO2_sig_strgth_mean")
+    Average (1,H2O_sig_strgth,FP2,irga_disable_f)
+      FieldNames ("H2O_sig_strgth_mean")
+  #EndIf
+
+  #If ( SENSOR_HMP = TRUE ) Then
+    Sample(1,T_hmp_mean,FP2)              'mean HMP temp, degC
+    Sample(1,RH_hmp_mean,FP2)             'mean HMP relative humidity, %
+  #EndIf
+
+  #If ( SENSOR_NR_LITE = TRUE ) Then
+    Average (2,Rn,IEEE4,slowsequence_disable_f)
+  #EndIf
+
+  #If ( SENSOR_CS616 = TRUE ) Then
+    Average (NMBR_CS616,soil_water_T(1),IEEE4,slowsequence_disable_f)
+    Average (NMBR_CS616,cs616_wcr(1),IEEE4,slowsequence_disable_f)
+  #EndIf
+
+  #If ( SENSOR_HFT3 = TRUE ) Then
+    Average (NMBR_SHF,shf(1),IEEE4,slowsequence_disable_f)
+  #EndIf
+
+  #If ( SENSOR_HFP01 = TRUE ) Then
+    Average (NMBR_SHF,shf(1),IEEE4,slowsequence_disable_f)
+  #EndIf
+
+  #If ( SENSOR_HFP01SC = TRUE ) Then
+    Average (NMBR_SHF,shf(1),IEEE4,shf_cal_on_f OR slowsequence_disable_f)
+    Sample (NMBR_SHF,shf_cal(1),IEEE4)
+  #EndIf
+
+  #If ( SENSOR_190SB = TRUE ) Then
+    Totalize (1,PAR_totflx,IEEE4,False)
+    Average (1,PAR_flxdens,IEEE4,False)
+  #EndIf
+
+  #If ( SENSOR_034B = TRUE ) Then
+    WindVector (1,WS_ms,WindDir,fp2,False,0,0,0)
+    FieldNames("034b_ws2,034b_wd2,034b_stdwd2")
+    Units 034b_ws2=m/s
+    Units 034b_wd2=degrees
+    Units 034b_stdwd2=degrees
+  #EndIf
+  
+  #If ( SENSOR_TE525 = TRUE ) Then
+    Totalize(1,Rain_mm,FP2,False)
+  #EndIf
+
+  'GARMIN GPS
+  Sample(4,latitude_a,FP2)
+  ' 2      latitude_b
+  ' 3      longitude_a
+  ' 4      longitude_b
+  Sample(1,magnetic_variation,FP2)
+  Sample(1,altitude,IEEE4)
+  Sample(1,max_clock_change,IEEE4)
+  Sample(1,nmbr_clock_change,UINT2)
+
+  'DATALOGGER
+  Average (1,panel_tmpr,FP2,FALSE)
+  Average (1,batt_volt,FP2,slowsequence_disable_f)
+EndTable
+
+
+
+
 
 
 
@@ -1358,6 +1481,7 @@ BeginProg
       #EndIf
 
       CallTable flux
+      CallTable CFNT_met_5min 
       slowsequence_disable_f = TRUE
       If ( slowsequence_finished_f ) Then
         slowsequence_finished_f = FALSE

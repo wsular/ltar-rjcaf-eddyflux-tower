@@ -1,6 +1,24 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20120204_CFNT
+-------------
+
+### Issues Fixed
+
+* Add units "m" for meter to Monin-Obukhov Length (`L`)
+
+### Data Table Changes
+
+* NEW data table "CFNT_met_5min" with select subset of values in the "flux"
+  table on a 5-min instead of half-hour basis.
+* Change variable names:
+    * `l` to `L`
+    * `par_mV` to `PAR_mV`
+    * `par_flxdens` to `PAR_flxdens`
+    * `par_totflx` to `PAR_totflx`
+
+
 20111101_CFNT
 -------------
 
