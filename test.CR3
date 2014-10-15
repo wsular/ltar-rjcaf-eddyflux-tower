@@ -10,7 +10,7 @@
 '
 Const SENSOR_CSAT3       = FALSE  'CSAT3           three dimensional sonic anemometer
 Const SENSOR_EC150       = TRUE   'EC150 AND(CSAT3A)  open path infrared gas analyzer (CO2 and H2O) and three dimensional sonic anemometer head
-Const SENSOR_ATI         = FALSE   'ATI             three dimensional sonic anemometer
+Const SENSOR_ATI         = false  'ATI             three dimensional sonic anemometer
 Const SENSOR_KH20        = FALSE  'KH20            krypton hygrometer (H2O)
 Const SENSOR_FW          = FALSE  'FW05            finewire thermocouple
 Const SENSOR_LI7500      = FALSE  'LI-7500(A)      open path infrared gas analyzer (CO2 and H2O)
@@ -26,8 +26,8 @@ Const SENSOR_TCAV        = FALSE  'TCAV            type E thermocouple averaging
 Const SENSOR_CS616       = FALSE  'CS616           water content reflectometers (volumetric soil moisture)
 Const SENSOR_HFT3        = FALSE  'HFT3            soil heat flux plates
 Const SENSOR_HFP01       = FALSE  'HFP01           soil heat flux plates
-Const SENSOR_HFP01SC     = FALSE  'HFP01SC         soil heat flux plates
-
+Const SENSOR_HFP01SC     = false 'HFP01SC         soil heat flux plates
+Const SENSOR_5tm         = false  '5tm         decagon soil temp&moisture
 
 ' The sign convention for the fluxes is positive away from the surface and
 'negative towards the surface.
@@ -144,14 +144,14 @@ Const SHF_ANALOG_INPUT = 9           'Unique analog input channel.
 Const SHF_ANALOG_INPUT = 9             'Unique analog input channel.
 Const SHF_HEATER_ANALOG_INPUT = 25     'Unique analog input channel.
 #EndIf
+ 
+#If ( SENSOR_5tm = TRUE ) Then
+Const 5tm_sdi_input = 1             'Unique sdi input channel.
+#EndIf
 
 Const PAR_ANALOG_INPUT = 5             'Unique: PAR diff input chan #
 Const WIND_034B_SE_INPUT = 11          'Unique: 034B single ended input = D6H
-Const ATI_COM = Com1                   'Unique: serial inport for ATI
-Dim son1_in_str As String * 20
-Dim son1_in_parts(4) As String * 5
-Dim bytes_back_1
-Dim j 
+Const ATI_COM = Com3                   'Unique: serial inport for ATI
 
 PipeLineMode
 
@@ -166,7 +166,7 @@ Const NUM_DAY_CPU = 7                                    'Number of days of data
 Const FLUX_SIZE_CPU = (NUM_DAY_CPU*1440)/OUTPUT_INTERVAL 'Size of flux data table on CPU [days].
 
 Const MU_WPL = 29/18                                     'Ratio of the molecular weight of dry air to that of water vapor.
-Const R = 8.3143e-3                                      'Universal gas constant [kPa m^3/(K mol)].
+Const R = .0083143                                      'Universal gas constant [kPa m^3/(K mol)].
 Const RD = R/29                                          'Gas constant for dry air [kPa m^3/(K g)].
 Const LV = 2440                                          'Estimate of the latent heat of vaporization [J/g].
 Const RV = R/18                                          'Gas constant for water vapor [kPa m^3/(K g)].
@@ -178,6 +178,11 @@ Public panel_tmpr
 Public batt_volt
 Units panel_tmpr = C
 Units batt_volt = V
+Public co2_mix_ratio
+Public co2_molar_density
+Public h2o_mix_ratio
+Public h2o_molar_density
+Public l
 
 'Program working variables.
 Dim scan_count As Long                                   'Number scans executed.
@@ -202,7 +207,7 @@ Const DELAY_CSAT3 = 2                      'Fixed CSAT3 delay.
 Const CSAT3_REC_BCK = OFFSET-DELAY_CSAT3   'Number of records back to align CSAT3 data.
 
 Const CP = 1004.67                         'Estimate of heat capacity of air [J/(kg K)].
-
+Const ati_azimuth = 176
 Public sonic(5)
 Alias sonic(1) = Ux
 Alias sonic(2) = Uy
@@ -212,12 +217,15 @@ Alias sonic(5) = diag_sonic
 
 Public diag_bits_sonic(4) As Boolean       'Sonic warning flags.
 Public sonic_azimuth                       'Enter sonic azimuth using keyboard after program has compiled (azimuth of the CSAT3(A) negative x-axis see Section 3.2.1 CSAT3A Azimuth in the OPEC manual).
+Public ati_azimuth
+'Const ati_azimuth=176
 Alias diag_bits_sonic(1) = amp_l_f         'Amplitude low warning flag.
 Alias diag_bits_sonic(2) = amp_h_f         'Amplitude high warning flag.
 Alias diag_bits_sonic(3) = sig_lck_f       'Poor signal lock warning flag.
 Alias diag_bits_sonic(4) = del_T_f         'Delta temperature warning flag.
 Units diag_bits_sonic = arb
 Units sonic_azimuth = degrees
+Units ati_azimuth = degrees
 
 Dim sonic_irga_raw(12)                     'CSAT3 and EC150 (not lagged).
 
@@ -226,7 +234,6 @@ Dim mask_sonic As Long
 Dim sonic_disable_f As Boolean             'TRUE when CSAT3(A) diagnostic warning flags are on or CSAT3(A) has not sent data or an SDM signature error is reported.
 Dim Ts_absolute                            'Sonic temperature (K).
 Dim sonic_azimuth_prev
-
 Dim cov_array_sonic(1,4)                   'Arrays used to hold the input data for the covariance instructions (CSAT3(A)).
 Dim cov_out_sonic(18)                      'CSAT3(A) statistics.
 Alias cov_out_sonic(1) = Hs                'Sensible heat flux using sonic temperature.
@@ -266,6 +273,8 @@ Units wnd_dir_sonic = degrees
 Units std_wnd_dir = degrees
 Units wnd_dir_compass = degrees
 
+
+
 DataTable (delay_3d,TRUE,OFFSET)
   TableHide
 
@@ -284,11 +293,41 @@ EndTable
 #If (SENSOR_EC150 = FALSE) Then
 DisplayMenu ("System Control",TRUE)
   MenuItem ("Sonic Azmth",sonic_azimuth)
+  'MenuItem("ati azmth",ati_azimuth)
 EndMenu
 #EndIf
 '*** End of CSAT3(A) constants, variables, and working data table ***
 #EndIf
 
+#If(SENSOR_ATI=true)Then
+Public ati1(4) As Float
+Alias ati1(1) = atiUx
+Alias ati1(2) = atiUy
+Alias ati1(3) = atiUz
+Alias ati1(4) = atiTs
+Units atiUx = m/s
+Units atiUy = m/s
+Units atiUz = m/s
+Units atiTs = degC
+Dim son1_in_str As String * 20
+Dim son1_in_parts(4) As String * 5
+Dim bytes_back_1
+Dim ati1_flag(4) As Boolean
+
+Dim j 
+Const DperR = 180/3.14159
+'Dim n
+'Units n = records
+Public max_temp = 25
+Units max_temp = degC
+Const Vaz = 90
+
+Public atiWD
+Public atiWS
+Units atiWD = degrees
+Units atiWS = m/s
+
+#EndIf
 
 #If ( SENSOR_EC150 = TRUE ) Then
 '*** Beginning of EC100 configure, zero, and span constants and variables, and subroutine ***
@@ -351,6 +390,7 @@ Alias sonic(5) = diag_sonic
 
 Public diag_bits_sonic(6) As Boolean       'Sonic warning flags.
 Public sonic_azimuth                       'Enter sonic azimuth using keyboard after program has compiled (azimuth of the CSAT3(A) negative x-axis see Section 3.2.1 CSAT3A Azimuth in the OPEC manual).
+Public ati_azimuth
 Alias diag_bits_sonic(1) = amp_l_f         'Amplitude low warning flag.
 Alias diag_bits_sonic(2) = amp_h_f         'Amplitude high warning flag.
 Alias diag_bits_sonic(3) = sig_lck_f       'Poor signal lock warning flag.
@@ -359,7 +399,7 @@ Alias diag_bits_sonic(5) = aq_sig_f        'Sonic acquiring signals warning flag
 Alias diag_bits_sonic(6) = sonic_cal_err_f 'Signature error in reading CSAT3A sonic head calibration data.
 Units diag_bits_sonic = arb
 Units sonic_azimuth = degrees
-
+Units ati_azimuth = degress
 Dim sonic_irga_raw(12)                     'EC150 w/CSAT3A sonic head (not lagged).
 
 Dim diag_sonic_tmp As Long                 'Temporary variable used to break out the CSAT3A sonic head diagnostic bits.
@@ -555,6 +595,7 @@ EndTable
 
 DisplayMenu ("System Control",TRUE)
   MenuItem ("Sonic Azmth",sonic_azimuth)
+  'MenuItem ("ati azmth",ati_azimuth)
   SubMenu ("Change Press Source")
     MenuItem ("Select Srce",press_source_array(1,2))
   MenuPick (BB,EB)
@@ -998,9 +1039,9 @@ Units shf = W/m^2
 
 #If ( SENSOR_HFP01SC = TRUE ) Then
 '*** Beginning of HFP01SC constants and variables ***
-Const NMBR_SHF = 4                     'Unique number of HFP01SC to measure.
-Data 1000/62                           'Unique multiplier for HFP01SC #1 (1000/sensitivity).
-Data 1000/62                           'Unique multiplier for HFP01SC #2 (1000/sensitivity).
+Const NMBR_SHF = 2                     'Unique number of HFP01SC to measure.
+Data 1000/63.2                           'Unique multiplier for HFP01SC #1 (1000/sensitivity).
+Data 1000/62.3                           'Unique multiplier for HFP01SC #2 (1000/sensitivity).
 Data 1000/62                           'Unique multiplier for HFP01SC #3 (1000/sensitivity).
 Data 1000/62                           'Unique multiplier for HFP01SC #4 (1000/sensitivity).
 Const CAL_INTERVAL = 1440              'HFP01SC insitu calibration interval (minutes).
@@ -1038,7 +1079,7 @@ Units par_totflx = mmol/m^2
 '*** Beginning of 034B constants and variables ***
 Public WS_ms
 Public WindDir
-Units WS_ms=meters/second
+Units WS_ms=m/s
 Units WindDir=degrees
 '*** End of 034B constants and variables ***
 
@@ -1049,7 +1090,7 @@ Units Rain_mm=mm
 
 '*** Beginning of GPS16X-HVS constants and variables ***
 'Program the GPS16X-HVS to use 38.4 kbaud, no parity, 8 data bits, and 1 stop bit
-Const LOCAL_TIME_OFFSET = -6 'Unique local time offset relative to UTC time
+Const LOCAL_TIME_OFFSET = -8 'Unique local time offset relative to UTC time
 Dim nmea_sentence(2) As String * 90
 Public gps_data(15)
 Alias gps_data(1) = latitude_a 'Degrees latitude (+ = East; - = West)
@@ -1114,6 +1155,7 @@ DataTable (flux,TRUE,FLUX_SIZE_CPU)
 
   #If ( SENSOR_CSAT3 = FALSE ) Then
   '*** Beginning of CSAT3A sonic head output data ***
+  Sample(1,l,ieee4)                         'monin obu length output
   Sample (18,Hs,IEEE4)
   Average (4,Ux,IEEE4,sonic_disable_f)
   Sample (1,sonic_azimuth,IEEE4)
@@ -1302,9 +1344,31 @@ DataTable (flux,TRUE,FLUX_SIZE_CPU)
   '*** End of LI190SB output data ***
 
   '*** Beginning of 034B output data ***
-  Average(1,WS_ms,FP2,False)
-  WindVector (1,WS_ms,WindDir,FP2,False,0,0,0)
+    WindVector (1,WS_ms,WindDir,fp2,False,0,0,0)
+    FieldNames("034b_ws,034b_wd,034b_stdwd")
+    Units 034b_ws=m/s
+    Units 034b_wd=degrees
+    Units 034b_stdwd=degrees
+    
   '*** End of 034B output data ***
+  
+ #If ( SENSOR_ATI = TRUE ) Then
+  '*** Beginning of ATI_sonic output data ***
+  Sample (1,ati_azimuth,IEEE4)
+  WindVector (1,atiWS,atiWD,ieee4,ati1_flag,0,0,0)
+    FieldNames("ati_ws,ati_wd,ati_stdwd")
+    Units ati_ws=m/s
+    Units ati_wd=degrees
+    Units ati_stdwd=degrees
+    Average(4,ati1(1),ieee4,ati1_flag)
+    FieldNames("atiUavg,atiVavg,atiWavg,atitmpavg")
+    Units atiUavg=m/s
+    Units atiVavg=m/s
+    Units atiWavg=m/s
+    Units atitmpavg=C
+    
+'*** End of ati_sonic output data ***
+  #EndIf
 
   '*** Beginning of TE525 output data ***
   Totalize(1,Rain_mm,FP2,False)
@@ -1337,11 +1401,49 @@ DataTable (ts_data,TRUE,-1)
   Units Uy = m/s
   Units Uz = m/s
   Units Ts = C
-  Units diag_sonic = arb
-  '*** End of CSAT3(A) time series output ***
-
-  #If ( SENSOR_EC150 = TRUE ) Then
+  Units diag_sonic = arb  
+ 'WindVector (1,Uy,Ux,IEEE4,sonic_disable_f,0,1,0)
+'*** End of CSAT3(A) time series output ***
+ 
+ #If (SENSOR_ATI=true) Then
+'*** Beginning of ATI_sonic time series output ***
+  Sample (4,ati1(1),IEEE4)
+  FieldNames ("atiUx,atiUy,atiUz,atiTs")
+  Units atiUx = m/s
+  Units atiUy = m/s
+  Units atiUz = m/s
+  Units atiTs = C
+  'Units diag_sonic = arb
+  'WindVector (1,atiWS,atiWD,FP2,False,0,0,0)
+  'FieldNames("ati_ws,ati_wd,ati_stdwd")
+   ' Units ati_ws=m/s
+    'Units ati_wd=degrees
+    'Units ati_stdwd=degrees
+'*** End of ATI_sonic time series output ***
+#endif
+ 
+ #If ( SENSOR_EC150 = TRUE ) Then
   '*** Beginning of EC150 time series output ***
+  co2_molar_density=sonic_irga_raw(6)/44
+  Sample(1,co2_molar_density,ieee4)
+  FieldNames("co2_molar_density")
+  Units co2_molar_density=umol/m^3
+ 
+ h2o_molar_density=sonic_irga_raw(7)/.018
+  Sample(1,h2o_molar_density,ieee4)
+  FieldNames("h2o_molar_density")
+  Units h2o_molar_density=mmol/m^3
+  
+     ' co2_mix_ratio = sonic_irga_raw(6)/44*R*Tc/amb_press*1000
+    '  Sample (1,co2_mix_ratio,ieee4)
+ ' FieldNames("CO2_mix_ratio")
+'  Units co2_mix_ratio=umol/mol
+ 
+' h2o_mix_ratio = sonic_irga_raw(7)/0.018*R*Tc/amb_press
+' Sample(1,h2o_mix_ratio,ieee4)
+'  FieldNames("H2O_mix_ratio")
+'  Units h2o_mix_ratio=mmol/mol
+ 
   Sample (7,sonic_irga_raw(6),IEEE4)
   FieldNames ("CO2,H2O,diag_irga,amb_tmpr,amb_press,CO2_sig_strgth,H2O_sig_strgth")
   Units CO2 = mg/m^3
@@ -1389,7 +1491,7 @@ EndTable
 '*** Program ***
 
 BeginProg
-  SerialOpen(ATI_COM,9600,10,0,40)        'Open up serial ports to ATI sonics
+  'SerialOpen(ATI_COM,9600,10,0,40)        'Open up serial ports to ATI sonics
 
   #If ( (SENSOR_HFT3 = TRUE) OR (SENSOR_HFP01 = TRUE) OR (SENSOR_HFP01SC = TRUE) ) Then
   'Load NMBR_SHF plate calibration.
@@ -1456,27 +1558,42 @@ BeginProg
     CallTable delay_cs
     '*** End of EC150 w/ CSAT3A sonic head measurements ***
     #EndIf
-
+  
+    
+    'EXTRACT NUMERIC VALUES FROM ATI STRING INPUT
     #If ( SENSOR_ATI = TRUE) Then
+     ati_azimuth=176
     SerialInRecord(ATI_COM,son1_in_str,0,20,&h0D,bytes_back_1,01)
     If NOT(son1_in_str = NAN) Then
-      MoveBytes (son1_in_parts(1),0,son1_in_str,0,5)
-      MoveBytes (son1_in_parts(2),0,son1_in_str,5,5)
-      MoveBytes (son1_in_parts(3),0,son1_in_str,10,5)
-      MoveBytes (son1_in_parts(4),0,son1_in_str,15,5)
-      For j = 1 To 4
-        sonic_irga_raw(j) = son1_in_parts(j)	  'Convert from a string to float
-        If (sonic_irga_raw(j)=9999 OR sonic_irga_raw(j)=-9999) Then
-          diag_sonic = 61502
-        Else
-          sonic_irga_raw(j) = sonic_irga_raw(j)/100	        'Scale the ATI data.
-          diag_sonic = 0
-        EndIf
-      Next j
-    Else
-      Move(Ux,5,NAN,1)
-    EndIf
-    #ElseIf ( SENSOR_CSAT3 = TRUE ) Then
+  		MoveBytes (son1_in_parts(1),0,son1_in_str,0,5)
+		  MoveBytes (son1_in_parts(2),0,son1_in_str,5,5)
+		  MoveBytes (son1_in_parts(3),0,son1_in_str,10,5)
+		  MoveBytes (son1_in_parts(4),0,son1_in_str,15,5)
+  		For j = 1 To 4
+  			ati1(j) = son1_in_parts(j)	  'Convert from a string to float
+  			If NOT(ABS(ati1(j))=9999) Then
+    			ati1(j) = ati1(j)/100	        'Scale the ATI data.
+    			ati1_flag(j) = FALSE
+    		Else
+    		  ati1_flag(j) = TRUE
+    		EndIf
+  		Next j	
+  	Else
+  	  Move(atiUx,4,NAN,1)
+  	  Move(ati1_flag(1),4,TRUE,1)
+  	EndIf
+  	
+     'INSTANT WIND SPEED/DIRECTION CALCULATIONS
+        If NOT(ati1_flag(1) OR ati1_flag(2)) Then
+  	   atiWD = (360 + ATN2(-1*atiUx,-1*atiUy)*DperR + Vaz + ati_azimuth) MOD 360
+		  atiWS = SQR(atiUx^2+atiUy^2)
+		Else
+		  atiWD = NAN
+		  atiWS = NAN
+		EndIf
+		#EndIf
+   
+    #If ( SENSOR_CSAT3 = TRUE ) Then
     '*** Beginning of CSAT3 measurements ***
     'Get CSAT3 data.
     CSAT3 (sonic_irga_raw(1),1,CSAT3_SDM_ADDR,91,CSAT_OPT)
@@ -1621,6 +1738,8 @@ BeginProg
         'Compute online fluxes.
         tau = SQR ((Ux_Uz_cov*Ux_Uz_cov)+(Uy_Uz_cov*Uy_Uz_cov))
         u_star = SQR (tau)
+        
+        L=-u_star^3*(Tc_mean+273.15)/(0.4*9.8*Ts_Uz_cov)   'obukohov length
 
         'Compute the standard deviation from the variance.
         Ts_stdev = SQR (Ts_stdev)
@@ -1654,14 +1773,20 @@ BeginProg
       'Compute fast response air temperature from sonic temperature and EC150 vapor density.
       Tc = Ts_absolute/(1+0.32*H2O*R*Ts_absolute/(amb_press*18)) 'Kaimal and Gaynor (1991) Eq. (3).
 
-      'Compute the molar mixing ratio of CO2 and H2O.
-      divisor = (amb_press/(R*(Tc+273.15)))-(H2O/18)
-      Xc = CO2/(0.044*divisor)
-      Xv = H2O/(0.018*divisor)
-
       'Convert the fast response air temperature to degrees C.
       Tc = Tc-273.15
+      
+      'Compute the molar mixing ratio of CO2 and H2O.
+      divisor = (amb_press/(R*(Tc+273.15)))-(H2O/18)
+      Xc=CO2/(0.044*divisor)
+      Xv=H2O/(0.018*divisor)
 
+      'co2_molar=sonic_irga_raw(6)/(0.044*divisor)
+      'h2o_molar=sonic_irga_raw(7)/(0.018*divisor)
+      co2_mix_ratio = sonic_irga_raw(6)/44*R*Tc/amb_press*1000
+      h2o_mix_ratio = sonic_irga_raw(7)/0.018*R*Tc/amb_press
+
+      
       'Filter data in the covariance instruction if the EC150 w/ CSAT3A sonic head reports bad data.
       irga_disable_f = sonic_disable_f OR irga_bad_data_f
 
@@ -1824,15 +1949,15 @@ BeginProg
       'Compute fast response air temperature from sonic temperature and IRGA
       ' vapor density (see CSAT3 manual).
       Tc_li = Ts_absolute/(1+0.32*H2O_li*R*Ts_absolute/(amb_press_li*18)) 'Kaimal and Gaynor (1991) Eq. 3
-
+      
+      'Convert the fast response air temperature to degrees C.
+      Tc_li = Tc_li-273.15
+     
       'Compute the molar concentration of CO2 and H2O.
       CO2_li_um_m = CO2_li/44*R*Tc_li/amb_press_li*1000
       H2O_li_mm_m = H2O_li/0.018*R*Tc_li/amb_press_li
 
-      'Convert the fast response air temperature to degrees C.
-      Tc_li = Tc_li-273.15
-
-      'Filter data in the covariance instruction if the CSAT3(A) or LI-7500(A)
+            'Filter data in the covariance instruction if the CSAT3(A) or LI-7500(A)
       ' reports bad data.
       irga_li_disable_f = (sonic_disable_f) OR (agc_li > AGC_THRESHOLD) OR (H2O_li = NAN)
 
