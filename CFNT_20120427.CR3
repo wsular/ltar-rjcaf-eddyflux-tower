@@ -19,90 +19,17 @@
 ' -
 '
 'Version history
+' CFNT_20120427.CR3 [pto]
+'   - removed history beyond last entry
+'   - finished adding code for 6band net radiometers
+'   - disabled Los Gatos instrument code
+'   - verified cal. constants are correct
 ' CFNT_20120420.CR3 [pto]
 '   - reintroduced Los Gatos instrument, cleaned up its namespace, added *_extra tables
 '   - respecified all integration times to a constant, INTEG (merged in A_INTEG)
 '   - implemented input constants for GPS, LGR,
 '   - moved paneltemp measurement from 10hz to slow scan
 '   - set everything to short integration time (250)
-' CFNT_20120330.CR3 [pto]
-'   - incorporated changes from LIND_20120323.CR3
-'     * removed average lat/long and avg mag_var from tables; left medians
-'     * added '_Med' suffix to lat/long in site table
-'     * added median altitude for comparison since its avgs actually vary
-' CFNT_20120316 [pto]
-'   - forked off most recent program: LIND_20120309
-'   - updated with correct cal constants: NRLITE, PAR
-'   - added two values to site_daily table: Status.ProgSignature, Status.RunSignature
-'   - changed Met1(3) aka Met1_wnd_dir TO Met1_rslt_wnd_dir
-'   - removed spaces from decimal latitude/longitude units; clarified course units
-' LIND_20120309 [pto]
-'   - synchronized with CFNT_20120215.CR3 plus additional edits:
-'   - removed site code prefix from tables; its over redundant
-'   - fixed site daily table by removing slowsequence conditionals
-' 	- reverted many tables & variables back to hidden 
-'   - (!) fixed issue with HMP using 5 min stats for both 5/30min derived #s
-'   - added conditional to exclude negative par voltages
-'   - added units of degreesEofN to mag var; clarified N/E on lat/long
-'   - removed extra uptime variables; only sonic + irga left
-'   - (!) reordered sonic derived ws/wd variables, renamed for clarity
-'
-' LIND_20120224 [pto]
-'   - adapted from CFNT_20120214.CR3 :: must have been a working copy because had to fix bug 
-'     with sonic_uptime being referenced as wnd_dir_compass
-'   - checked wiring is identical - OK
-'   - confirmed site press const 93.5kPa is reasonable
-'   - updated with new calibration constants for NR Lite (12.6), LI190SB (6.84)
-' CFNT_20120214 [pto]
-'   - std_wnd_dir reports 0 sometimes; completely unapparent why
-'     > WindVector ignores NANs for stddev and "for Option output 2" (CSI CRBASIC help)
-'     > introduced sonic_uptime (0-1) signifying ratio of good samples out of possible
-'     > code now sets all results of WindVector to NAN if sonic_uptime < 0.5
-'   - when no sonic values are recorded (flags=100%) the recorded wind dir is the azimuth
-'     > solved by introducing sonic_uptime variable; set to NAN when uptime < 0.5
-'   - T_hmp is 0, RH_hmp_Avg is NAN throughout 5,30min files; there are no NAN exclusions in Average
-'     statements for previous version
-'     > added NAN exclusion statements to work_stat*_hmp tables, unhid tables to troubleshoot
-'   - CO2_ppm_Avg (based on Xc) is nonzero when remaining IRGA values are NAN; this is an
-'     average of 10hz calculated value, may need irga exclusion flags
-'     > soln: use analogous irga_uptime to set Xc,Xv=NAN when uptime < 0.5
-'   - created *_uptime variables for all intermediate processing tables (csat,irga,hmp,met1)
-'   - csat/irga diag flag now checked before processing intermediate variables; sets them to NAN if true
-'   - added stddev of CO2_ppm to stats tables
-'   - added mean+stdev of H2O in g/kg to stats tables
-'   - added mean amb_tmpr to stats tables for sanity check purposes
-'   - extended precision of Met1 WS multiplier 0.799 >> 0.7989
-'   - no IRGA samples total (like for CSAT); do we need this if *_uptime works? prob not
-'     > added to stat1,2 tables anyway
-'   - (!) changed constant SITE_PRESS to 93.5 kPa based data from Dec 2011 - Feb 2012
-'   - made most variables public to facilitate troubleshooting
-' CFNT_20120210 [pto]
-'   - begin commenting unused conditional compilation blocks
-'   - begin applying consistent naming scheme to constants and variables
-'   - disabled System Control menu for lack of apparent utility
-'   - added disable flags to prevent NAN output for LI-190SB, 034B, TE525
-'   - (!) changed wind vector calculation for 034B from type 0 to 2 to match csat
-'   - (!) removed erroreous mixing ratio calculations -> use Xc, Xv
-'   - (!) relocated Monin-Obukhov length calculation so it uses correct Tc_mean
-'   - moved HMP mult/offsets into voltdiff() statements, added them for RH channel
-'   - (!) implemented back-end to get correct 5min statistics
-'   - changed NR Lite measurement from AutoRange to mV20
-'   - encountered compilation bug which prevents duplicate FieldName assignments, even
-'     in different data tables; implemented separate data tables for 034B to permit
-'     same field names in output tables; also renamed '034B' to 'Met1'
-'   - force nearly all tables to autoallocate now
-'   - added (dry) mixing ratio to 5/30min outputs
-' CFNT_20120204  [pto, patrick.okeeffe@email.wsu.edu]
-'   - copy 30min flux table as a 5min flux table, removed extra variables, ensure units for each
-'     variable, no correctness checks
-'   - start file naming scheme
-'   - enclose sensor statements in compilation conditionals to match original style
-'   - relocated ANAL0G_INTEGRATION constant from sensor input mapping to program variable setup
-' ....
-' backfill?
-' ...
-' 20110216  version 3.0
-'   Copyright (c) 2002, 2006, 2010 Campbell Scientific, Inc. All rights reserved.
 '
 ' Flux sign convention is positive upwards, away from the surface and negative downwards, 
 ' towards the surface. Before computing online fluxes, the datalogger will introduce lags 
@@ -129,7 +56,7 @@ Const SENSOR_TE525       = TRUE  'TE525           texas instruments rain gage
 Const SENSOR_HFP01       = FALSE  'HFP01           soil heat flux plates
 Const SENSOR_DEC_5TM     = FALSE  '5TM             decagon soil temp/moisture probe
 Const SENSOR_DEC_6RAD    = TRUE   '                Decagon-built 6-band radiometer
-Const SENSOR_LGR_N2OCO   = TRUE   '                Los Gatos N2O/CO analyzer
+Const SENSOR_LGR_N2OCO   = FALSE   '                Los Gatos N2O/CO analyzer
 Const SENSOR_PIC_CO2CH4  = FALSE  'G2301-f         Picarro CO2/CH4/H2O analyzer
 
 '== SENSORS NOT USED ==
@@ -168,11 +95,11 @@ Const SDI_COM_ADDR = 5              'specified for 5TM and 6RAD sensors below
 Const DEC_5TM_NUM_OF = 6             'how many 5TM sensors?
 Const DEC_5TM_1st_SDI_ADDR = 1       'first address of consecutive addresses
 
-Const DEC_6RAD_UP_SDI_ADDR = 0      'up-facing 6 band radiometer
+Const DEC_6RAD_UP_SDI_ADDR = 2      'up-facing 6 band radiometer
 Const DEC_6RAD_UP_MULT = 1.0
 Const DEC_6RAD_UP_OFF = 0
 
-Const DEC_6RAD_DN_SDI_ADDR = 2      'down-facing 6 band radiometer
+Const DEC_6RAD_DN_SDI_ADDR = 0      'down-facing 6 band radiometer
 Const DEC_6RAD_DN_MULT = 1.0
 Const DEC_6RAD_DN_OFF = 0
 
@@ -1017,9 +944,8 @@ Units nmbr_clock_change = samples
 
 '**********  Decagon 6-band radiometers  **********
 #If ( SENSOR_DEC_6RAD = TRUE ) Then
-  Public decagon_6rad(2)
-  Alias decagon_6rad(1) = dec_6rad_up
-  Alias decagon_6rad(2) = dec_6rad_dn
+  Public dec_6rad_up(6) As Float
+  Public dec_6rad_dn(6) As Float
   Units dec_6rad_up = unknown
   Units dec_6rad_dn = unknown
 #EndIf
@@ -1291,39 +1217,56 @@ DataTable (site_daily,TRUE,-1)
 EndTable
 
 
+#If ( SENSOR_LGR_N2OCO = TRUE )
+  DataTable (tsdata_extra,TRUE,-1)
+    DataInterval (0,FAST_RATE,mSec,100)
+    CardOut (0,-1)
+    Sample (1,lgr_n2o,IEEE4)
+    Sample (1,lgr_co,IEEE4)
+  EndTable
+  
+  '5 minute extra sensors table
+  DataTable (stats5_extra,TRUE,-1)
+    DataInterval (0,STAT_INT1,min,10)
+    CardOut(0,-1)
+    Sample(1,lgr_n2o_Avg,FP2)
+    Sample(1,lgr_n2o_Std,FP2)
+    Sample(1,lgr_co_Avg,FP2)
+    Sample(1,lgr_co_Std,FP2)
+    Sample(1,lgr_uptime,FP2)
+    Sample(1,cov_n2o_Uz,FP2)
+    Sample(1,cov_co_Uz,FP2)
+  EndTable
+  
+  '5 minute extra sensors table
+  DataTable (stats30_extra,TRUE,-1)
+    DataInterval (0,STAT_INT2,min,10)
+    CardOut(0,-1)
+    Sample(1,lgr_n2o_Avg,FP2)
+    Sample(1,lgr_n2o_Std,FP2)
+    Sample(1,lgr_co_Avg,FP2)
+    Sample(1,lgr_co_Std,FP2)
+    Sample(1,lgr_uptime,FP2)
+    Sample(1,cov_n2o_Uz,FP2)
+    Sample(1,cov_co_Uz,FP2)
+  EndTable
+#EndIf
 
-DataTable (tsdata_extra,TRUE,-1)
-  DataInterval (0,FAST_RATE,mSec,100)
-  CardOut (0,-1)
-  Sample (1,lgr_n2o,IEEE4)
-  Sample (1,lgr_co,IEEE4)
-EndTable
+#If ( SENSOR_DEC_6RAD = TRUE ) Then
+  DataTable (stats5_6rad,TRUE,-1)
+    DataInterval(0,STAT_INT1,min,10)
+    CardOut(0,-1)
+    Average(6,dec_6rad_up(1),IEEE4,FALSE)
+    Average(6,dec_6rad_dn(1),IEEE4,FALSE)
+  EndTable
 
-'5 minute extra sensors table
-DataTable (stats5_extra,TRUE,-1)
-  DataInterval (0,STAT_INT1,min,10)
-  CardOut(0,-1)
-  Sample(1,lgr_n2o_Avg,FP2)
-  Sample(1,lgr_n2o_Std,FP2)
-  Sample(1,lgr_co_Avg,FP2)
-  Sample(1,lgr_co_Std,FP2)
-  Sample(1,lgr_uptime,FP2)
-  Sample(1,cov_n2o_Uz,FP2)
-  Sample(1,cov_co_Uz,FP2)
-EndTable
-
-'5 minute extra sensors table
-DataTable (stats30_extra,TRUE,-1)
-  DataInterval (0,STAT_INT2,min,10)
-  CardOut(0,-1)
-  Sample(1,lgr_n2o_Avg,FP2)
-  Sample(1,lgr_n2o_Std,FP2)
-  Sample(1,lgr_co_Avg,FP2)
-  Sample(1,lgr_co_Std,FP2)
-  Sample(1,lgr_uptime,FP2)
-  Sample(1,cov_n2o_Uz,FP2)
-  Sample(1,cov_co_Uz,FP2)
-EndTable
+  DataTable (stats30_6rad,TRUE,-1)
+    DataInterval(0,STAT_INT2,min,10)
+    CardOut(0,-1)
+    Average(6,dec_6rad_up(1),IEEE4,FALSE)
+    Average(6,dec_6rad_dn(1),IEEE4,FALSE)
+  EndTable
+#EndIf
 
 
 '========================================================================================
@@ -1782,6 +1725,13 @@ BeginProg
     Else
       Rn = Rn_meas
     EndIf
+    #EndIf
+    
+    #If ( SENSOR_DEC_6RAD = TRUE ) Then
+      SDI12Recorder (dec_6rad_up(1),SDI_COM_ADDR,DEC_6RAD_UP_SDI_ADDR,"M!",1.0,0)
+	    SDI12Recorder (dec_6rad_dn(1),SDI_COM_ADDR,DEC_6RAD_DN_SDI_ADDR,"M!",1.0,0)
+      CallTable(stats5_6rad)
+      CallTable(stats30_6rad)
     #EndIf
 
 

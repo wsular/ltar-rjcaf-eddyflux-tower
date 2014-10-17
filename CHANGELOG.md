@@ -1,6 +1,17 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20120427_CFNT
+-------------
+
+### Other Changes
+
+* Add support for Decagon 6-band radiometers
+    * Swapped sensor SDI addresses: up-facing is now 2, down-facing is 0
+* Disable Los Gatos N2O/CO analyzer
+* Verify net rad, PAR sensor sensitivity values are correct for CFNT site
+
+
 20120420_LIND
 -------------
 
