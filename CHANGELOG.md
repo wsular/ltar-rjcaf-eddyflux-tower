@@ -1,6 +1,51 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20120309_LIND
+-------------
+
+This vesion was manually (imperfectly) merged against **20120215_CFNT**.
+
+### Issues Fixed
+
+* Removed site code prefix from data tables
+* Correct data table reference; before this fix, since 20120215_CFNT, values
+  from the T/RH probe recorded in 30-min data table were mistakenly duplicates
+  of most recent 5-min period values. 
+* Add missing units to CO2/H2O signal strength values in table 'tsdata'
+* Remove slowsequence disable flags from daily table to restore output
+
+### Data Tables
+
+* Renamed data tables:
+    * CFNT_stats5 -> stats5
+    * CFNT_stats30 -> stats30
+    * CFNT_site_daily -> site_daily
+    * CFNT_tsdata -> tsdata 
+* Changed units for variables:
+    * `latitude_a`: degrees -> degreesN
+    * `latitude_b`: minutes -> minutesN
+    * `longitude_a`: degrees -> degreesE
+    * `longitude_b`: minutes -> minutesE
+    * `magnetic_variation`: unitless -> degreesEofN
+    * `diag_sonic`: arb -> bitmap
+    * 'diag_irga`: arb -> bitmap
+* Modify 5- & 30-min data tables:
+    * Remove columns: Tc_Std, CO2_ppm_Std, H2O_g_kg_Std, hmp_uptime, Met1_uptime
+    * Rename `wnd_dir_compass` to `rslt_wnd_dir` and move upward one column
+* Add median values to daily table of GPS-related data
+    * `latitude`: decimal_degrees_N
+    * `longitude`: decimal_degrees_E
+    * `magnetic_variation_Med`: degreesEofN
+
+### Other Changes
+
+* Revert many tables & variables back to hidden
+* Simplify significantly the evaluation of sonic anemometer diagnostic word
+* Also simplify the evaluation of IRGA diagnostic word
+* Exclude negative values from PAR sensor
+
+
 20120224_LIND
 -------------
 
@@ -43,6 +88,44 @@ This version diverged from an earlier, unretained draft of **20120215_CFNT**.
 * Updated calibration constants to reflect LIND-specific sensors
     * net radiometer (NR-Lite2): 12.6
     * PAR sensor (LI190SB): 6.84
+* Modify multiplier used to value specified in user manual (0.799 -> 0.7989)
+* Redefine several variables as Public to facilitate troubleshooting
+* Modify behavior for cup & vane measurement QC
+    * Change `If WS=0.2811 Then WS=0` to `If WS<=0.2811 Then WS=NAN`
+    * Change `If WD>=360 Then WD=0` to `If WD>=360 OR WD<0 Then WD=NAN`
+
+
+20120215_CFNT
+-------------
+
+### Issues Fixed
+
+* Update constant `SITE_PRESS` to 93.5 kPa (based on Dec 2011 - Feb 2012)
+* Fix cause of `T_hmp` being 0 and `RH_hmp_Avg` being "NAN",
+  which was a missing `GetRecord` statement
+* In some instances, standard deviation of wind direction is reported zero, or
+  site azimuth is recorded as wind direction because period lacked data and
+  mean wind direction was reported zero. To resolve both, new value 
+  `sonic_uptime` tracks ratio (0-1) of good sonic records out of queries; when
+  value < 0.5 then null values ("NAN") are recorded for wind stats
+* Use an `irga_uptime` analagous to sonic_uptime to set `Xc`/`Xv` to null
+  value ("NAN") when irga_uptime < 0.5
+
+### Data Table Changes
+
+* Units are changed for several columns:
+    * diag_sonic: arb -> bitmap
+    * diag_irga: arb -> bitmap
+    * CO2_sig_strgth: arb -> unity
+    * H2O_sig_strgth: arb -> unity
+* Change both "CFNT_stats5" and "CFNT_stats30" tables by
+    * Adding columns: sonic_uptime, CO2_ppm_Avg, H2O_g_kg_Avg, amb_tmpr_Avg,
+      irga_uptime, e_hmp_Avg, e_sat_hmp_Avg
+    * Removing columns: Tc_Std, sonic_samples_Tot
+* Simplify daily GPS-related data table by removing standard deviation values
+
+### Other Changes
+
 * Modify multiplier used to value specified in user manual (0.799 -> 0.7989)
 * Redefine several variables as Public to facilitate troubleshooting
 * Modify behavior for cup & vane measurement QC
