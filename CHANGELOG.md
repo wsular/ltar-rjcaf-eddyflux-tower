@@ -1,6 +1,22 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20120316_CFNT
+-------------
+
+### Data Table Changes
+
+* In 5- & 30-min data tables rename `Met1_wnd_dir` to `Met1_rslt_wnd_dir`
+* In daily table
+    * Change units for latitude/longitude from 'decimal degrees N/E' to
+      'decDegreesN/E' respectively
+    * Add two columns `RunSig` and `ProgSig`
+
+### Other Changes
+
+* Specified sensitivity values for net radiometer, PAR sensor at CFNT site
+
+
 20120309_LIND
 -------------
 
