@@ -1,6 +1,25 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20120420_LIND
+-------------
+
+### Data Table Changes
+
+* New data tables
+    * tsdata_extra: 10 Hz samples of N2O & CO
+    * stats5_extra/stats30_extra: summary stats on 5- & 30-min intervals
+        * Includes covariance between vertical wind speed & species conc but
+          delay through sampling tube is not compensated for, therefore
+          covariance values should be ignored
+
+### Other Changes
+
+* Add support for Los Gatos N2O/CO analyzer
+    * Analog voltage input: N2O/DF 10, CO/DF 11
+* Reduce analog input voltage measurement integration time: _60Hz -> 250
+
+
 20120330_CFNT
 -------------
 

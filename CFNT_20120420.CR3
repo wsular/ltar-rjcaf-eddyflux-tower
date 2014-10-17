@@ -19,6 +19,12 @@
 ' -
 '
 'Version history
+' CFNT_20120420.CR3 [pto]
+'   - reintroduced Los Gatos instrument, cleaned up its namespace, added *_extra tables
+'   - respecified all integration times to a constant, INTEG (merged in A_INTEG)
+'   - implemented input constants for GPS, LGR,
+'   - moved paneltemp measurement from 10hz to slow scan
+'   - set everything to short integration time (250)
 ' CFNT_20120330.CR3 [pto]
 '   - incorporated changes from LIND_20120323.CR3
 '     * removed average lat/long and avg mag_var from tables; left medians
@@ -105,22 +111,11 @@
 ' lag" and set the delay to the appropriate value. The raw data is not lagged. The site 
 ' attendant must load in several constants and calibration values. Search for the text string 
 ' "unique" to find the locations where unique constants and calibration values are entered.
-'   
-'C        Celsius
-'degrees  degrees (angle)
-'g        grams
-'J        Joules
-'kg       kilograms
-'kPa      kilopascals
-'m        meters
-'mg       milligrams
-'mmol     millimoles
-'mol      moles
-'s        seconds
-'umol     micromols
-'V        volts
-'W        Watts
 
+
+'========================================================================================
+'================================  USER-EDITABLE CONSTANTS  =============================
+'========================================================================================
 
 '== REACCH SENSOR CONFIGURATION ==
 Const SENSOR_EC150       = TRUE  'EC150/CSAT3A    OP-IRGA & 3d sonic anemometer/thermometer
@@ -130,13 +125,12 @@ Const SENSOR_190SB       = TRUE  'LI190SB         licor quantum sensor??
 Const SENSOR_034B        = TRUE  '034B            cup & vane
 Const SENSOR_TE525       = TRUE  'TE525           texas instruments rain gage
 
-
 '== OPTIONAL DEPLOYMENT SENSORS 
-Const SENSOR_N2O         = FALSE  'Los Gatos N2O/CO analyzer
-Const SENSOR_CH4         = FALSE  'Picarro CO2/CH4/H2O analyzer
-Const SENSOR_5TM         = FALSE  '5TM             decagon soil temp/moisture probe
 Const SENSOR_HFP01       = FALSE  'HFP01           soil heat flux plates
-
+Const SENSOR_DEC_5TM     = FALSE  '5TM             decagon soil temp/moisture probe
+Const SENSOR_DEC_6RAD    = TRUE   '                Decagon-built 6-band radiometer
+Const SENSOR_LGR_N2OCO   = TRUE   '                Los Gatos N2O/CO analyzer
+Const SENSOR_PIC_CO2CH4  = FALSE  'G2301-f         Picarro CO2/CH4/H2O analyzer
 
 '== SENSORS NOT USED ==
 Const SENSOR_Q7_1        = FALSE  'Q7.1            net radiometer
@@ -152,75 +146,86 @@ Const SENSOR_HFP01SC     = FALSE  'HFP01SC         soil heat flux plates
 
 '== SENSOR INPUT MAP ==
 
-#If ( SENSOR_EC150 = TRUE ) Then
-  Const EC100_SDM_ADDR = 1               'Unique SDM address for EC100.
-#EndIf
+Const EC100_SDM_ADDR = 1               'Unique SDM address for EC100.
 
-
-#If ( SENSOR_HMP = TRUE ) Then
-  Const HMP_ANALOG_T_INPUT = 2             'Unique analog input channel.
-  Const HMP_ANALOG_RH_INPUT = 3           'Unique: HMP RH input
-#EndIf
-
-
-#If ( SENSOR_Q7_1 = TRUE ) Then
-  Const NR_ANALOG_INPUT = 4              'Unique analog input channel.
-#EndIf
-
-
-#If ( SENSOR_NR_LITE = TRUE ) Then
-  Const NR_ANALOG_INPUT = 4              'Unique analog input channel.
-#EndIf
-
-
-#If ( SENSOR_CNR_2 = TRUE ) Then
-  Const NR_ANALOG_INPUT = 4              'Unique analog input channel.
-#EndIf
-
-
-#If ( SENSOR_NR_01_CNR_1 = TRUE ) Then
-  Const T_NR_ANALOG_INPUT = 1            'Unique analog input channel.
-  Const NR_ANALOG_INPUT = 2              'Unique analog input channel.
-#EndIf
-
-
-#If ( SENSOR_CNR_4 = TRUE ) Then
-  Const T_NR_ANALOG_INPUT = 1            'Unique analog input channel.
-  Const NR_ANALOG_INPUT = 2              'Unique analog input channel.
-#EndIf
-
-
-#If ( SENSOR_CS616 = TRUE ) Then
-  Const CS616_ANALOG_INPUT = 11          'Unique analog input channel.
-#EndIf
-
-
-#If ( SENSOR_TCAV = TRUE ) Then
-  Const TCAV_ANALOG_INPUT = 7            'Unique analog input channel.
-#EndIf
-
-
-#If ( SENSOR_HFT3 = TRUE ) Then
-  Const SHF_ANALOG_INPUT = 9            'Unique analog input channel.
-#EndIf
-
-
-#If ( SENSOR_HFP01 = TRUE ) Then
-  Const SHF_ANALOG_INPUT = 9           'Unique analog input channel.
-#EndIf
-
-
-#If ( SENSOR_HFP01SC = TRUE ) Then
-  Const SHF_ANALOG_INPUT = 9             'Unique analog input channel.
-  Const SHF_HEATER_ANALOG_INPUT = 25     'Unique analog input channel.
-#EndIf
- 
-#If ( SENSOR_5TM = TRUE ) Then
-  Const 5tm_sdi_input = 1             'Unique sdi input channel.
-#EndIf
-
-
+Const HMP_ANALOG_T_INPUT = 2             'Unique analog input channel.
+Const HMP_ANALOG_RH_INPUT = 3           'Unique: HMP RH input
+Const NR_ANALOG_INPUT = 4              'Unique analog input channel.
 Const PAR_ANALOG_INPUT = 5             'Unique: PAR diff input chan #
+
+'Const SHF_HEATER_PORT ?
+Const SHF_ANALOG_INPUT = 9           'Unique analog input channel.
+
+Const LGR_N2O_DF_INPUT = 10
+Const LGR_N2O_MULT = (500 - 0) / 5000  '0-500ppb over 0-5V
+Const LGR_N2O_OFF = 0
+Const LGR_CO_DF_INPUT = 11
+Const LGR_CO_MULT = (500 - 0) / 5000   '0-500ppb over 0-5V
+Const LGR_CO_OFF = 0
+
+Const SDI_COM_ADDR = 5              'specified for 5TM and 6RAD sensors below
+
+Const DEC_5TM_NUM_OF = 6             'how many 5TM sensors?
+Const DEC_5TM_1st_SDI_ADDR = 1       'first address of consecutive addresses
+
+Const DEC_6RAD_UP_SDI_ADDR = 0      'up-facing 6 band radiometer
+Const DEC_6RAD_UP_MULT = 1.0
+Const DEC_6RAD_UP_OFF = 0
+
+Const DEC_6RAD_DN_SDI_ADDR = 2      'down-facing 6 band radiometer
+Const DEC_6RAD_DN_MULT = 1.0
+Const DEC_6RAD_DN_OFF = 0
+
+Const GPS_COM_ADDR = Com4
+
+
+
+
+
+'#If ( SENSOR_Q7_1 = TRUE ) Then
+'  Const NR_ANALOG_INPUT = 4              'Unique analog input channel.
+'#EndIf
+
+
+'#If ( SENSOR_CNR_2 = TRUE ) Then
+'  Const NR_ANALOG_INPUT = 4              'Unique analog input channel.
+'#EndIf
+
+
+'#If ( SENSOR_NR_01_CNR_1 = TRUE ) Then
+'  Const T_NR_ANALOG_INPUT = 1            'Unique analog input channel.
+'  Const NR_ANALOG_INPUT = 2              'Unique analog input channel.
+'#EndIf
+
+
+'#If ( SENSOR_CNR_4 = TRUE ) Then
+'  Const T_NR_ANALOG_INPUT = 1            'Unique analog input channel.
+'  Const NR_ANALOG_INPUT = 2              'Unique analog input channel.
+'#EndIf
+
+
+'#If ( SENSOR_CS616 = TRUE ) Then
+'  Const CS616_ANALOG_INPUT = 11          'Unique analog input channel.
+'#EndIf
+
+
+'#If ( SENSOR_TCAV = TRUE ) Then
+'  Const TCAV_ANALOG_INPUT = 7            'Unique analog input channel.
+'#EndIf
+
+
+'#If ( SENSOR_HFT3 = TRUE ) Then
+'  Const SHF_ANALOG_INPUT = 9            'Unique analog input channel.
+'#EndIf
+
+
+'#If ( SENSOR_HFP01SC = TRUE ) Then
+'  Const SHF_ANALOG_INPUT = 9             'Unique analog input channel.
+'  Const SHF_HEATER_ANALOG_INPUT = 25     'Unique analog input channel.
+'#EndIf
+ 
+
+
 
 #If ( SENSOR_034B = TRUE ) Then
   Const WIND_034B_SE_INPUT = 11          'Unique: 034B single ended input = D6H
@@ -236,7 +241,7 @@ Const STAT_INT2 = 30		  'Unique: flux data output interval (2), min
 Const DAILY_MEDIAN_NUM = 480 'number of values to track in median for daily stats
 
 Const SDM_PER = 30          'Unique: default SDM clock speed
-Const A_INTEG = _60Hz       'Slowsequence analog measurement integration time, _60Hz or _50Hz.
+Const INTEG = 250       'Slowsequence analog measurement integration time, _60Hz or _50Hz.
 
 Const OFFSET = 17           'minimum # of records req'd to compensate for IRGA/CSAT lags on-the-fly
 Const SCAN_BUFFER_SIZE = 60*INT (1000/FAST_RATE)     'Compute a 60 second scan buffer.
@@ -363,16 +368,16 @@ Public cov_out_sonic(22)                   'CSAT3A sonic head statistics.
 Alias cov_out_sonic(1) = Hs                'Sensible heat flux using sonic temperature.
 Alias cov_out_sonic(2) = tau               'Momentum flux.
 Alias cov_out_sonic(3) = u_star            'Friction velocity.
-Alias cov_out_sonic(4) = Ts_stdev          'results of covariance instructions, 10 qntys
+Alias cov_out_sonic(4) = Ts_Std          'results of covariance instructions, 10 qntys
 Alias cov_out_sonic(5) = Ts_Ux_cov
 Alias cov_out_sonic(6) = Ts_Uy_cov
 Alias cov_out_sonic(7) = Ts_Uz_cov
-Alias cov_out_sonic(8) = Ux_stdev
+Alias cov_out_sonic(8) = Ux_Std
 Alias cov_out_sonic(9) = Ux_Uy_cov
 Alias cov_out_sonic(10) = Ux_Uz_cov
-Alias cov_out_sonic(11) = Uy_stdev
+Alias cov_out_sonic(11) = Uy_Std
 Alias cov_out_sonic(12) = Uy_Uz_cov
-Alias cov_out_sonic(13) = Uz_stdev
+Alias cov_out_sonic(13) = Uz_Std
 Alias cov_out_sonic(14) = wnd_spd          'results of windvector instruction, 4 qntys
 Alias cov_out_sonic(15) = rslt_wnd_spd
 Alias cov_out_sonic(16) = wnd_dir_sonic
@@ -385,16 +390,16 @@ Alias cov_out_sonic(22) = wnd_dir_compass
 Units Hs = W/m^2
 Units tau = kg/(m s^2)
 Units u_star = m/s
-Units Ts_stdev = C
+Units Ts_Std = C
 Units Ts_Ux_cov = C m/s
 Units Ts_Uy_cov = C m/s
 Units Ts_Uz_cov = C m/s
-Units Ux_stdev = m/s
+Units Ux_Std = m/s
 Units Ux_Uy_cov = (m/s)^2
 Units Ux_Uz_cov = (m/s)^2
-Units Uy_stdev = m/s
+Units Uy_Std = m/s
 Units Uy_Uz_cov = (m/s)^2
-Units Uz_stdev = m/s
+Units Uz_Std = m/s
 Units wnd_spd = m/s
 Units rslt_wnd_spd = m/s
 Units wnd_dir_sonic = degrees
@@ -584,9 +589,9 @@ DataTable (work_cov1_irga,TRUE,1)
   Average (1,CO2_sig_strgth,IEEE4,irga_disable_f)
   Average (1,H2O_sig_strgth,IEEE4,irga_disable_f)
   Totalize (1,n,IEEE4,irga_disable_f)
-    FieldNames("irga_samples_Tot")
+    FieldNames("irga_samples_Tot") 'reqd to prevent name conflict
   Totalize (1,n,IEEE4,FALSE)
-    FieldNames("irga_possible_Tot")
+    FieldNames("irga_possible_Tot") 'ditto
 EndTable
 
 DataTable (work_cov2_irga,TRUE,1)
@@ -604,9 +609,9 @@ DataTable (work_cov2_irga,TRUE,1)
   Average (1,CO2_sig_strgth,IEEE4,irga_disable_f)
   Average (1,H2O_sig_strgth,IEEE4,irga_disable_f)
   Totalize (1,n,IEEE4,irga_disable_f)
-    FieldNames("irga_samples_Tot")
+    FieldNames("irga_samples_Tot") 'reqd to prevent name conflict
   Totalize (1,n,IEEE4,FALSE)
-    FieldNames("irga_possible_Tot")
+    FieldNames("irga_possible_Tot") 'ditto
 EndTable
 
 'DisplayMenu ("System Control",TRUE)
@@ -869,9 +874,9 @@ Units Rn_meas = W/m^2
 '#EndIf
 
 '*** Beginning of LI190SB constants and variables ***
-Const PAR_CAL = 6.26				                          'Unique calibration value, uA/mmol/s/m^2
-Const PAR_MULT_FLXDENS = 1000/(PAR_CAL*0.604)	        'multiplier for Flux Density_1 calculation
-Const PAR_MULT_TOTFLX = (1/(PAR_CAL*0.604))*(FAST_RATE/1000)	'multiplier for Total Fluxes_1 calculation
+Const LI190_CAL = 6.26				                          'Unique calibration value, uA/mmol/s/m^2
+Const LI190_MULT_FLXDENS = 1000/(LI190_CAL*0.604)	        'multiplier for Flux Density_1 calculation
+Const LI190_MULT_TOTFLX = (1/(LI190_CAL*0.604))*(FAST_RATE/1000)	'multiplier for Total Fluxes_1 calculation
 Public PAR(3)
 Alias PAR(1) = PAR_mV
 Alias PAR(2) = PAR_flxdens
@@ -950,12 +955,57 @@ Units gps_ready = unitless
 Units max_clock_change = ms
 Units nmbr_clock_change = samples
 
-'#If ( SENSOR_N2O = TRUE ) Then
-'Public n2o
-'Public c_monoxide
-'Units n2o=ppm
-'Units c_monoxide=ppm
-'#EndIf
+
+'**********  Los Gatos N2O/CO analyzer  **********
+#If ( SENSOR_LGR_N2OCO = TRUE ) Then
+  Public LGR(2)                          'data variables
+  Alias LGR(1) = lgr_n2o
+  Alias LGR(2) = lgr_co
+  Units lgr_n2o = ppm, dMR
+  Units lgr_co = ppm, dMR
+  
+  Dim lgr_disable_f As Boolean           'work variables
+  Dim cov_array_lgr(2,2)
+  Dim cov_out_lgr(11)
+  Alias cov_out_lgr(1)  = lgr_n2o_Avg                'averages
+  Alias cov_out_lgr(2)  = lgr_co_Avg
+  Alias cov_out_lgr(3)  = lgr_n2o_Std 'cov_n2o_n2o     covariance 1
+  Alias cov_out_lgr(4)  = cov_n2o_Uz
+ 'Alias cov_out_lgr(5)  =              cov_Uz_Uz
+  Alias cov_out_lgr(6)  = lgr_co_Std  'cov_co_co        covariance 2
+  Alias cov_out_lgr(7)  = cov_co_Uz
+  Alias cov_out_lgr(8)  = cov_co_Uz
+  Alias cov_out_lgr(9)  = lgr_samples
+  Alias cov_out_lgr(10) = lgr_possible
+  Alias cov_out_lgr(11) = lgr_uptime
+
+  DataTable (work_cov1_lgr,TRUE,1)
+    TableHide
+    DataInterval (0,STAT_INT1,Min,1)
+    Average(2,LGR(1),IEEE4,lgr_disable_f)
+    Covariance (2,cov_array_lgr(1,1),IEEE4,lgr_disable_f,3)
+    Covariance (2,cov_array_lgr(2,1),IEEE4,lgr_disable_f,3)
+    Totalize (1,n,IEEE4,lgr_disable_f) 'reqd to prevent name conflict
+      FieldNames("lgr_samples_Tot")
+    Totalize (1,n,IEEE4,FALSE)
+      FieldNames("lgr_possible_Tot")
+  EndTable
+      
+  DataTable (work_cov2_lgr,TRUE,1)
+    TableHide
+    DataInterval (0,STAT_INT1,Min,1)
+    Average(2,LGR(1),IEEE4,lgr_disable_f)
+    Covariance (2,cov_array_lgr(1,1),IEEE4,lgr_disable_f,3)
+    Covariance (2,cov_array_lgr(2,1),IEEE4,lgr_disable_f,3)
+    Totalize (1,n,IEEE4,lgr_disable_f) 'reqd to prevent name conflict
+      FieldNames("lgr_samples_Tot")
+    Totalize (1,n,IEEE4,FALSE)
+      FieldNames("lgr_possible_Tot")
+  EndTable
+
+#EndIf
+'^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 
 '#If ( SENSOR_CH4 = TRUE ) Then
 'Public ch4
@@ -965,8 +1015,52 @@ Units nmbr_clock_change = samples
 '#EndIf
 
 
+'**********  Decagon 6-band radiometers  **********
+#If ( SENSOR_DEC_6RAD = TRUE ) Then
+  Public decagon_6rad(2)
+  Alias decagon_6rad(1) = dec_6rad_up
+  Alias decagon_6rad(2) = dec_6rad_dn
+  Units dec_6rad_up = unknown
+  Units dec_6rad_dn = unknown
+#EndIf
 
-'== OUTPUT DATA TABLES == 
+
+
+
+
+'========================================================================================
+'===========================  BASE OUTPUT DATA TABLES  ==================================
+'========================================================================================
+
+'**********  Time series data  **********
+#If ( SENSOR_EC150 = TRUE ) Then
+DataTable (tsdata,TRUE,-1)
+  DataInterval (0,FAST_RATE,mSec,100)
+  CardOut (0,-1)
+
+  Sample (4,sonic_irga_raw(1),IEEE4)
+    FieldNames ("Ux,Uy,Uz,Ts")
+    Units Ux = m/s
+    Units Uy = m/s
+    Units Uz = m/s
+    Units Ts = C
+  Sample (1,sonic_irga_raw(5),FP2)
+    FieldNames ("diag_sonic")
+    Units diag_sonic = bitmap
+  Sample (5,sonic_irga_raw(6),IEEE4)
+    FieldNames ("CO2,H2O,diag_irga,amb_tmpr,amb_press")
+    Units CO2 = mg/m^3
+    Units H2O = g/m^3
+    Units diag_irga = bitmap
+    Units amb_tmpr = C
+    Units amb_press = kPa
+  Sample (2,sonic_irga_raw(11),FP2)
+    FieldNames ("CO2_signal,H2O_signal")
+    Units CO2_signal = unity
+    Units H2O_signal = unity
+EndTable
+#EndIf
+
 
 '5min statistics
 DataTable (stats5,TRUE,-1)'FLUX_SIZE_CPU)
@@ -982,11 +1076,11 @@ DataTable (stats5,TRUE,-1)'FLUX_SIZE_CPU)
   Sample(1,Hc,FP2)                      'density-corrected sensible heat flux, W/m2
 
   Sample(1,Ts_Avg,FP2)                  'mean sonic temperature, degC
-  Sample(1,Ts_stdev,FP2)                'stdev of sonic temp, degC
+  Sample(1,Ts_Std,FP2)                'stdev of sonic temp, degC
     FieldNames("Ts_Std")
   Sample(1,Tc_mean,FP2)                 'mean of corrected sonic temp, degC
     FieldNames("Tc_Avg")
-  Sample(1,Uz_stdev,FP2)                'stdev of vertical wind, m/s
+  Sample(1,Uz_Std,FP2)                'stdev of vertical wind, m/s
     FieldNames("Uz_Std")
   Sample(1,wnd_spd,FP2)                 'mean scalar wind speed, m/s
   Sample(1,rslt_wnd_spd,FP2)            'vector mean wind speed, m/s
@@ -1083,11 +1177,11 @@ DataTable (stats30,TRUE,-1)
   Sample(1,Hc,FP2)                      'density-corrected sensible heat flux, W/m2
 
   Sample(1,Ts_Avg,FP2)                  'mean sonic temperature, degC
-  Sample(1,Ts_stdev,FP2)                'stdev of sonic temp, degC
+  Sample(1,Ts_Std,FP2)                'stdev of sonic temp, degC
     FieldNames("Ts_Std")
   Sample(1,Tc_mean,FP2)                 'mean of corrected sonic temp, degC
     FieldNames("Tc_Avg")
-  Sample(1,Uz_stdev,FP2)                'stdev of vertical wind, m/s
+  Sample(1,Uz_Std,FP2)                'stdev of vertical wind, m/s
     FieldNames("Uz_Std")
   Sample(1,wnd_spd,FP2)                 'mean scalar wind speed, m/s
   Sample(1,rslt_wnd_spd,FP2)            'vector mean wind speed, m/s
@@ -1180,15 +1274,10 @@ DataTable (site_daily,TRUE,-1)
   Median(1,(latitude_a + latitude_b/60),DAILY_MEDIAN_NUM,IEEE4,(latitude_a=NAN OR latitude_b=NAN))
     FieldNames("latitude_Med")
     Units latitude_Med = decDegreesN
-'  Average(1,latitude_a,FP2,latitude_a=NAN)
-'  Average(1,latitude_b,FP2,latitude_b=NAN)
   Median(1,(longitude_a + longitude_b/60),DAILY_MEDIAN_NUM,IEEE4,(longitude_a=NAN OR longitude_b=NAN))
     FieldNames("longitude_Med")
     Units longitude_Med = decDegreesE
-'  Average(1,longitude_a,FP2,longitude_a=NAN)
-'  Average(1,longitude_b,FP2,longitude_b=NAN)
   Median(1,magnetic_variation,DAILY_MEDIAN_NUM,FP2,magnetic_variation=NAN)
-'  Average(1,magnetic_variation,FP2,magnetic_variation=NAN)
   Average(1,nmbr_satellites,FP2,nmbr_satellites=NAN)
   Median(1,altitude,DAILY_MEDIAN_NUM,IEEE4,altitude=NAN)
   Average(1,altitude,IEEE4,altitude=NAN)
@@ -1202,57 +1291,44 @@ DataTable (site_daily,TRUE,-1)
 EndTable
 
 
-'Time series data.
-DataTable (tsdata,TRUE,-1)
+
+DataTable (tsdata_extra,TRUE,-1)
   DataInterval (0,FAST_RATE,mSec,100)
   CardOut (0,-1)
+  Sample (1,lgr_n2o,IEEE4)
+  Sample (1,lgr_co,IEEE4)
+EndTable
 
- #If ( SENSOR_EC150 = TRUE ) Then
-  Sample (4,sonic_irga_raw(1),IEEE4)
-    FieldNames ("Ux,Uy,Uz,Ts")
-    Units Ux = m/s
-    Units Uy = m/s
-    Units Uz = m/s
-    Units Ts = C
-  Sample (1,sonic_irga_raw(5),FP2)
-    FieldNames ("diag_sonic")
-    Units diag_sonic = bitmap
-  
-'  Sample(1, sonic_irga_raw(6)/44 ,IEEE4)
-'    FieldNames("co2_molar_density")
-'    Units co2_molar_density=umol/m^3
-'  Sample(1, sonic_irga_raw(7)/.018 ,IEEE4)
-'    FieldNames("h2o_molar_density")
-'    Units h2o_molar_density=mmol/m^3
- 
-  Sample (5,sonic_irga_raw(6),IEEE4)
-    FieldNames ("CO2,H2O,diag_irga,amb_tmpr,amb_press")
-    Units CO2 = mg/m^3
-    Units H2O = g/m^3
-    Units diag_irga = bitmap
-    Units amb_tmpr = C
-    Units amb_press = kPa
-  Sample (2,sonic_irga_raw(11),FP2)
-    FieldNames ("CO2_signal,H2O_signal")
-    Units CO2_signal = unity
-    Units H2O_signal = unity
-  #EndIf
+'5 minute extra sensors table
+DataTable (stats5_extra,TRUE,-1)
+  DataInterval (0,STAT_INT1,min,10)
+  CardOut(0,-1)
+  Sample(1,lgr_n2o_Avg,FP2)
+  Sample(1,lgr_n2o_Std,FP2)
+  Sample(1,lgr_co_Avg,FP2)
+  Sample(1,lgr_co_Std,FP2)
+  Sample(1,lgr_uptime,FP2)
+  Sample(1,cov_n2o_Uz,FP2)
+  Sample(1,cov_co_Uz,FP2)
+EndTable
 
-
-'  #If ( SENSOR_N2O = TRUE ) Then
-'  Sample(1,n2o,FP2)
-'  Sample(1,c_monoxide,FP2)
-'  #EndIf
-'
-'  #If ( SENSOR_CH4 = TRUE ) Then
-'  Sample(1,ch4,FP2)
-'  Sample(1,co2_picarro,FP2)
-'  #EndIf
+'5 minute extra sensors table
+DataTable (stats30_extra,TRUE,-1)
+  DataInterval (0,STAT_INT2,min,10)
+  CardOut(0,-1)
+  Sample(1,lgr_n2o_Avg,FP2)
+  Sample(1,lgr_n2o_Std,FP2)
+  Sample(1,lgr_co_Avg,FP2)
+  Sample(1,lgr_co_Std,FP2)
+  Sample(1,lgr_uptime,FP2)
+  Sample(1,cov_n2o_Uz,FP2)
+  Sample(1,cov_co_Uz,FP2)
 EndTable
 
 
-
-'*** Program ***
+'========================================================================================
+'================================  PROGRAM  =============================================
+'========================================================================================
 
 BeginProg
 '    #If ( (SENSOR_HFT3 = TRUE) OR (SENSOR_HFP01 = TRUE) OR (SENSOR_HFP01SC = TRUE) ) Then
@@ -1271,17 +1347,10 @@ BeginProg
   Calfile (sonic_azimuth,1,"CPU:sys_conf_var.dat",1) 'Read the values from the file.
   sonic_azimuth_prev = sonic_azimuth
 
-  'Set the SDM clock speed.
   SDMSpeed (SDM_PER)
   Scan (FAST_RATE,mSec,SCAN_BUFFER_SIZE,0)
-    'Datalogger panel temperature.
-    PanelTemp (panel_tmpr,250)
+    
 
-'   'Begin n2o/co measurements
-'   #If(SENSOR_N2O=true)Then
-'   VoltDiff(n2o,1,mv5000,6,true,0,250,.0001,0)
-'   VoltDiff(c_monoxide,1,mv5000,7,true,0,250,.0001,0)
-'   #EndIf
 
    
 '  'Begin ch2/co2 measurements
@@ -1294,7 +1363,7 @@ BeginProg
     '*** Begining of 034B measurements ***
     PulseCount(WS_ms,1,1,2,1,0.799,0.2811)
     If (WS_ms <= 0.2811) Then (WS_ms = NAN)
-    BrHalf(WindDir,1,mV5000,WIND_034B_SE_INPUT,1,1,5000,True,0,_60Hz,720,0)
+    BrHalf(WindDir,1,mV5000,WIND_034B_SE_INPUT,1,1,5000,True,0,INTEG,720,0)
     If ((WindDir >= 360) OR (WindDir < 0)) Then (WindDir = NAN)
 
 
@@ -1342,46 +1411,56 @@ BeginProg
     hor_wind_raw = SQR (sonic_irga_raw(1)*sonic_irga_raw(1)+sonic_irga_raw(2)*sonic_irga_raw(2))
     AvgRun (hor_wind,1,hor_wind_raw,NMBR_WND_SAMPLES) 'Maintain a three second running mean of horizontal wind.
     #EndIf
+    
+    #If ( SENSOR_LGR_N2OCO = TRUE ) Then
+      VoltDiff(lgr_n2o,1,mv5000,LGR_N2O_DF_INPUT,TRUE,0,INTEG,LGR_N2O_MULT,LGR_N2O_OFF)
+      VoltDiff(lgr_co,1,mv5000,LGR_CO_DF_INPUT,TRUE,0,INTEG,LGR_CO_MULT,LGR_CO_OFF)
+      If ( (lgr_n2o <> NAN) AND (lgr_co <> NAN) )
+        lgr_disable_f = FALSE
+      Else
+        lgr_disable_f = TRUE
+      EndIf
+      CallTable(tsdata_extra)
+    #EndIf
 
     If ( scan_count >= OFFSET ) Then
       
       #If ( SENSOR_EC150 = true ) Then
-      
-      'CSAT processing
-      GetRecord (dly_data_out(1),work_delay_csat,EC150_REC_BCK)
-      Move (Ux,5,dly_data_out(1),5) 'Ux, Uy, Uz, Ts, diag_sonic
-      If ( (diag_sonic <> NAN) AND (diag_sonic <> -1) ) Then 
-        sonic_disable_f = diag_sonic AND &h3f  '= 0011 1111
-        If ( NOT sonic_disable_f ) Then
-          Ts_absolute = Ts + 273.15
+        'CSAT processing
+        GetRecord (dly_data_out(1),work_delay_csat,EC150_REC_BCK)
+        Move (Ux,5,dly_data_out(1),5) 'Ux, Uy, Uz, Ts, diag_sonic
+        If ( (diag_sonic <> NAN) AND (diag_sonic <> -1) ) Then 
+          sonic_disable_f = diag_sonic AND &h3f  '= 0011 1111
+          If ( NOT sonic_disable_f ) Then
+            Ts_absolute = Ts + 273.15
+          EndIf
+        Else 
+          sonic_disable_f = TRUE
+          Ts_absolute = NAN
         EndIf
-      Else 
-        sonic_disable_f = TRUE
-        Ts_absolute = NAN
-      EndIf
 
-      'IRGA processing
-      GetRecord (dly_data_out(1),work_delay_irga,EC150_REC_BCK)
-      Move (CO2,7,dly_data_out(1),7) '+H2O,diag_irga,amb_tmpr,amb_press,CO2_sig_strgth,H2O_sig_strgth
-      If ( (diag_irga <> NAN) AND (diag_irga <> -1) ) Then 
-        irga_disable_f = sonic_disable_f OR (diag_irga AND &h1) 'bit 1 always HI for warning (?)
-        If ( NOT irga_disable_f ) Then
-          Td_tmp = LOG (H2O*R*(amb_tmpr+273.15)/(11.0178*(1.00072+3.2e-5*amb_press+5.9e-9*amb_press*amb_tmpr*amb_tmpr))) 
-          'eqns: Td_tmp = ln (H2O*R*(T+273.15)/(Mv*0.61121*f)); Mv = 18 g/mol, f = 1.00072+3.2e-5*P+5.9e-9*P*T*T
-          Td = (240.97*Td_tmp)/(17.502-Td_tmp) 'Buck (1981) Eq. (2a, 3a, & 6) and Leuning (2004) Eq. (6.23)
-          'Compute fast response air temperature from sonic temperature and EC150 vapor density.
-          Tc = Ts_absolute/(1+0.32*H2O*R*Ts_absolute/(amb_press*18)) - 273.15'Kaimal and Gaynor (1991) Eq. (3).
-          divisor = (amb_press/(R*(Tc+273.15)))-(H2O/18) 'mixing ratio (X/dry air)
-          Xc=CO2/(0.044*divisor)
-          Xv=H2O/(0.018*divisor)
+        'IRGA processing
+        GetRecord (dly_data_out(1),work_delay_irga,EC150_REC_BCK)
+        Move (CO2,7,dly_data_out(1),7) '+H2O,diag_irga,amb_tmpr,amb_press,CO2_sig_strgth,H2O_sig_strgth
+        If ( (diag_irga <> NAN) AND (diag_irga <> -1) ) Then 
+          irga_disable_f = sonic_disable_f OR (diag_irga AND &h1) 'bit 1 always HI for warning (?)
+          If ( NOT irga_disable_f ) Then
+            Td_tmp = LOG (H2O*R*(amb_tmpr+273.15)/(11.0178*(1.00072+3.2e-5*amb_press+5.9e-9*amb_press*amb_tmpr*amb_tmpr))) 
+            'eqns: Td_tmp = ln (H2O*R*(T+273.15)/(Mv*0.61121*f)); Mv = 18 g/mol, f = 1.00072+3.2e-5*P+5.9e-9*P*T*T
+            Td = (240.97*Td_tmp)/(17.502-Td_tmp) 'Buck (1981) Eq. (2a, 3a, & 6) and Leuning (2004) Eq. (6.23)
+            'Compute fast response air temperature from sonic temperature and EC150 vapor density.
+            Tc = Ts_absolute/(1+0.32*H2O*R*Ts_absolute/(amb_press*18)) - 273.15'Kaimal and Gaynor (1991) Eq. (3).
+            divisor = (amb_press/(R*(Tc+273.15)))-(H2O/18) 'mixing ratio (X/dry air)
+            Xc=CO2/(0.044*divisor)
+            Xv=H2O/(0.018*divisor)
+          EndIf
+        Else
+          irga_disable_f = TRUE
+          Td = NAN
+          Tc = NAN
+          Xc = NAN
+          Xv = NAN
         EndIf
-      Else
-        irga_disable_f = TRUE
-        Td = NAN
-        Tc = NAN
-        Xc = NAN
-        Xv = NAN
-      EndIf
       
       '================== BEGIN 5 MIN STATS PROCESSING =========================
 
@@ -1390,7 +1469,7 @@ BeginProg
       Move (cov_array_sonic(1,2),3,Ux,3)
       CallTable work_cov1_csat
       If ( work_cov1_csat.Output(1,1) ) Then
-        GetRecord (Ts_stdev,work_cov1_csat,1)
+        GetRecord (Ts_Std,work_cov1_csat,1)
         sonic_uptime = sonic_samples/sonic_possible
         If ( sonic_uptime < min_uptime )
           Move(Hs,18,NAN,1) 'set Hs thru Ts_Avg to NAN
@@ -1404,10 +1483,10 @@ BeginProg
           If ( wnd_dir_sonic > 180 ) Then ( wnd_dir_sonic = wnd_dir_sonic-360 )
           tau = SQR ((Ux_Uz_cov*Ux_Uz_cov)+(Uy_Uz_cov*Uy_Uz_cov))
           u_star = SQR (tau)
-          Ts_stdev = SQR (Ts_stdev)
-          Ux_stdev = SQR (Ux_stdev)
-          Uy_stdev = SQR (Uy_stdev)
-          Uz_stdev = SQR (Uz_stdev)
+          Ts_Std = SQR (Ts_Std)
+          Ux_Std = SQR (Ux_Std)
+          Uy_Std = SQR (Uy_Std)
+          Uz_Std = SQR (Uz_Std)
         EndIf
       EndIf
 
@@ -1503,72 +1582,89 @@ BeginProg
         GetRecord(Met1_workaround(1),work_met1_1,1)
         'correct for azimuth?!
       EndIf
+      
+      #If ( SENSOR_LGR_N2OCO = TRUE ) Then
+        cov_array_lgr(1,1) = lgr_n2o
+        cov_array_lgr(2,1) = lgr_co
+        #If ( SENSOR_EC150 = TRUE ) Then
+          cov_array_lgr(1,2) = Uz
+          cov_array_lgr(2,2) = Uz 
+        #Else
+          cov_array_lgr(1,2) = NAN
+          cov_array_lgr(2,2) = NAN
+        #EndIf
+        CallTable (work_cov1_lgr)
+        If ( work_cov1_lgr.Output(1,1) ) Then
+          GetRecord (cov_out_lgr(1),work_cov1_lgr,1)
+          If ( work_cov1_csat.Output(1,1) ) Then
+            lgr_uptime = lgr_samples/lgr_possible
+          EndIf
+          CallTable (stats5_extra)
+        EndIf
+      #EndIf
 
-      '==================================
       CallTable stats5       '====== save 5 minute statistics
-      '==================================
       
       '===================== BEGIN 30 MIN STATS PROCESSING ===================
       
       #If ( SENSOR_EC150 = true ) Then
-      
-      'sonic cov for stats 2 - 30min
-      CallTable work_cov2_csat
-      If ( work_cov2_csat.Output(1,1) ) Then
-        GetRecord (Ts_stdev,work_cov2_csat,1)
-        sonic_uptime = sonic_samples/sonic_possible
-        If ( sonic_uptime < min_uptime ) 
-          Move(Hs,18,NAN,1) 'set Hs thru Ts_Avg to NAN
-          'leave alone uptime values
-          wnd_dir_compass = NAN
-          u_star = NAN
-        Else
-          'Rotate the CSAT3A sonic head RHC system so the negative x-axis points north.
-          wnd_dir_compass = (360+sonic_azimuth-wnd_dir_sonic) MOD 360
-          'Make the CSAT3A sonic head wind direction fall between 0 to 180 degrees and 0 to -180 degrees.
-          If ( wnd_dir_sonic > 180 ) Then ( wnd_dir_sonic = wnd_dir_sonic-360 )
-          tau = SQR ((Ux_Uz_cov*Ux_Uz_cov)+(Uy_Uz_cov*Uy_Uz_cov))
-          u_star = SQR (tau)
-          Ts_stdev = SQR (Ts_stdev)
-          Ux_stdev = SQR (Ux_stdev)
-          Uy_stdev = SQR (Uy_stdev)
-          Uz_stdev = SQR (Uz_stdev)
+        'sonic cov for stats 2 - 30min
+        CallTable work_cov2_csat
+        If ( work_cov2_csat.Output(1,1) ) Then
+          GetRecord (Ts_Std,work_cov2_csat,1)
+          sonic_uptime = sonic_samples/sonic_possible
+          If ( sonic_uptime < min_uptime ) 
+            Move(Hs,18,NAN,1) 'set Hs thru Ts_Avg to NAN
+            'leave alone uptime values
+            wnd_dir_compass = NAN
+            u_star = NAN
+          Else
+            'Rotate the CSAT3A sonic head RHC system so the negative x-axis points north.
+            wnd_dir_compass = (360+sonic_azimuth-wnd_dir_sonic) MOD 360
+            'Make the CSAT3A sonic head wind direction fall between 0 to 180 degrees and 0 to -180 degrees.
+            If ( wnd_dir_sonic > 180 ) Then ( wnd_dir_sonic = wnd_dir_sonic-360 )
+            tau = SQR ((Ux_Uz_cov*Ux_Uz_cov)+(Uy_Uz_cov*Uy_Uz_cov))
+            u_star = SQR (tau)
+            Ts_Std = SQR (Ts_Std)
+            Ux_Std = SQR (Ux_Std)
+            Uy_Std = SQR (Uy_Std)
+            Uz_Std = SQR (Uz_Std)
+          EndIf
         EndIf
-      EndIf
-
-      'irga cov for stats 2
-      CallTable work_cov2_irga
-      If ( work_cov2_irga.Output(1,1) ) Then
-        GetRecord (CO2_stdev,work_cov2_irga,1)
-        If ( irga_uptime < min_uptime )
-          Move(Fc_wpl,22,NAN,1) ' set Fc_wpl thru Tc_mean to NAN
-          'leave alone signal & uptime values
-          Move(rho_a_mean,7,NAN,1) '+Fc_irga, LE_irga + co2/h2o WPL terms to NAN          L = NAN
-          L = NAN
-          rho_d_mean = NAN
-          sigma_wpl = NAN
-        Else
-          L=-u_star^3*(Tc_mean+273.15)/(0.4*9.8*Ts_Uz_cov)   'obukohov length
-          rho_d_mean = (amb_press_mean/((Tc_mean+273.15)*RD))-(H2O_mean*MU_WPL)
-          rho_a_mean = (rho_d_mean+H2O_mean)/1000
-          Fc_irga = CO2_Uz_cov                                'online fluxes
-          LE_irga = LV*H2O_Uz_cov
-          CO2_stdev = SQR (CO2_stdev)                        'stdevs
-          H2O_stdev = SQR (H2O_stdev)
-          Tc_stdev = SQR (Tc_stdev)
-          sigma_wpl = H2O_mean/rho_d_mean                   'WPL term
   
-          'EC150 Webb et al. (1980) term for carbon dioxide Eq. (24).
-          CO2_wpl_LE = MU_WPL*CO2_mean/rho_d_mean*H2O_Uz_cov
-          CO2_wpl_H = (1+(MU_WPL*sigma_wpl))*CO2_mean/(Tc_mean+273.15)*Tc_Uz_cov
-          Fc_wpl = Fc_irga+CO2_wpl_LE+CO2_wpl_H
-  
-          'EC150 Webb et al. (1980) term for water vapor Eq. (25).
-          H2O_wpl_LE = MU_WPL*sigma_wpl*LE_irga
-          H2O_wpl_H = (1+(MU_WPL*sigma_wpl))*H2O_mean/(Tc_mean+273.15)*LV*Tc_Uz_cov
-          LE_wpl = LE_irga+H2O_wpl_LE+H2O_wpl_H
+        'irga cov for stats 2
+        CallTable work_cov2_irga
+        If ( work_cov2_irga.Output(1,1) ) Then
+          GetRecord (CO2_stdev,work_cov2_irga,1)
+          If ( irga_uptime < min_uptime )
+            Move(Fc_wpl,22,NAN,1) ' set Fc_wpl thru Tc_mean to NAN
+            'leave alone signal & uptime values
+            Move(rho_a_mean,7,NAN,1) '+Fc_irga, LE_irga + co2/h2o WPL terms to NAN          L = NAN
+            L = NAN
+            rho_d_mean = NAN
+            sigma_wpl = NAN
+          Else
+            L=-u_star^3*(Tc_mean+273.15)/(0.4*9.8*Ts_Uz_cov)   'obukohov length
+            rho_d_mean = (amb_press_mean/((Tc_mean+273.15)*RD))-(H2O_mean*MU_WPL)
+            rho_a_mean = (rho_d_mean+H2O_mean)/1000
+            Fc_irga = CO2_Uz_cov                                'online fluxes
+            LE_irga = LV*H2O_Uz_cov
+            CO2_stdev = SQR (CO2_stdev)                        'stdevs
+            H2O_stdev = SQR (H2O_stdev)
+            Tc_stdev = SQR (Tc_stdev)
+            sigma_wpl = H2O_mean/rho_d_mean                   'WPL term
+    
+            'EC150 Webb et al. (1980) term for carbon dioxide Eq. (24).
+            CO2_wpl_LE = MU_WPL*CO2_mean/rho_d_mean*H2O_Uz_cov
+            CO2_wpl_H = (1+(MU_WPL*sigma_wpl))*CO2_mean/(Tc_mean+273.15)*Tc_Uz_cov
+            Fc_wpl = Fc_irga+CO2_wpl_LE+CO2_wpl_H
+    
+            'EC150 Webb et al. (1980) term for water vapor Eq. (25).
+            H2O_wpl_LE = MU_WPL*sigma_wpl*LE_irga
+            H2O_wpl_H = (1+(MU_WPL*sigma_wpl))*H2O_mean/(Tc_mean+273.15)*LV*Tc_Uz_cov
+            LE_wpl = LE_irga+H2O_wpl_LE+H2O_wpl_H
+          EndIf
         EndIf
-      EndIf
       #EndIf
 
 
@@ -1606,6 +1702,26 @@ BeginProg
         'correct for azimuth?!
       EndIf
       
+      #If ( SENSOR_LGR_N2OCO = TRUE ) Then
+        cov_array_lgr(1,1) = lgr_n2o
+        cov_array_lgr(2,1) = lgr_co
+        #If ( SENSOR_EC150 = TRUE ) Then
+          cov_array_lgr(1,2) = Uz
+          cov_array_lgr(2,2) = Uz 
+        #Else
+          cov_array_lgr(1,2) = NAN
+          cov_array_lgr(2,2) = NAN
+        #EndIf
+        CallTable (work_cov2_lgr)
+        If ( work_cov2_lgr.Output(1,1) ) Then
+          GetRecord (cov_out_lgr(1),work_cov2_lgr,1)
+          If ( work_cov2_csat.Output(1,1) ) Then
+            lgr_uptime = lgr_samples/lgr_possible
+          EndIf
+          CallTable (stats30_extra)
+        EndIf
+      #EndIf
+      
       '==============================
       CallTable stats30   '===== save 30min stats
       '==============================
@@ -1626,11 +1742,12 @@ BeginProg
   SlowSequence
 
   Scan (1,Sec,3,0)
+    PanelTemp (panel_tmpr,INTEG)
     Battery (batt_volt)
 
     #If ( SENSOR_HMP = TRUE ) Then
-    VoltDiff (T_hmp,1,mV1000,HMP_ANALOG_T_INPUT,TRUE,0,A_INTEG,HMP_T_MULT,HMP_T_OFFSET)
-    VoltDiff (RH_hmp,1,mV1000,HMP_ANALOG_RH_INPUT,TRUE,0,A_INTEG,HMP_RH_MULT,HMP_RH_OFFSET)
+    VoltDiff (T_hmp,1,mV1000,HMP_ANALOG_T_INPUT,TRUE,0,INTEG,HMP_T_MULT,HMP_T_OFFSET)
+    VoltDiff (RH_hmp,1,mV1000,HMP_ANALOG_RH_INPUT,TRUE,0,INTEG,HMP_RH_MULT,HMP_RH_OFFSET)
     VaporPressure (e_hmp,T_hmp,RH_hmp)
     SatVP (e_sat_hmp,T_hmp)
     #EndIf
@@ -1659,7 +1776,7 @@ BeginProg
 
 
     #If ( SENSOR_NR_LITE = TRUE ) Then
-    VoltDiff (Rn_meas,1,mV20,NR_ANALOG_INPUT,TRUE,0,A_INTEG,NRLITE_CAL,0)
+    VoltDiff (Rn_meas,1,mV20,NR_ANALOG_INPUT,TRUE,0,INTEG,NRLITE_CAL,0)
     If ( sonic_irga_raw(5) = 0 ) Then    'sonic_irga_raw(5) = inst. CSAT3 diag word
       Rn = Rn_meas*(1+(0.021286*(hor_wind-5)))
     Else
@@ -1773,13 +1890,13 @@ BeginProg
 '    #EndIf
 
     '== LI190SB 
-    VoltDiff (PAR_mV,1,mV20,PAR_ANALOG_INPUT,True,200,250,1.0,0)
+    VoltDiff (PAR_mV,1,mV20,PAR_ANALOG_INPUT,True,0,INTEG,1,0) 'MULT/OFF applied below
     If (PAR_mV < 0) Then (PAR_mV = 0)
-    PAR_flxdens = PAR_mV*PAR_MULT_FLXDENS
-    PAR_totflx = PAR_mV*PAR_MULT_TOTFLX
+    PAR_flxdens = PAR_mV*LI190_MULT_FLXDENS
+    PAR_totflx = PAR_mV*LI190_MULT_TOTFLX
 
     '== Garmin GPS
-    GPS (latitude_a,Com4,LOCAL_TIME_OFFSET*3600,0,nmea_sentence(1))
+    GPS (latitude_a,GPS_COM_ADDR,LOCAL_TIME_OFFSET*3600,0,nmea_sentence(1))
 
     If ( sonic_azimuth_prev <> sonic_azimuth ) Then
       sonic_azimuth_prev = sonic_azimuth
