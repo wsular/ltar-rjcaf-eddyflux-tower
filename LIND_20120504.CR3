@@ -19,6 +19,9 @@
 ' -
 '
 'Version history
+' LIND_20120504.CR3 
+'   - updated with correct cal. constants for netrad, par
+'   - removed from los gatos estimated flux
 ' CFNT_20120420.CR3 [pto]
 '   - reintroduced Los Gatos instrument, cleaned up its namespace, added *_extra tables
 '   - respecified all integration times to a constant, INTEG (merged in A_INTEG)
@@ -710,7 +713,7 @@ Const SITE_PRESS = 93.5            'Unique: user-defined site pressure (kpa?)
 
 
 #If ( SENSOR_NR_LITE = TRUE ) Then
-Const NRLITE_CAL = 1000/13.3                 'Unique multiplier for NR Lite (1000/sensitivity).
+Const NRLITE_CAL = 1000/12.6                 'Unique multiplier for NR Lite (1000/sensitivity).
 Const NMBR_WND_SAMPLES = 3000/FAST_RATE      '#pts to compute 3sec mean horizontal wind
 Public nr(2)
 Public hor_wind
@@ -874,7 +877,7 @@ Units Rn_meas = W/m^2
 '#EndIf
 
 '*** Beginning of LI190SB constants and variables ***
-Const LI190_CAL = 6.26				                          'Unique calibration value, uA/mmol/s/m^2
+Const LI190_CAL = 6.84				                          'Unique calibration value, uA/mmol/s/m^2
 Const LI190_MULT_FLXDENS = 1000/(LI190_CAL*0.604)	        'multiplier for Flux Density_1 calculation
 Const LI190_MULT_TOTFLX = (1/(LI190_CAL*0.604))*(FAST_RATE/1000)	'multiplier for Total Fluxes_1 calculation
 Public PAR(3)
@@ -961,42 +964,34 @@ Units nmbr_clock_change = samples
   Public LGR(2)                          'data variables
   Alias LGR(1) = lgr_n2o
   Alias LGR(2) = lgr_co
-  Units lgr_n2o = ppm, dMR
-  Units lgr_co = ppm, dMR
+  Units lgr_n2o = ppm
+  Units lgr_co = ppm
   
   Dim lgr_disable_f As Boolean           'work variables
-  Dim cov_array_lgr(2,2)
-  Dim cov_out_lgr(11)
-  Alias cov_out_lgr(1)  = lgr_n2o_Avg                'averages
-  Alias cov_out_lgr(2)  = lgr_co_Avg
-  Alias cov_out_lgr(3)  = lgr_n2o_Std 'cov_n2o_n2o     covariance 1
-  Alias cov_out_lgr(4)  = cov_n2o_Uz
- 'Alias cov_out_lgr(5)  =              cov_Uz_Uz
-  Alias cov_out_lgr(6)  = lgr_co_Std  'cov_co_co        covariance 2
-  Alias cov_out_lgr(7)  = cov_co_Uz
-  Alias cov_out_lgr(8)  = cov_co_Uz
-  Alias cov_out_lgr(9)  = lgr_samples
-  Alias cov_out_lgr(10) = lgr_possible
-  Alias cov_out_lgr(11) = lgr_uptime
+  Dim stats_lgr(7)
+  Alias stats_lgr(1)  = lgr_n2o_Avg
+  Alias stats_lgr(2)  = lgr_co_Avg
+  Alias stats_lgr(3)  = lgr_n2o_Std 
+  Alias stats_lgr(4)  = lgr_co_Std 
+  Alias stats_lgr(5)  = lgr_samples
+  Alias stats_lgr(6) = lgr_possible
+  Alias stats_lgr(7) = lgr_uptime
 
-  DataTable (work_cov1_lgr,TRUE,1)
+  DataTable (work_lgr_1,TRUE,1)
     TableHide
     DataInterval (0,STAT_INT1,Min,1)
     Average(2,LGR(1),IEEE4,lgr_disable_f)
-    Covariance (2,cov_array_lgr(1,1),IEEE4,lgr_disable_f,3)
-    Covariance (2,cov_array_lgr(2,1),IEEE4,lgr_disable_f,3)
+    StdDev(2,LGR(1),IEEE4,lgr_disable_f)
     Totalize (1,n,IEEE4,lgr_disable_f) 'reqd to prevent name conflict
       FieldNames("lgr_samples_Tot")
     Totalize (1,n,IEEE4,FALSE)
       FieldNames("lgr_possible_Tot")
   EndTable
       
-  DataTable (work_cov2_lgr,TRUE,1)
+  DataTable (work_lgr_2,TRUE,1)
     TableHide
     DataInterval (0,STAT_INT1,Min,1)
     Average(2,LGR(1),IEEE4,lgr_disable_f)
-    Covariance (2,cov_array_lgr(1,1),IEEE4,lgr_disable_f,3)
-    Covariance (2,cov_array_lgr(2,1),IEEE4,lgr_disable_f,3)
     Totalize (1,n,IEEE4,lgr_disable_f) 'reqd to prevent name conflict
       FieldNames("lgr_samples_Tot")
     Totalize (1,n,IEEE4,FALSE)
@@ -1292,7 +1287,7 @@ EndTable
 
 
 
-DataTable (tsdata_extra,TRUE,-1)
+DataTable (tsdata_n2o_co,TRUE,-1)
   DataInterval (0,FAST_RATE,mSec,100)
   CardOut (0,-1)
   Sample (1,lgr_n2o,IEEE4)
@@ -1300,7 +1295,7 @@ DataTable (tsdata_extra,TRUE,-1)
 EndTable
 
 '5 minute extra sensors table
-DataTable (stats5_extra,TRUE,-1)
+DataTable (stats5_n2o_co,TRUE,-1)
   DataInterval (0,STAT_INT1,min,10)
   CardOut(0,-1)
   Sample(1,lgr_n2o_Avg,FP2)
@@ -1308,12 +1303,10 @@ DataTable (stats5_extra,TRUE,-1)
   Sample(1,lgr_co_Avg,FP2)
   Sample(1,lgr_co_Std,FP2)
   Sample(1,lgr_uptime,FP2)
-  Sample(1,cov_n2o_Uz,FP2)
-  Sample(1,cov_co_Uz,FP2)
 EndTable
 
 '5 minute extra sensors table
-DataTable (stats30_extra,TRUE,-1)
+DataTable (stats30_n2o_co,TRUE,-1)
   DataInterval (0,STAT_INT2,min,10)
   CardOut(0,-1)
   Sample(1,lgr_n2o_Avg,FP2)
@@ -1321,8 +1314,6 @@ DataTable (stats30_extra,TRUE,-1)
   Sample(1,lgr_co_Avg,FP2)
   Sample(1,lgr_co_Std,FP2)
   Sample(1,lgr_uptime,FP2)
-  Sample(1,cov_n2o_Uz,FP2)
-  Sample(1,cov_co_Uz,FP2)
 EndTable
 
 
@@ -1350,15 +1341,11 @@ BeginProg
   SDMSpeed (SDM_PER)
   Scan (FAST_RATE,mSec,SCAN_BUFFER_SIZE,0)
     
-
-
-   
 '  'Begin ch2/co2 measurements
 '   #If(SENSOR_CH4=true)Then
 '   VoltDiff(ch4,1,mv5000,8,true,0,250,1,0)
 '   VoltDiff(co2_picarro,1,mv5000,9,true,0,250,1,0)
 '   #EndIf
-
     
     '*** Begining of 034B measurements ***
     PulseCount(WS_ms,1,1,2,1,0.799,0.2811)
@@ -1420,7 +1407,7 @@ BeginProg
       Else
         lgr_disable_f = TRUE
       EndIf
-      CallTable(tsdata_extra)
+      CallTable(tsdata_n2o_co)
     #EndIf
 
     If ( scan_count >= OFFSET ) Then
@@ -1584,22 +1571,11 @@ BeginProg
       EndIf
       
       #If ( SENSOR_LGR_N2OCO = TRUE ) Then
-        cov_array_lgr(1,1) = lgr_n2o
-        cov_array_lgr(2,1) = lgr_co
-        #If ( SENSOR_EC150 = TRUE ) Then
-          cov_array_lgr(1,2) = Uz
-          cov_array_lgr(2,2) = Uz 
-        #Else
-          cov_array_lgr(1,2) = NAN
-          cov_array_lgr(2,2) = NAN
-        #EndIf
-        CallTable (work_cov1_lgr)
-        If ( work_cov1_lgr.Output(1,1) ) Then
-          GetRecord (cov_out_lgr(1),work_cov1_lgr,1)
-          If ( work_cov1_csat.Output(1,1) ) Then
-            lgr_uptime = lgr_samples/lgr_possible
-          EndIf
-          CallTable (stats5_extra)
+        CallTable (work_lgr_1)
+        If ( work_lgr_1.Output(1,1) ) Then
+          GetRecord (stats_lgr(1),work_lgr_1,1)
+          lgr_uptime = lgr_samples/lgr_possible
+          CallTable (stats5_n2o_co)
         EndIf
       #EndIf
 
@@ -1703,22 +1679,11 @@ BeginProg
       EndIf
       
       #If ( SENSOR_LGR_N2OCO = TRUE ) Then
-        cov_array_lgr(1,1) = lgr_n2o
-        cov_array_lgr(2,1) = lgr_co
-        #If ( SENSOR_EC150 = TRUE ) Then
-          cov_array_lgr(1,2) = Uz
-          cov_array_lgr(2,2) = Uz 
-        #Else
-          cov_array_lgr(1,2) = NAN
-          cov_array_lgr(2,2) = NAN
-        #EndIf
-        CallTable (work_cov2_lgr)
-        If ( work_cov2_lgr.Output(1,1) ) Then
-          GetRecord (cov_out_lgr(1),work_cov2_lgr,1)
-          If ( work_cov2_csat.Output(1,1) ) Then
-            lgr_uptime = lgr_samples/lgr_possible
-          EndIf
-          CallTable (stats30_extra)
+        CallTable (work_lgr_2)
+        If ( work_lgr_2.Output(1,1) ) Then
+          GetRecord (stats_lgr(1),work_lgr_2,1)
+          lgr_uptime = lgr_samples/lgr_possible
+          CallTable (stats30_n2o_co)
         EndIf
       #EndIf
       

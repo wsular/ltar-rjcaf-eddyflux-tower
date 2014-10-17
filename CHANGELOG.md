@@ -1,8 +1,32 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20140504_LIND
+-------------
+
+### Issues Fixed
+
+* Corrected net radiometer and PAR sensor sensitivity values
+
+### Data Table Changes
+
+* Rename data tables
+    * tsdata_extra -> tsdata_n2o_co
+    * stats5_extra -> stats5_n2o_co
+    * stats30_extra -> stats30_n2o_co
+* Changed units within tsdata_n2o_co table
+    * lgr_n2o: ppm, dMR -> ppm
+    * lgr_co: ppm, dMR -> ppm
+* Remove covariance terms from stats5_n2o_co and stats30_n2o_co tables
+
+
 20120420_LIND
 -------------
+
+### Known Issues
+
+* Sensitivity values used for net radiometer and PAR sensor were incorrect,
+  actually for CFNT sensor set, not LIND sensor set
 
 ### Data Table Changes
 
