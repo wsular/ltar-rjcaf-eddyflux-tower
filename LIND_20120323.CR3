@@ -20,6 +20,14 @@
 ' -
 '
 'Version history
+' 20120323 [pto]
+'   - incorporated changes from CFNT_20120316
+'     * changed Met1(3) aka Met1_wnd_dir TO Met1_rslt_wnd_dir for accuracy sake
+'     * added two values to site_daily table: Status.ProgSignature, Status.RunSignature
+'     * removed spaces from decimal latitude/longitude units; clarified course units
+'   - removed average lat/long and avg mag_var from tables; left medians
+'   - added '_Med' suffix to lat/long in site table
+'   - added median altitude for comparison since its avgs actually vary
 ' 20120309 [pto]
 '   - synchronized with CFNT_20120215.CR3 plus additional edits:
 '   - removed site code prefix from tables; its over redundant
@@ -883,11 +891,11 @@ Units WindDir = degrees
 Public Met1_workaround(5)
 Alias Met1_workaround(1) = Met1_wnd_spd
 Alias Met1_workaround(2) = Met1_rslt_wnd_spd
-Alias Met1_workaround(3) = Met1_wnd_dir
+Alias Met1_workaround(3) = Met1_rslt_wnd_dir
 Alias Met1_workaround(4) = Met1_std_wnd_dir
 Units Met1_wnd_spd = m/s
 Units Met1_rslt_wnd_spd = m/s
-Units Met1_wnd_dir = degrees
+Units Met1_rslt_wnd_dir = degrees
 Units Met1_std_wnd_dir = degrees
 
 DataTable (work_met1_1,TRUE,1)
@@ -933,7 +941,7 @@ Units latitude_b = minutesN
 Units longitude_a = degreesE
 Units longitude_b = minutesE
 Units speed = m/s
-Units course = degrees
+Units course = degreesEofN
 Units magnetic_variation = degreesEofN
 Units fix_quality = unitless
 Units nmbr_satellites = unitless
@@ -987,9 +995,8 @@ DataTable (stats5,TRUE,-1)'FLUX_SIZE_CPU)
   Sample(1,wnd_dir_compass,FP2)         'mean wind direction rel2 north, degrees
 	FieldNames("rslt_wnd_dir")
   Sample(1,std_wnd_dir,FP2)             'scalar stdev of wind direction, degrees
-'  Totalize(1,n,UINT2,sonic_disable_f)   'total of good sonic values
-'    FieldNames ("sonic_samples_Tot")
   Sample (1,sonic_uptime,FP2)
+
   Sample(1,CO2_ppm_Avg,FP2)
   Sample(1,CO2_mean,FP2)                'mean of CO2 conc, mg/m3
     FieldNames ("CO2_mg_m3_Avg")
@@ -1002,13 +1009,9 @@ DataTable (stats5,TRUE,-1)'FLUX_SIZE_CPU)
   Sample(1,H2O_stdev,FP2)               'stdev of H2O conc, g/m3
     FieldNames ("H2O_g_m3_Std")
   Sample(1,H2O_signal_Avg,FP2)
-
   Sample(1,amb_tmpr_Avg,FP2)
   Sample(1,amb_press_mean,IEEE4)        'mean of ambient pressure, kPa
     FieldNames ("amb_press_Avg")
-'  Totalize(1,n,UINT2,irga_disable_f)   'total of good sonic values
-'    FieldNames ("irga_samples_Tot")
-
   Sample (1,irga_uptime,FP2)
   #EndIf
 
@@ -1053,7 +1056,7 @@ DataTable (stats5,TRUE,-1)'FLUX_SIZE_CPU)
   #If ( SENSOR_034B = TRUE ) Then
   Sample(1,Met1_wnd_spd,FP2)
   Sample(1,Met1_rslt_wnd_spd,FP2)
-  Sample(1,Met1_wnd_dir,FP2)
+  Sample(1,Met1_rslt_wnd_dir,FP2)
   Sample(1,Met1_std_wnd_dir,FP2)
   #EndIf
   
@@ -1091,8 +1094,6 @@ DataTable (stats30,TRUE,-1)
   Sample(1,wnd_dir_compass,FP2)         'mean wind direction rel2 north, degrees
 	FieldNames("rslt_wnd_dir")
   Sample(1,std_wnd_dir,FP2)             'scalar stdev of wind direction, degrees
-'  Totalize(1,n,UINT2,sonic_disable_f)   'total of good sonic values
-'    FieldNames ("sonic_samples_Tot")
   Sample (1,sonic_uptime,FP2)
 
   Sample(1,CO2_ppm_Avg,FP2)
@@ -1101,20 +1102,15 @@ DataTable (stats30,TRUE,-1)
   Sample(1,CO2_stdev,FP2)               'stdev of CO2 conc, mg/m3
     FieldNames ("CO2_mg_m3_Std")
   Sample(1,CO2_signal_Avg,FP2)
-
   Sample(1,H2O_g_kg_Avg,FP2)
   Sample(1,H2O_mean,FP2)                'mean of H2O conc, g/m3
     FieldNames ("H2O_g_m3_Avg")
   Sample(1,H2O_stdev,FP2)               'stdev of H2O conc, g/m3
     FieldNames ("H2O_g_m3_Std")
   Sample(1,H2O_signal_Avg,FP2)
-
   Sample(1,amb_tmpr_Avg,FP2)
   Sample(1,amb_press_mean,IEEE4)        'mean of ambient pressure, kPa
     FieldNames ("amb_press_Avg")
-'  Totalize(1,n,UINT2,irga_disable_f)   'total of good sonic values
-'    FieldNames ("irga_samples_Tot")
-
   Sample (1,irga_uptime,FP2)
   #EndIf
 
@@ -1160,7 +1156,7 @@ DataTable (stats30,TRUE,-1)
   #If ( SENSOR_034B = TRUE ) Then
   Sample(1,Met1_wnd_spd,FP2)
   Sample(1,Met1_rslt_wnd_spd,FP2)
-  Sample(1,Met1_wnd_dir,FP2)
+  Sample(1,Met1_rslt_wnd_dir,FP2)
   Sample(1,Met1_std_wnd_dir,FP2)
 
   #EndIf
@@ -1180,22 +1176,27 @@ DataTable (site_daily,TRUE,-1)
   CardOut(0,-1)
   Sample(1,sonic_azimuth,FP2)
   Median(1,(latitude_a + latitude_b/60),DAILY_MEDIAN_NUM,IEEE4,(latitude_a=NAN OR latitude_b=NAN))
-    FieldNames("latitude")
-    Units latitude = decimal degrees N
-  Average(1,latitude_a,FP2,latitude_a=NAN)
-  Average(1,latitude_b,FP2,latitude_b=NAN)
+    FieldNames("latitude_Med")
+    Units latitude_Med = decDegreesN
+'  Average(1,latitude_a,FP2,latitude_a=NAN)
+'  Average(1,latitude_b,FP2,latitude_b=NAN)
   Median(1,(longitude_a + longitude_b/60),DAILY_MEDIAN_NUM,IEEE4,(longitude_a=NAN OR longitude_b=NAN))
-    FieldNames("longitude")
-    Units longitude = decimal degrees E
-  Average(1,longitude_a,FP2,longitude_a=NAN)
-  Average(1,longitude_b,FP2,longitude_b=NAN)
+    FieldNames("longitude_Med")
+    Units longitude_Med = decDegreesE
+'  Average(1,longitude_a,FP2,longitude_a=NAN)
+'  Average(1,longitude_b,FP2,longitude_b=NAN)
   Median(1,magnetic_variation,DAILY_MEDIAN_NUM,FP2,magnetic_variation=NAN)
-  Average(1,magnetic_variation,FP2,magnetic_variation=NAN)
+'  Average(1,magnetic_variation,FP2,magnetic_variation=NAN)
   Average(1,nmbr_satellites,FP2,nmbr_satellites=NAN)
+  Median(1,altitude,DAILY_MEDIAN_NUM,IEEE4,altitude=NAN)
   Average(1,altitude,IEEE4,altitude=NAN)
   Minimum(1,gps_ready,FP2,gps_ready=NAN,0)
   Sample(1,max_clock_change,UINT2)
   Sample(1,nmbr_clock_change,UINT2)
+  Sample(1,Status.RunSignature,UINT2)
+    FieldNames("RunSig")
+  Sample(1,Status.ProgSignature,UINT2)
+    FieldNames("ProgSig")
 EndTable
 
 

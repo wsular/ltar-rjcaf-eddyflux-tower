@@ -1,6 +1,40 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20120323_LIND
+-------------
+
+Manually incorporates changes from 20120316_CFNT
+
+### Issues Fixed
+
+* Add missing type code suffix "_Med" to `latitude` and `longitude`
+
+### Data Table Changes
+
+* In daily data table, 
+    * Add missing type code suffix "_Med" to `latitude` and `longitude`
+    * Remove average latitude, longitude, and magnetic_variation
+    * Add median altitude (in addition to mean) since it presents more
+      variance apparently
+
+
+20120316_CFNT
+-------------
+
+### Data Table Changes
+
+* In 5- & 30-min data tables rename `Met1_wnd_dir` to `Met1_rslt_wnd_dir`
+* In daily table
+    * Change units for latitude/longitude from 'decimal degrees N/E' to
+      'decDegreesN/E' respectively
+    * Add two columns `RunSig` and `ProgSig`
+
+### Other Changes
+
+* Specified sensitivity values for net radiometer, PAR sensor at CFNT site
+
+
 20120309_LIND
 -------------
 
