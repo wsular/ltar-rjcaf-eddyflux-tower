@@ -1,6 +1,55 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20120224_LIND
+-------------
+
+This version diverged from an earlier, unretained draft of **20120215_CFNT**. 
+
+### Known Issues
+
+* New `sonic_uptime` name incorrectly attached to `wnd_dir_compass` values
+  while `wnd_dir_compass` name incorrectly reflects `sonic_uptime` values
+* Implementation of `*_uptime` variables may have been flawed, always 
+  indicating "1"
+
+### Issues Fixed
+
+* Update constant `SITE_PRESS` to 93.5 kPa (based on Dec 2011 - Feb 2012)
+* Fix cause of `T_hmp` being 0 and `RH_hmp_Avg` being "NAN",
+  which was a missing `GetRecord` statement
+* In some instances, standard deviation of wind direction is reported zero, or
+  site azimuth is recorded as wind direction because period lacked data and
+  mean wind direction was reported zero. To resolve both, new value 
+  `sonic_uptime` tracks ratio (0-1) of good sonic records out of queries; when
+  value < 0.5 then null values ("NAN") are recorded for wind stats
+* Use an `irga_uptime` analagous to sonic_uptime to set `Xc`/`Xv` to null
+  value ("NAN") when irga_uptime < 0.5
+
+### Data Table Changes
+
+* Units are changed for several columns:
+    * diag_sonic: arb -> bitmap
+    * diag_irga: arb -> bitmap
+    * CO2_sig_strgth: arb -> unity
+    * H2O_sig_strgth: arb -> unity
+* Modify both 5- and 30-min tables by
+    * Adding columns: sonic_uptime, CO2_ppm_Std, H2O_g_kg_Avg, H2O_g_kg_Std,
+      amb_tmpr_Avg, irga_samples_Tot, irga_uptime, e_hmp_Avg, e_sat_hmp_Avg,
+      hmp_uptime, Met1_uptime
+
+### Other Changes
+
+* Updated calibration constants to reflect LIND-specific sensors
+    * net radiometer (NR-Lite2): 12.6
+    * PAR sensor (LI190SB): 6.84
+* Modify multiplier used to value specified in user manual (0.799 -> 0.7989)
+* Redefine several variables as Public to facilitate troubleshooting
+* Modify behavior for cup & vane measurement QC
+    * Change `If WS=0.2811 Then WS=0` to `If WS<=0.2811 Then WS=NAN`
+    * Change `If WD>=360 Then WD=0` to `If WD>=360 OR WD<0 Then WD=NAN`
+
+
 20120210_CFNT
 -------------
 
@@ -84,6 +133,17 @@ Change Log for GHG Monitoring Tower Program
     * `par_mV` to `PAR_mV`
     * `par_flxdens` to `PAR_flxdens`
     * `par_totflx` to `PAR_totflx`
+
+
+20111121_LIND
+-------------
+
+This is the first release deployed at the Lind, WA site.
+
+### Site-specific Changes 
+
+* Update net radiometer sensitivity value
+* Update PAR sensor sensitivity value
 
 
 20111101_CFNT
