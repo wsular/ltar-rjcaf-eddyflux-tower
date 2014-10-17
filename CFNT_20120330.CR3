@@ -19,6 +19,11 @@
 ' -
 '
 'Version history
+' CFNT_20120330.CR3 [pto]
+'   - incorporated changes from LIND_20120323.CR3
+'     * removed average lat/long and avg mag_var from tables; left medians
+'     * added '_Med' suffix to lat/long in site table
+'     * added median altitude for comparison since its avgs actually vary
 ' CFNT_20120316 [pto]
 '   - forked off most recent program: LIND_20120309
 '   - updated with correct cal constants: NRLITE, PAR
@@ -1173,18 +1178,19 @@ DataTable (site_daily,TRUE,-1)
   CardOut(0,-1)
   Sample(1,sonic_azimuth,FP2)
   Median(1,(latitude_a + latitude_b/60),DAILY_MEDIAN_NUM,IEEE4,(latitude_a=NAN OR latitude_b=NAN))
-    FieldNames("latitude")
-    Units latitude = decDegreesN
-  Average(1,latitude_a,FP2,latitude_a=NAN)
-  Average(1,latitude_b,FP2,latitude_b=NAN)
+    FieldNames("latitude_Med")
+    Units latitude_Med = decDegreesN
+'  Average(1,latitude_a,FP2,latitude_a=NAN)
+'  Average(1,latitude_b,FP2,latitude_b=NAN)
   Median(1,(longitude_a + longitude_b/60),DAILY_MEDIAN_NUM,IEEE4,(longitude_a=NAN OR longitude_b=NAN))
-    FieldNames("longitude")
-    Units longitude = decDegreesE
-  Average(1,longitude_a,FP2,longitude_a=NAN)
-  Average(1,longitude_b,FP2,longitude_b=NAN)
+    FieldNames("longitude_Med")
+    Units longitude_Med = decDegreesE
+'  Average(1,longitude_a,FP2,longitude_a=NAN)
+'  Average(1,longitude_b,FP2,longitude_b=NAN)
   Median(1,magnetic_variation,DAILY_MEDIAN_NUM,FP2,magnetic_variation=NAN)
-  Average(1,magnetic_variation,FP2,magnetic_variation=NAN)
+'  Average(1,magnetic_variation,FP2,magnetic_variation=NAN)
   Average(1,nmbr_satellites,FP2,nmbr_satellites=NAN)
+  Median(1,altitude,DAILY_MEDIAN_NUM,IEEE4,altitude=NAN)
   Average(1,altitude,IEEE4,altitude=NAN)
   Minimum(1,gps_ready,FP2,gps_ready=NAN,0)
   Sample(1,max_clock_change,UINT2)

@@ -1,6 +1,30 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20120330_CFNT
+-------------
+
+Incorporate changes from 20120323_LIND
+
+
+20120323_LIND
+-------------
+
+Manually incorporates changes from 20120316_CFNT
+
+### Issues Fixed
+
+* Add missing type code suffix "_Med" to `latitude` and `longitude`
+
+### Data Table Changes
+
+* In daily data table, 
+    * Add missing type code suffix "_Med" to `latitude` and `longitude`
+    * Remove average latitude, longitude, and magnetic_variation
+    * Add median altitude (in addition to mean) since it presents more
+      variance apparently
+
+
 20120316_CFNT
 -------------
 
