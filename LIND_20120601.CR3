@@ -3,7 +3,7 @@
 ' Laboratory for Atmospheric Research
 ' Washington State University
 '
-' Site: Cook Farm No-Till
+' Site: Lind
 ' Description: This program combines fast measurements of CO2 and H2O with 3D wind speeds  
 '   to generate near real-time surface fluxes of CO2, latent & sensible heat. Additional 
 '   meteorological statistics are produced in five and thirty minute intervals. 
@@ -19,6 +19,8 @@
 ' -
 '
 'Version history
+' LIND_20120601.CR3
+'   -
 ' LIND_20120504.CR3 
 '   - updated with correct cal. constants for netrad, par
 '   - removed from los gatos estimated flux
@@ -131,8 +133,8 @@ Const SENSOR_TE525       = TRUE  'TE525           texas instruments rain gage
 '== OPTIONAL DEPLOYMENT SENSORS 
 Const SENSOR_HFP01       = FALSE  'HFP01           soil heat flux plates
 Const SENSOR_DEC_5TM     = FALSE  '5TM             decagon soil temp/moisture probe
-Const SENSOR_DEC_6RAD    = TRUE   '                Decagon-built 6-band radiometer
-Const SENSOR_LGR_N2OCO   = TRUE   '                Los Gatos N2O/CO analyzer
+Const SENSOR_DEC_6RAD    = FALSE   '                Decagon-built 6-band radiometer
+Const SENSOR_LGR_N2OCO   = FALSE   '                Los Gatos N2O/CO analyzer
 Const SENSOR_PIC_CO2CH4  = FALSE  'G2301-f         Picarro CO2/CH4/H2O analyzer
 
 '== SENSORS NOT USED ==
@@ -1286,35 +1288,36 @@ DataTable (site_daily,TRUE,-1)
 EndTable
 
 
+#If ( SENSOR_LGR_N2OCO = TRUE ) Then
+  DataTable (tsdata_n2o_co,TRUE,-1)
+    DataInterval (0,FAST_RATE,mSec,100)
+    CardOut (0,-1)
+    Sample (1,lgr_n2o,IEEE4)
+    Sample (1,lgr_co,IEEE4)
+  EndTable
 
-DataTable (tsdata_n2o_co,TRUE,-1)
-  DataInterval (0,FAST_RATE,mSec,100)
-  CardOut (0,-1)
-  Sample (1,lgr_n2o,IEEE4)
-  Sample (1,lgr_co,IEEE4)
-EndTable
+  '5 minute extra sensors table
+  DataTable (stats5_n2o_co,TRUE,-1)
+    DataInterval (0,STAT_INT1,min,10)
+    CardOut(0,-1)
+    Sample(1,lgr_n2o_Avg,FP2)
+    Sample(1,lgr_n2o_Std,FP2)
+    Sample(1,lgr_co_Avg,FP2)
+    Sample(1,lgr_co_Std,FP2)
+    Sample(1,lgr_uptime,FP2)
+  EndTable
 
-'5 minute extra sensors table
-DataTable (stats5_n2o_co,TRUE,-1)
-  DataInterval (0,STAT_INT1,min,10)
-  CardOut(0,-1)
-  Sample(1,lgr_n2o_Avg,FP2)
-  Sample(1,lgr_n2o_Std,FP2)
-  Sample(1,lgr_co_Avg,FP2)
-  Sample(1,lgr_co_Std,FP2)
-  Sample(1,lgr_uptime,FP2)
-EndTable
-
-'5 minute extra sensors table
-DataTable (stats30_n2o_co,TRUE,-1)
-  DataInterval (0,STAT_INT2,min,10)
-  CardOut(0,-1)
-  Sample(1,lgr_n2o_Avg,FP2)
-  Sample(1,lgr_n2o_Std,FP2)
-  Sample(1,lgr_co_Avg,FP2)
-  Sample(1,lgr_co_Std,FP2)
-  Sample(1,lgr_uptime,FP2)
-EndTable
+  '5 minute extra sensors table
+  DataTable (stats30_n2o_co,TRUE,-1)
+    DataInterval (0,STAT_INT2,min,10)
+    CardOut(0,-1)
+    Sample(1,lgr_n2o_Avg,FP2)
+    Sample(1,lgr_n2o_Std,FP2)
+    Sample(1,lgr_co_Avg,FP2)
+    Sample(1,lgr_co_Std,FP2)
+    Sample(1,lgr_uptime,FP2)
+  EndTable
+#EndIf
 
 
 '========================================================================================

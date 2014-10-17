@@ -1,6 +1,19 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20120601_LIND
+-------------
+
+### Data Table Changes
+
+* Drop data tables tsdata_n2o_co, stats5_n2o_co and stats30_n2o_co since 
+  Los Gatos N2O/CO analyzer disabled
+
+### Other Changes
+
+* Disable Los Gatos N2O/CO analyzer
+
+
 20140504_LIND
 -------------
 
