@@ -1,8 +1,112 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20120627_CFCT
+-------------
+
+This version represents a lot of changes which means this entry is more likely
+than others to be less than comprehensive.
+
+### Enhancements
+
+* Site-specific sensitivity values for certain sensors are now automatically
+  selected using datalogger's serial number when program is compiled.
+* Support for new auxilary sensors (not enabled by default)
+    * Los Gatos N2O/CO analyzer, 2 analog voltage inputs, high-freq. sampling
+    * Picarro CH4/CO2 analyzer, 2 analog voltage inputs, high-freq. sampling
+    * Decagon soil moisture probes (5TM), 5 sensors
+    * Huskeflux soil heat flux plates, 2 sensors
+
+### Known Issues
+
+* Disable flag for Picarro CO2/CH4 analyzer only checked for CO2=NAN, checked
+  twice
+
+### Wiring Changes
+
+Consult the reference sheet `wiring_details.ods` for details.
+
+* Cup & vane wind direction signal: SE 11 -> SE 1
+* NEW Picarro Fast CO2/CH4/H2O analyzer
+    * CO2: DIFF 12
+    * CH4: DIFF 13
+* SDI sensors including Decagon soil moisture probes and Decagon 6-band 
+  radiometers: C5, 12V, G
+* Soil heat flux plates (used in pairs) on: DF 6/7, SE 27/28, VX1, SW12-1, G
+
+### Data Table Changes
+
+* NEW data tables
+    * site_info
+        * Includes sonic_azimuth, RunSig, and ProgSig, moved from 'site_daily'
+        * Also contains site-specific metadata like clock offset from UTC,
+          sensor sensitivity values, and flags indicating presence of auxilary
+          instruments
+    * stats5_soil, stats30_soil
+        * For each probe measure: 'epsilon', dielectric permittivity;
+          'T', soil temperature; and 'VWC', volumetric water content calculated
+          using the Topp equation
+        * If soil heat flux plates are present, then soil heat flux and current
+          sensitivity values
+    * tsdata_co2_ch4, stats5_co2_ch4, stats30_co2_ch4
+        * Analagous to tsdata_n2o_co, stats5_n2o_co, stats30_n2o_co
+        * 5- and 30-min tables have mean and standard deviation of each scalar
+        * Has "uptime" value too, which is # of non-NAN values over # scans
+
+### Other Changes
+
+* Remove base sensor set-related code from conditional compilation blocks
+* Remove code related to sensors not deployed at any REACCH site
+* Revise cup & vane WS sensor multiplier/offset: 0.799/0.2811 -> 0.7989/0.28
+* Add conditional so wind-speed adjustment is only applied when WS > 5 m/s
+    * If no refererence is found for this, it may be tagged a 'known issue'
+
+### References
+
+* Decagon Devices. *Dr. Topp.* <http://www.decagon.com/micro/dr-topp/>.
+    * Topp, G.C., J.L. David, and A.P. Annan 1980. Electromagnetic, 
+      Determination of Soil Water Content: Measurement in Coaxial Transmission 
+      Lines. Water Resources Research 16:3. p. 574-582.
+
+
+20120601_LIND
+-------------
+
+### Data Table Changes
+
+* Drop data tables tsdata_n2o_co, stats5_n2o_co and stats30_n2o_co since 
+  Los Gatos N2O/CO analyzer completely disabled
+
+### Other Changes
+
+* Comment out Los Gatos N2O/CO analyzer code
+
+
+20140504_LIND
+-------------
+
+### Issues Fixed
+
+* Corrected net radiometer and PAR sensor sensitivity values
+
+### Data Table Changes
+
+* Rename data tables
+    * tsdata_extra -> tsdata_n2o_co
+    * stats5_extra -> stats5_n2o_co
+    * stats30_extra -> stats30_n2o_co
+* Changed units within tsdata_n2o_co table
+    * lgr_n2o: ppm, dMR -> ppm
+    * lgr_co: ppm, dMR -> ppm
+* Remove covariance terms from stats5_n2o_co and stats30_n2o_co tables
+
+
 20120427_CFNT
 -------------
+
+### Data Table Changes
+
+* NEW data tables 'stats5_6rad' and 'stats30_6rad' for Decagon radiometers
 
 ### Other Changes
 
@@ -14,6 +118,11 @@ Change Log for GHG Monitoring Tower Program
 
 20120420_LIND
 -------------
+
+### Known Issues
+
+* Sensitivity values used for net radiometer and PAR sensor were incorrect,
+  actually for CFNT sensor set, not LIND sensor set
 
 ### Data Table Changes
 
