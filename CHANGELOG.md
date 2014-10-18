@@ -1,6 +1,18 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20120628_CFNT
+-------------
+
+### Issues Fixed
+
+* Record null values ("NAN") instead of 0 if soil heat flux plates are not used
+
+### Other changes
+
+* Activate Los Gatos N2O/CO analyzer
+
+
 20120627_CFCT
 -------------
 
