@@ -8,6 +8,10 @@
 '   meteorological statistics are produced in five and thirty minute intervals. 
 ' 
 'Version history
+' XXXX_20120711.CR3
+'   - added calibration constants for new site near Moscow Mtn outside Moscow, ID
+'   - except for soil moisture probes, all auxilary sensors deactivated
+'   - increased scan buffer for slow scan from 3->60sec; also made a constant
 ' XXXX_20120705.CR3
 '   - moved calls to soil table below heat flux plate code
 '   - added else statements to place NANs in soil table if either sensor not used
@@ -53,7 +57,7 @@ Const SENSOR_DEC_5TM     = TRUE  '5TM             decagon soil temp/moisture pro
 Const SENSOR_DEC_6RAD    = FALSE  '                Decagon-built 6-band radiometer
 Const SENSOR_LGR_N2OCO   = FALSE  '                Los Gatos N2O/CO analyzer
 Const SENSOR_PIC_CO2CH4  = FALSE  'G2301-f         Picarro CO2/CH4/H2O analyzer
-Const SENSOR_HFP01SC     = TRUE  'HFP01SC         soil heat flux plates
+Const SENSOR_HFP01SC     = FALSE  'HFP01SC         soil heat flux plates
 
 '----- OPTIONAL SENSORS ANALOG INPUT MAPS -----
 'Confirm the analog output of these sensors before using
@@ -85,7 +89,8 @@ Const STAT_OUT_2 = 30		  'stats output interval #2, minutes; use multiple of STA
 Const DAILY_MEDNUM = 480  '# of values to include in median for daily stats
 Const SDM_PER = 30         'default SDM clock speed
 Const INTEG = 250          'analog measurement integration time (250/_50hz/_60hz)
-Const SCAN_BUFFER_SIZE = 60*INT (1000/FAST_INTV)     'Compute a 60 second scan buffer.
+Const FAST_BUFFER_SIZE = 60*INT(1000/FAST_INTV)     'Compute a 60 second scan buffer.
+Const SLOW_BUFFER_SIZE = 60*INT(1/1) 
 Const NMBR_WND_SAMPLES = 3000/FAST_INTV  '#pts to compute 3sec mean horizontal wind
 
 
@@ -146,10 +151,10 @@ Const CFCT_CSAT_AZIMUTH  = 184+15
 Const CFCT_NRLITE_SENS   = 12.2
 Const CFCT_LI190_SENS    = 6.18
 
-Const LAB1_SERIAL_NO     = 0
-Const LAB1_CSAT_AZIMUTH  = 0
-Const LAB1_NRLITE_SENS   = 0
-Const LAB1_LI190_SENS    = 0
+Const MMTN_SERIAL_NO     = 6504
+Const MMTN_CSAT_AZIMUTH  = 180
+Const MMTN_NRLITE_SENS   = 12.2
+Const MMTN_LI190_SENS    = 6.69
 
 Const LAB2_SERIAL_NO     = 6505
 Const LAB2_CSAT_AZIMUTH  = 0
@@ -1147,10 +1152,10 @@ BeginProg
     csat_azimuth = CFCT_CSAT_AZIMUTH
     nrlite_sens  = CFCT_NRLITE_SENS
     li190_sens   = CFCT_LI190_SENS
-  ElseIf ( Status.SerialNumber = LAB1_SERIAL_NO ) Then
-    csat_azimuth = LAB1_CSAT_AZIMUTH
-    nrlite_sens  = LAB1_NRLITE_SENS
-    li190_sens   = LAB1_LI190_SENS
+  ElseIf ( Status.SerialNumber = MMTN_SERIAL_NO ) Then
+    csat_azimuth = MMTN_CSAT_AZIMUTH
+    nrlite_sens  = MMTN_NRLITE_SENS
+    li190_sens   = MMTN_LI190_SENS
   ElseIf ( Status.SerialNumber = LAB2_SERIAL_NO ) Then
     csat_azimuth = LAB2_CSAT_AZIMUTH
     nrlite_sens  = LAB2_NRLITE_SENS
@@ -1173,7 +1178,7 @@ BeginProg
 
   CallTable (site_info)
   SDMSpeed (SDM_PER)
-  Scan (FAST_INTV,mSec,SCAN_BUFFER_SIZE,0)
+  Scan (FAST_INTV,mSec,FAST_BUFFER_SIZE,0)
         
     '== 034B wind vane acquisition 
     BrHalf(WindDir,1,mV5000,oh34B_WD_SE,oh34B_WD_VX,1,5000,True,0,INTEG,oh34B_WD_MULT,oh34B_WD_OFFSET)
@@ -1483,7 +1488,7 @@ BeginProg
   '===========================================================================
   '====================== SLOW SCAN INTERVAL =================================
   SlowSequence
-  Scan (SLOW_INTV,Sec,3,0)
+  Scan (SLOW_INTV,Sec,SLOW_BUFFER_SIZE,0)
     PanelTemp (panel_tmpr,INTEG)
     Battery (batt_volt)
 

@@ -1,6 +1,17 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20120711_MMTN
+-------------
+
+### Other Changes
+
+* NEW monitoring site: Moscow Mountain Road (MMTN)
+    * Sensor sensitivity values, sonic orientation, etc added
+    * Soil heat flux plate (active at LIND) deactivated
+* Slow scan buffer increased from 3 -> 60 sec
+
+
 20120705_LIND
 -------------
 
