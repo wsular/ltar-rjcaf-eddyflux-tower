@@ -8,6 +8,11 @@
 '   meteorological statistics are produced in five and thirty minute intervals. 
 ' 
 'Version history
+' XXXX_20120705.CR3
+'   - moved calls to soil table below heat flux plate code
+'   - added else statements to place NANs in soil table if either sensor not used
+'   - changed optional sensor config from n2o deployed at CFNT to LIND+heat flux plate & dec_5TM
+'   - verified heat flux calibration routine works OK
 ' XXXX_20120627.CR3 
 '   - integrated finished, deactivated los gatos code from LIND_20120601.CR3
 '   - added analogous code for recording Picarro co2/ch4 analyzer
@@ -45,10 +50,10 @@ Const UTC_OFFSET = -8    'offset from UTC as +/- hours; PST = -8
 '----- OPTIONAL DEPLOYMENT SENSORS -----
 'Set values to TRUE if instrument is at site; FALSE if not
 Const SENSOR_DEC_5TM     = TRUE  '5TM             decagon soil temp/moisture probe
-Const SENSOR_DEC_6RAD    = TRUE  '                Decagon-built 6-band radiometer
-Const SENSOR_LGR_N2OCO   = TRUE  '                Los Gatos N2O/CO analyzer
+Const SENSOR_DEC_6RAD    = FALSE  '                Decagon-built 6-band radiometer
+Const SENSOR_LGR_N2OCO   = FALSE  '                Los Gatos N2O/CO analyzer
 Const SENSOR_PIC_CO2CH4  = FALSE  'G2301-f         Picarro CO2/CH4/H2O analyzer
-Const SENSOR_HFP01SC     = FALSE  'HFP01SC         soil heat flux plates
+Const SENSOR_HFP01SC     = TRUE  'HFP01SC         soil heat flux plates
 
 '----- OPTIONAL SENSORS ANALOG INPUT MAPS -----
 'Confirm the analog output of these sensors before using
@@ -62,7 +67,7 @@ Const PIC_CH4_MULT   = 1 'x - x ppm over 0-5V
 Const PIC_CH4_OFFSET = 0
 
 '----- OPTIONAL HEAT FLUX PLATE CALIBRATION -----
-Const HFP_CAL_INTERVAL = 3*60*60      'frequency of cal. interval, seconds
+Const HFP_CAL_INTERVAL = 2*60*60      'frequency of cal. interval, seconds
 
 '----- QUALITY CONTROL -----
 Public min_uptime = {0.5}         'minimum ratio of OK samples in total to enable stats
@@ -126,19 +131,10 @@ Const DEC_6RAD_DN_SDI_ADDR = 0   'down-facing 6 band radiometer
 '    **GPS does report mag. declination but values are NOT used to calculate WD**
 '  NRLITE_SENS     sensitivity of NR-Lite2 net rad., uV/W/m^2
 '  LI190_SENS      sensitivity of LI-190SB quantum PAR sensor, uA/mmol/s/m^2
-'  HFP_SENS        sensitivity of heat flux plate, W/m^2/mV
-'  HFP_R_SELF      resistance of heating element in heat flux plate, Ohms
-'  HFP_A_SELF      area of the sensor face of the heat flux plate, m^2
 Const CFNT_SERIAL_NO     = 6034
 Const CFNT_CSAT_AZIMUTH  = 186
 Const CFNT_NRLITE_SENS   = 13.3
 Const CFNT_LI190_SENS    = 6.26
-Const CFNT_HFP_1_SENS    = 63.2
-Const CFNT_HFP_1_R_SELF  = 99.4
-Const CFNT_HFP_1_A_SELF  = 0.003885
-Const CFNT_HFP_2_SENS    = 62.3
-Const CFNT_HFP_2_R_SELF  = 99.9
-Const CFNT_HFP_2_A_SELF  = 0.003885
 
 Const LIND_SERIAL_NO     = 6035
 Const LIND_CSAT_AZIMUTH  = 188
@@ -155,10 +151,10 @@ Const LAB1_CSAT_AZIMUTH  = 0
 Const LAB1_NRLITE_SENS   = 0
 Const LAB1_LI190_SENS    = 0
 
-Const LAB2_SERIAL_NO     = 0
+Const LAB2_SERIAL_NO     = 6505
 Const LAB2_CSAT_AZIMUTH  = 0
-Const LAB2_NRLITE_SENS   = 0
-Const LAB2_LI190_SENS    = 0
+Const LAB2_NRLITE_SENS   = 12.0
+Const LAB2_LI190_SENS    = 6.5
 
 Const LAB3_SERIAL_NO     = 0
 Const LAB3_CSAT_AZIMUTH  = 0
@@ -182,6 +178,17 @@ Const TE525_MULT       = 0.254
 Const TE525_OFFSET     = 0
 ' **These values depend on site-specific values; assignment is deferred
 '   to program execution time.
+
+'----- OPTIONAL BUT FIXED CALIBRATION VALUES -----
+'  HFP_SENS        sensitivity of heat flux plate, uV/W/m^2
+'  HFP_R_SELF      resistance of heating element in heat flux plate, Ohms
+'  HFP_A_SELF      area of the sensor face of the heat flux plate, m^2
+Const HFP_1_SENS    = 62.3
+Const HFP_1_R_SELF  = 99.9
+Const HFP_1_A_SELF  = 0.003885
+Const HFP_2_SENS    = 63.2 
+Const HFP_2_R_SELF  = 99.4
+Const HFP_2_A_SELF  = 0.003885
 
 
 '-----  PHYSICAL CONSTANTS  -----
@@ -602,23 +609,24 @@ Units nmbr_clock_change = samples
 
 
 '**********  Decagon 5TM soil moisture/temp **********
-#If ( SENSOR_DEC_5TM = TRUE ) Then
-  Public fiveTM(15)
-  Alias fiveTM(1)  = soil_5TM_ID5_epsilon
-  Alias fiveTM(2)  = soil_5TM_ID5_T
-  Alias fiveTM(3)  = soil_5TM_ID5_VWC
-  Alias fiveTM(4)  = soil_5TM_ID6_epsilon
-  Alias fiveTM(5)  = soil_5TM_ID6_T
-  Alias fiveTM(6)  = soil_5TM_ID6_VWC
-  Alias fiveTM(7)  = soil_5TM_ID7_epsilon
-  Alias fiveTM(8)  = soil_5TM_ID7_T
-  Alias fiveTM(9)  = soil_5TM_ID7_VWC
-  Alias fiveTM(10) = soil_5TM_ID8_epsilon
-  Alias fiveTM(11) = soil_5TM_ID8_T
-  Alias fiveTM(12) = soil_5TM_ID8_VWC
-  Alias fiveTM(13) = soil_5TM_ID9_epsilon
-  Alias fiveTM(14) = soil_5TM_ID9_T
-  Alias fiveTM(15) = soil_5TM_ID9_VWC
+' Required so soil table can record NAN if probes are not used.
+Public fiveTM(15)
+Alias fiveTM(1)  = soil_5TM_ID5_epsilon
+Alias fiveTM(2)  = soil_5TM_ID5_T
+Alias fiveTM(3)  = soil_5TM_ID5_VWC
+Alias fiveTM(4)  = soil_5TM_ID6_epsilon
+Alias fiveTM(5)  = soil_5TM_ID6_T
+Alias fiveTM(6)  = soil_5TM_ID6_VWC
+Alias fiveTM(7)  = soil_5TM_ID7_epsilon
+Alias fiveTM(8)  = soil_5TM_ID7_T
+Alias fiveTM(9)  = soil_5TM_ID7_VWC
+Alias fiveTM(10) = soil_5TM_ID8_epsilon
+Alias fiveTM(11) = soil_5TM_ID8_T
+Alias fiveTM(12) = soil_5TM_ID8_VWC
+Alias fiveTM(13) = soil_5TM_ID9_epsilon
+Alias fiveTM(14) = soil_5TM_ID9_T
+Alias fiveTM(15) = soil_5TM_ID9_VWC
+#If ( SENSOR_DEC_5TM = True ) Then
   Units soil_5TM_ID5_epsilon = dimensionless
   Units soil_5TM_ID5_T       = C
   Units soil_5TM_ID5_VWC     = v/v
@@ -638,6 +646,7 @@ Units nmbr_clock_change = samples
 
 
 '**********  HFP01SC heat flux plate  **********
+' Required so soil table can record NAN if hfp is not used.
 Public hfp(4)
 Alias hfp(1) = soil_hfp1_heat_flux
 Alias hfp(2) = soil_hfp2_heat_flux
@@ -645,38 +654,38 @@ Alias hfp(3) = soil_hfp1_sensitivity
 Alias hfp(4) = soil_hfp2_sensitivity
 Units soil_hfp1_heat_flux = W/m^2
 Units soil_hfp2_heat_flux = W/m^2
-Units soil_hfp1_sensitivity = uV/W/m^2
-Units soil_hfp2_sensitivity = uV/W/m^2
-Dim hfp_isCalibrating As Boolean
+Units soil_hfp1_sensitivity = W/m^2/mV
+Units soil_hfp2_sensitivity = W/m^2/mV
+Public hfp_isCalibrating As Boolean
 
 #If (SENSOR_HFP01SC = TRUE) Then
   Const HFP_CAL_RUNAVG = 10/SLOW_INTV   'use 10 sec running averages
-  Const HFP_CAL_T_START = 60            'starting time into cal. interval, seconds
-  Const HFP_CAL_T_HEAT = HFP_CAL_T_START + 180
-  Const HFP_CAL_T_END = HFP_CAL_T_HEAT + 180
+  Const HFP_CAL_T_START = 10            'starting time into cal. interval, seconds
+  Const HFP_CAL_T_HEATON = HFP_CAL_T_START + 20
+  Const HFP_CAL_T_END = HFP_CAL_T_START + 190
+  Const HFP_CAL_T_HEATOFF = HFP_CAL_T_START + 200
   Const HFP_R_CUR = 10                  'current sensing resistor = 10 Ohm, 1%, 1/4 W
-  Const HFP_1_SELFCAL_MULT = CFNT_HFP_1_R_SELF / (2 * HFP_R_CUR^2 * CFNT_HFP_1_A_SELF)
-  Const HFP_2_SELFCAL_MULT = CFNT_HFP_2_R_SELF / (2 * HFP_R_CUR^2 * CFNT_HFP_2_A_SELF)
+  Const HFP_1_SELFCAL_MULT = HFP_1_R_SELF / (2 * HFP_R_CUR^2 * HFP_1_A_SELF)
+  Const HFP_2_SELFCAL_MULT = HFP_2_R_SELF / (2 * HFP_R_CUR^2 * HFP_2_A_SELF)
 
-  Dim hfp_sw12_isOn As Boolean
+  Public hfp_sw12_isOn As Boolean
   Dim hfp_selfcal(8,2)
-  Alias hfp_selfcal(1,1) = hfp1_mV          'inst. value of soil heat flux
-  Alias hfp_selfcal(2,1) = hfp1_mV_runavg   'run avg of soil heat flux
-  Alias hfp_selfcal(3,1) = hfp1_mV_start    'soil heat flux @ start of cal cycle
-  Alias hfp_selfcal(4,1) = hfp1_mV_heat     'soil heat flux after heating in cal cycle
-  Alias hfp_selfcal(5,1) = hfp1_mV_end      'soil heat flux symmetrically after cal cycle
-  Alias hfp_selfcal(6,1) = hfp1_Vref        'inst. ref voltage
-  Alias hfp_selfcal(7,1) = hfp1_Vref_runavg 'run avg of ref voltage
-  Alias hfp_selfcal(8,1) = hfp1_Vref_heat   'ref voltage after heating in cal cycle
-  Alias hfp_selfcal(1,2) = hfp2_mV          'inst. value of soil heat flux
-  Alias hfp_selfcal(2,2) = hfp2_mV_runavg   'run avg of soil heat flux
-  Alias hfp_selfcal(3,2) = hfp2_mV_start    'soil heat flux @ start of cal cycle
-  Alias hfp_selfcal(4,2) = hfp2_mV_heat     'soil heat flux after heating in cal cycle
-  Alias hfp_selfcal(5,2) = hfp2_mV_end      'soil heat flux symmetrically after cal cycle
-  Alias hfp_selfcal(6,2) = hfp2_Vref        'inst. ref voltage
-  Alias hfp_selfcal(7,2) = hfp2_Vref_runavg 'run avg of ref voltage
-  Alias hfp_selfcal(8,2) = hfp2_Vref_heat   'ref voltage after heating in cal cycle
-  Units hfp_selfcal = mV
+  Alias hfp_selfcal(1,1) = hfp1_mVs          'inst. value of soil heat flux
+  Alias hfp_selfcal(2,1) = hfp1_mVs_runavg   'run avg of soil heat flux
+  Alias hfp_selfcal(3,1) = hfp1_mVs_t0       'soil heat flux @ start of cal cycle
+  Alias hfp_selfcal(4,1) = hfp1_mVs_th       'soil heat flux after heating in cal cycle
+  Alias hfp_selfcal(5,1) = hfp1_mVs_te       'soil heat flux symmetrically after cal cycle
+  Alias hfp_selfcal(6,1) = hfp1_Vh           'inst. ref voltage
+  Alias hfp_selfcal(7,1) = hfp1_Vh_runavg    'run avg of ref voltage
+  Alias hfp_selfcal(8,1) = hfp1_Vh_th        'ref voltage after heating in cal cycle
+  Alias hfp_selfcal(1,2) = hfp2_mVs          'inst. value of soil heat flux
+  Alias hfp_selfcal(2,2) = hfp2_mVs_runavg   'run avg of soil heat flux
+  Alias hfp_selfcal(3,2) = hfp2_mVs_t0       'soil heat flux @ start of cal cycle
+  Alias hfp_selfcal(4,2) = hfp2_mVs_th       'soil heat flux after heating in cal cycle
+  Alias hfp_selfcal(5,2) = hfp2_mVs_te       'soil heat flux symmetrically after cal cycle
+  Alias hfp_selfcal(6,2) = hfp2_Vh           'inst. ref voltage
+  Alias hfp_selfcal(7,2) = hfp2_Vh_runavg    'run avg of ref voltage
+  Alias hfp_selfcal(8,2) = hfp2_Vh_th        'ref voltage after heating in cal cycle
 #EndIf
 
 
@@ -955,10 +964,10 @@ DataTable (site_info,TRUE,1)
   Sample(1,li190_sens,FP2)            'LI-190SB sensitivity
     FieldNames("LI190SB_sens")
     Units LI190SB_sens = uA/mmol/s/m^2
-  Sample(1,soil_hfp1_sensitivity,FP2)            'heat flux plate #1 info
+  Sample(1,soil_hfp1_sensitivity,IEEE4)            'heat flux plate #1 info
     FieldNames("HFP_1_sens")
     Units HFP_1_SENS = W/m^2/mV
-  Sample(1,soil_hfp2_sensitivity,FP2)            'heat flux plate #2 info
+  Sample(1,soil_hfp2_sensitivity,IEEE4)            'heat flux plate #2 info
     FieldNames("HFP_2_sens")
     Units HFP_2_SENS = W/m^2/mV
   Sample(1,Status.CompileResults,String)
@@ -1130,26 +1139,18 @@ BeginProg
     csat_azimuth = CFNT_CSAT_AZIMUTH
     nrlite_sens  = CFNT_NRLITE_SENS
     li190_sens   = CFNT_LI190_SENS
-    soil_hfp1_sensitivity = 1000/CFNT_HFP_1_SENS
-    soil_hfp2_sensitivity = 1000/CFNT_HFP_2_SENS
   ElseIf ( Status.SerialNumber = LIND_SERIAL_NO ) Then     'Lind dryland station
     csat_azimuth = LIND_CSAT_AZIMUTH
     nrlite_sens  = LIND_NRLITE_SENS
     li190_sens   = LIND_LI190_SENS
-    soil_hfp1_sensitivity = NaN
-    soil_hfp2_sensitivity = NaN
   ElseIf ( Status.SerialNumber = CFCT_SERIAL_NO ) Then     'Clark farm conventional till
     csat_azimuth = CFCT_CSAT_AZIMUTH
     nrlite_sens  = CFCT_NRLITE_SENS
     li190_sens   = CFCT_LI190_SENS
-    soil_hfp1_sensitivity = NaN
-    soil_hfp2_sensitivity = NaN
   ElseIf ( Status.SerialNumber = LAB1_SERIAL_NO ) Then
     csat_azimuth = LAB1_CSAT_AZIMUTH
     nrlite_sens  = LAB1_NRLITE_SENS
     li190_sens   = LAB1_LI190_SENS
-    soil_hfp1_sensitivity = NaN
-    soil_hfp2_sensitivity = NaN
   ElseIf ( Status.SerialNumber = LAB2_SERIAL_NO ) Then
     csat_azimuth = LAB2_CSAT_AZIMUTH
     nrlite_sens  = LAB2_NRLITE_SENS
@@ -1158,18 +1159,17 @@ BeginProg
     csat_azimuth = LAB3_CSAT_AZIMUTH
     nrlite_sens  = LAB3_NRLITE_SENS
     li190_sens   = LAB3_LI190_SENS
-    soil_hfp1_sensitivity = NaN
-    soil_hfp2_sensitivity = NaN
   Else    'error case
     csat_azimuth = NaN
     nrlite_sens = NaN
     li190_sens = NaN
-    soil_hfp1_sensitivity = NaN
-    soil_hfp2_sensitivity = NaN
   EndIf
   nrlite_mult = 1000/nrlite_sens
   li190_dens_mult = 1000/(li190_sens*0.604)
   li190_tot_mult = (1/(li190_sens*0.604))*(FAST_INTV/1000)
+  soil_hfp1_sensitivity = 1000/HFP_1_SENS
+  soil_hfp2_sensitivity = 1000/HFP_2_SENS
+  hfp_isCalibrating = False
 
   CallTable (site_info)
   SDMSpeed (SDM_PER)
@@ -1521,52 +1521,61 @@ BeginProg
       soil_5TM_ID7_VWC = Topp_equation(soil_5TM_ID7_epsilon)
       soil_5TM_ID8_VWC = Topp_equation(soil_5TM_ID8_epsilon)
       soil_5TM_ID9_VWC = Topp_equation(soil_5TM_ID9_epsilon)
-      CallTable(stats5_soil)
-      CallTable(stats30_soil)
+    #Else
+      Move(fiveTM(1),15,NaN,1)
     #EndIf
 
     '== optional Huskeflux heat flux plate
     #If ( SENSOR_HFP01SC = TRUE ) Then
-      VoltDiff(hfp1_mV,1,mv200,HFP_1_SGNL_DIFF,TRUE,0,INTEG,1,0)
-      soil_hfp1_heat_flux = hfp1_mV * soil_hfp1_sensitivity
-      VoltDiff(hfp2_mV,1,mv200,HFP_2_SGNL_DIFF,TRUE,0,INTEG,1,0)
-      soil_hfp2_heat_flux = hfp2_mV * soil_hfp2_sensitivity
-
+      VoltDiff(hfp1_mVs,1,mv200,HFP_1_SGNL_DIFF,TRUE,0,INTEG,1,0)    'millivolts
+      VoltDiff(hfp2_mVs,1,mv200,HFP_2_SGNL_DIFF,TRUE,0,INTEG,1,0)
+      VoltSe(hfp1_Vh,1,mv5000,HFP_1_HEAT_SE,TRUE,0,INTEG,(1/1000),0)
+      VoltSe(hfp2_Vh,1,mv5000,HFP_2_HEAT_SE,TRUE,0,INTEG,(1/1000),0) 'volts
       PortSet(9,hfp_sw12_isOn)
-      VoltSe(hfp1_Vref,1,mv5000,HFP_1_HEAT_SE,TRUE,0,INTEG,1,0)
-      VoltSe(hfp2_Vref,1,mv5000,HFP_2_HEAT_SE,TRUE,0,INTEG,1,0)
-      AvgRun(hfp1_mV_runavg,1,hfp1_mV,HFP_CAL_RUNAVG)
-      AvgRun(hfp2_mV_runavg,1,hfp2_mV,HFP_CAL_RUNAVG)
-      AvgRun(hfp1_Vref_runavg,1,hfp1_Vref,HFP_CAL_RUNAVG)
-      AvgRun(hfp2_Vref_runavg,1,hfp2_Vref,HFP_CAL_RUNAVG)
+
+      soil_hfp1_heat_flux = hfp1_mVs * soil_hfp1_sensitivity
+      soil_hfp2_heat_flux = hfp2_mVs * soil_hfp2_sensitivity
+      AvgRun(hfp1_mVs_runavg,1,hfp1_mVs,HFP_CAL_RUNAVG)
+      AvgRun(hfp2_mVs_runavg,1,hfp2_mVs,HFP_CAL_RUNAVG)
+      AvgRun(hfp1_Vh_runavg,1,hfp1_Vh,HFP_CAL_RUNAVG)
+      AvgRun(hfp2_Vh_runavg,1,hfp2_Vh,HFP_CAL_RUNAVG)
       
       If TimeIntoInterval(HFP_CAL_T_START,HFP_CAL_INTERVAL,sec) Then
         hfp_isCalibrating = TRUE
-        hfp1_mV_start = hfp1_mV_runavg
-        hfp2_mV_start = hfp2_mV_runavg
+        hfp1_mVs_t0 = hfp1_mVs_runavg
+        hfp2_mVs_t0 = hfp2_mVs_runavg
+      EndIf
+      
+      If TimeIntoInterval(HFP_CAL_T_HEATON,HFP_CAL_INTERVAL,sec) Then 
         hfp_sw12_isOn = TRUE
       EndIf
       
-      If TimeIntoInterval(HFP_CAL_T_HEAT,HFP_CAL_INTERVAL,sec) Then
-        hfp1_mV_heat   = hfp1_mV_runavg
-        hfp1_Vref_heat = hfp1_Vref_runavg
-        hfp2_mV_heat   = hfp2_mV_runavg
-        hfp2_Vref_heat = hfp2_Vref_runavg
-        hfp_sw12_isOn  = FALSE
+      If TimeIntoInterval(HFP_CAL_T_END,HFP_CAL_INTERVAL,sec) Then
+        hfp1_mVs_th   = hfp1_mVs_runavg
+        hfp1_Vh_th = hfp1_Vh_runavg
+        hfp2_mVs_th   = hfp2_mVs_runavg
+        hfp2_Vh_th = hfp2_Vh_runavg
       EndIf
       
-      If TimeIntoInterval(HFP_CAL_T_END,HFP_CAL_INTERVAL,sec) Then
-        hfp1_mV_end = hfp1_mV_runavg
-        hfp2_mV_end = hfp2_mV_runavg
-        soil_hfp1_sensitivity = (hfp1_Vref_heat*hfp1_Vref_heat*HFP_1_SELFCAL_MULT) / ((hfp1_mV_start+hfp1_mV_end)/2 - hfp1_mV_heat)
-        soil_hfp2_sensitivity = (hfp2_Vref_heat*hfp2_Vref_heat*HFP_2_SELFCAL_MULT) / ((hfp2_mV_start+hfp2_mV_end)/2 - hfp2_mV_heat)
+      If TimeIntoInterval(HFP_CAL_T_HEATOFF,HFP_CAL_INTERVAL,sec) Then
+        hfp_sw12_isOn  = FALSE
+        soil_hfp1_sensitivity = (hfp1_Vh_th*hfp1_Vh_th*HFP_1_SELFCAL_MULT) / ABS(hfp1_mVs_t0 - hfp1_mVs_th) 
+        If ( ABS((soil_hfp1_sensitivity / (1000/HFP_1_SENS)) - 1) >= 0.25 ) Then
+          soil_hfp1_sensitivity = 1000/HFP_1_SENS
+        EndIf
+        soil_hfp2_sensitivity = (hfp2_Vh_th*hfp2_Vh_th*HFP_2_SELFCAL_MULT) / ABS(hfp2_mVs_t0 - hfp2_mVs_th)
+        If ( ABS((soil_hfp2_sensitivity / (1000/HFP_2_SENS)) - 1) >= 0.25 ) Then
+          soil_hfp2_sensitivity = 1000/HFP_2_SENS
+        EndIf
         hfp_isCalibrating = FALSE
       EndIf
     #Else
-      soil_hfp1_heat_flux = NaN
-      soil_hfp2_heat_flux = NAN
-      soil_hfp1_sensitivity = NAN
-      soil_hfp2_sensitivity = NAN
+      Move(hfp(1),4,NAN,1)
+    #EndIf
+
+    #If ( SENSOR_DEC_5TM = True OR SENSOR_HFP01SC = True ) Then
+      CallTable(stats5_soil)
+      CallTable(stats30_soil)
     #EndIf
 
     '== LI190SB 

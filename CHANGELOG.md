@@ -1,6 +1,28 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20120705_LIND
+-------------
+
+### Issues Fixed
+
+* Fix problem preventing soil heat flux plate data from being recorded if soil
+  moisture probes were not activated
+
+### Data Table Changes
+
+* In table site_info, change data type of soil heat flux plate sensitivity
+  from FP2 to IEEE4 
+
+### Other Changes
+
+* Modify schedule of self-calibration routine of soil heat flux plates
+    * Increase routine interval 3->2 hr
+    * Reduce starting time into interval 60 -> 10 sec
+    * Reduce heat-on time after start time 180 -> 20 sec
+    * Change duration from heat-on+180s to start-time+190s
+
+
 20120628_CFNT
 -------------
 
