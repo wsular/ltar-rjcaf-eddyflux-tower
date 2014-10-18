@@ -1,6 +1,12 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20120720_CFNT
+-------------
+
+* Activate Los Gatos N2O/CO analyzer
+
+
 20120720_CFCT
 -------------
 
