@@ -1,6 +1,16 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20120720_MMTN
+-------------
+
+* Revert some soil heat flux plate calibration routine schedule changes
+    * Increase routine interval 2 -> 3 hr
+    * Increase start time into interval delay 10 -> 120 sec
+    * Increase total routine runtime to 380 sec
+* Increase slow scan buffer 1 -> 2 min
+
+
 20120711_MMTN
 -------------
 

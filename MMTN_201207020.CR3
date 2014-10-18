@@ -8,6 +8,11 @@
 '   meteorological statistics are produced in five and thirty minute intervals. 
 ' 
 'Version history
+' XXXX_20120720.CR3
+'	  - added heat flux post-calibration delay so cooling down doesn't contaminate data
+' 	- changed cal start from 10sec to 2 min after hour to facilitate data processing
+'   - increased hfp cal interval from 2 to 3 hours
+'   - increased slow (1hz) scan buffer from 1 to 2 minutes
 ' XXXX_20120711.CR3
 '   - added calibration constants for new site near Moscow Mtn outside Moscow, ID
 '   - except for soil moisture probes, all auxilary sensors deactivated
@@ -71,7 +76,7 @@ Const PIC_CH4_MULT   = 1 'x - x ppm over 0-5V
 Const PIC_CH4_OFFSET = 0
 
 '----- OPTIONAL HEAT FLUX PLATE CALIBRATION -----
-Const HFP_CAL_INTERVAL = 2*60*60      'frequency of cal. interval, seconds
+Const HFP_CAL_INTERVAL = 3*60*60      'frequency of cal. interval, seconds
 
 '----- QUALITY CONTROL -----
 Public min_uptime = {0.5}         'minimum ratio of OK samples in total to enable stats
@@ -90,7 +95,7 @@ Const DAILY_MEDNUM = 480  '# of values to include in median for daily stats
 Const SDM_PER = 30         'default SDM clock speed
 Const INTEG = 250          'analog measurement integration time (250/_50hz/_60hz)
 Const FAST_BUFFER_SIZE = 60*INT(1000/FAST_INTV)     'Compute a 60 second scan buffer.
-Const SLOW_BUFFER_SIZE = 60*INT(1/1) 
+Const SLOW_BUFFER_SIZE = 120*INT(1/1) 
 Const NMBR_WND_SAMPLES = 3000/FAST_INTV  '#pts to compute 3sec mean horizontal wind
 
 
@@ -665,10 +670,11 @@ Public hfp_isCalibrating As Boolean
 
 #If (SENSOR_HFP01SC = TRUE) Then
   Const HFP_CAL_RUNAVG = 10/SLOW_INTV   'use 10 sec running averages
-  Const HFP_CAL_T_START = 10            'starting time into cal. interval, seconds
+  Const HFP_CAL_T_START = 120            'starting time into cal. interval, seconds
   Const HFP_CAL_T_HEATON = HFP_CAL_T_START + 20
   Const HFP_CAL_T_END = HFP_CAL_T_START + 190
   Const HFP_CAL_T_HEATOFF = HFP_CAL_T_START + 200
+  Const HFP_CAL_T_FINISH = HFP_CAL_T_START + 380
   Const HFP_R_CUR = 10                  'current sensing resistor = 10 Ohm, 1%, 1/4 W
   Const HFP_1_SELFCAL_MULT = HFP_1_R_SELF / (2 * HFP_R_CUR^2 * HFP_1_A_SELF)
   Const HFP_2_SELFCAL_MULT = HFP_2_R_SELF / (2 * HFP_R_CUR^2 * HFP_2_A_SELF)
@@ -1572,6 +1578,9 @@ BeginProg
         If ( ABS((soil_hfp2_sensitivity / (1000/HFP_2_SENS)) - 1) >= 0.25 ) Then
           soil_hfp2_sensitivity = 1000/HFP_2_SENS
         EndIf
+      EndIf
+
+      If TimeIntoInterval(HFP_CAL_T_FINISH,HFP_CAL_INTERVAL,sec) Then
         hfp_isCalibrating = FALSE
       EndIf
     #Else
