@@ -1,6 +1,12 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20120720_CFCT
+-------------
+
+* Activate Decagon 6-band radiometers
+
+
 20120720_MMTN
 -------------
 

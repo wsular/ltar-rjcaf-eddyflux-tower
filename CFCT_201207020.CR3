@@ -59,7 +59,7 @@ Const UTC_OFFSET = -8    'offset from UTC as +/- hours; PST = -8
 '----- OPTIONAL DEPLOYMENT SENSORS -----
 'Set values to TRUE if instrument is at site; FALSE if not
 Const SENSOR_DEC_5TM     = TRUE  '5TM             decagon soil temp/moisture probe
-Const SENSOR_DEC_6RAD    = FALSE  '                Decagon-built 6-band radiometer
+Const SENSOR_DEC_6RAD    = TRUE  '                Decagon-built 6-band radiometer
 Const SENSOR_LGR_N2OCO   = FALSE  '                Los Gatos N2O/CO analyzer
 Const SENSOR_PIC_CO2CH4  = FALSE  'G2301-f         Picarro CO2/CH4/H2O analyzer
 Const SENSOR_HFP01SC     = FALSE  'HFP01SC         soil heat flux plates
