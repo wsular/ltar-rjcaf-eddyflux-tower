@@ -30,14 +30,14 @@ Change Log for GHG Monitoring Tower Program
 * Create data table: tsdata_gases
     * Records 10 Hz time series of N2O, CO from LGR analyzer & CO2, CH4, H2O 
       from Picarro analyzer
-* Move columns from 'stats5_soil/stats30_soil' to 'stats5/stats30': dielectric 
-  value, temperature, and volumetric water content from each of the five soil 
-  moisture probes
+* Move columns from **stats5_soil/stats30_soil** to **stats5/stats30**: 
+  dielectric value, temperature, and volumetric water content from each of the 
+  five soil moisture probes
 * Rename data tables:
     * stats5_soil -> stats5_hfp
     * stats30_soil -> stats30_hfp
-* Remove column from 'site_info' table: SENSOR_DEC_5TM
-* Rename columns in 'site_info' table:
+* Remove column from **site_info** table: SENSOR_DEC_5TM
+* Rename columns in **site_info** table:
     * SENSOR_DEC_6RAD -> Dec_6rad_installed
     * SENSOR_LGR_N2OCO -> LGR_n2o_co_installed
     * SENSOR_PIC_CO2CH4 -> Pic_co2_ch4_installed
@@ -157,18 +157,18 @@ Consult the reference sheet `wiring_details.ods` for details.
 ### Data Table Changes
 
 * NEW data tables
-    * site_info
-        * Includes sonic_azimuth, RunSig, and ProgSig, moved from 'site_daily'
+    * **site_info**
+        * Includes sonic_azimuth, RunSig, and ProgSig, moved from **site_daily**
         * Also contains site-specific metadata like clock offset from UTC,
           sensor sensitivity values, and flags indicating presence of auxilary
           instruments
-    * stats5_soil, stats30_soil
-        * For each probe measure: 'epsilon', dielectric permittivity;
-          'T', soil temperature; and 'VWC', volumetric water content calculated
+    * **stats5_soil/stats30_soil**
+        * For each probe measure: **epsilon**, dielectric permittivity;
+          **T**, soil temperature; and **VWC**, volumetric water content calculated
           using the Topp equation
         * If soil heat flux plates are present, then soil heat flux and current
           sensitivity values
-    * tsdata_co2_ch4, stats5_co2_ch4, stats30_co2_ch4
+    * **tsdata_co2_ch4**, **stats5_co2_ch4**, **stats30_co2_ch4**
         * Analagous to tsdata_n2o_co, stats5_n2o_co, stats30_n2o_co
         * 5- and 30-min tables have mean and standard deviation of each scalar
         * Has "uptime" value too, which is # of non-NAN values over # scans
@@ -226,7 +226,7 @@ Consult the reference sheet `wiring_details.ods` for details.
 
 ### Data Table Changes
 
-* NEW data tables 'stats5_6rad' and 'stats30_6rad' for Decagon radiometers
+* NEW data tables **stats5_6rad** and **stats30_6rad** for Decagon radiometers
 
 ### Other Changes
 
@@ -328,7 +328,7 @@ This vesion was manually (imperfectly) merged against **20120215_CFNT**.
     * `longitude_b`: minutes -> minutesE
     * `magnetic_variation`: unitless -> degreesEofN
     * `diag_sonic`: arb -> bitmap
-    * 'diag_irga`: arb -> bitmap
+    * `diag_irga`: arb -> bitmap
 * Modify 5- & 30-min data tables:
     * Remove columns: Tc_Std, CO2_ppm_Std, H2O_g_kg_Std, hmp_uptime, Met1_uptime
     * Rename `wnd_dir_compass` to `rslt_wnd_dir` and move upward one column
