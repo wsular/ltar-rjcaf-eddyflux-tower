@@ -1,6 +1,59 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20120810_LIND
+-------------
+
+### Enhancements
+
+* Add support for measuring H2O from Picarro CH4/CO2/H2O analyzer on DIFF 13
+* Filter null values ("NAN") from data recorded to 'stats5_6rad/stats30_6rad'
+* Auxilary sensors 6-band radiometer (Decagon) and soil heat flux plate
+  (Huskeflux) are now set on/off automatically based on site (logger S/N)
+
+### Wiring Changes
+
+* Optional Los Gatos Analyzer N2O/CO move from DF 10/11 to DF 8/9 respectively
+* RESERVED FUTURE Optional Los Gatos Analyzer H2O input on DF 10
+* Optional Picarro Analyzer CO2/CH4 move from DF 12/13 to 11/12 respectively
+* NEW Optional Picarro Analyser H2O input on DF 13
+
+### Data Table Changes
+
+* Remove data tables: 
+    * tsdata_n2o_co
+    * stats5_n2o_co
+    * stats30_n2o_co
+    * tsdata_co2_ch4
+    * stats5_co2_ch4
+    * stats30_co2_ch4
+* Create data table: tsdata_gases
+    * Records 10 Hz time series of N2O, CO from LGR analyzer & CO2, CH4, H2O 
+      from Picarro analyzer
+* Move columns from 'stats5_soil/stats30_soil' to 'stats5/stats30': dielectric 
+  value, temperature, and volumetric water content from each of the five soil 
+  moisture probes
+* Rename data tables:
+    * stats5_soil -> stats5_hfp
+    * stats30_soil -> stats30_hfp
+* Remove column from 'site_info' table: SENSOR_DEC_5TM
+* Rename columns in 'site_info' table:
+    * SENSOR_DEC_6RAD -> Dec_6rad_installed
+    * SENSOR_LGR_N2OCO -> LGR_n2o_co_installed
+    * SENSOR_PIC_CO2CH4 -> Pic_co2_ch4_installed
+    * SENSOR_HFP01SC -> hfp_installed
+
+* Units changes
+    * irga_uptime: ratio -> unity
+
+### Other Changes
+
+* Processing for 5- and 30-min data tables is substantially simplified
+    * Processing based on 'min_uptime' values is removed entirely
+    * Data tables are consolidated and inter-scan triggers used instead
+    * No stats created for auxilary trace gas analyzers (LGR, Picarro)
+
+
 20120720_CFNT
 -------------
 
