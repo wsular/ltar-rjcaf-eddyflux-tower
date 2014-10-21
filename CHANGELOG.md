@@ -1,6 +1,24 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20120824_LIND
+-------------
+
+### Data Table Changes
+
+* Within **stats5/stats30**, change dielectric value column names and units
+    * soil_5TM_ID*_epsilon -> soil_5TM_ID*_E
+    * dimensionless -> dimless
+* Add columns to **stats5_hfp/stats30_hfp**: hfp1_samples_Tot, hfp2_samples_Tot,
+  tblcalls_Tot
+* Add columns to **stats5_6rad/stats30_6rad**: tblcalls_Tot
+
+### Other Changes
+
+* Move soil heat flux plate to an independent secondary scan at 1/4 Hz
+* Reduce other slow scan buffer from 2 -> 1 min
+
+
 20120810_LIND
 -------------
 

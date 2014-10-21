@@ -8,6 +8,11 @@
 '   meteorological statistics are produced in five and thirty minute intervals. 
 ' 
 'Version history
+' XXXX_20120824.CR3
+'   - reduced slow scan buffer to 1min again
+'   - renamed soil_5TM_ID*_epsilon => soil_5TM_ID*_E; change dimensionless=>dimless
+'   - relocated soil heat flux plate code into its own slow scan @ 1/4 Hz; increased
+'     running average time 10->20s to compensate for less points in average
 ' XXXX_20120810.CR3
 '   - merged los gatos n2o/co and picarro ch4/co2 (& any future gases) fast data into one
 '      table; removed stats tables entirely
@@ -22,39 +27,7 @@
 ' 	- changed cal start from 10sec to 2 min after hour to facilitate data processing
 '   - increased hfp cal interval from 2 to 3 hours
 '   - increased slow (1hz) scan buffer from 1 to 2 minutes
-' XXXX_20120711.CR3
-'   - added calibration constants for new site near Moscow Mtn outside Moscow, ID
-'   - except for soil moisture probes, all auxilary sensors deactivated
-'   - increased scan buffer for slow scan from 3->60sec; also made a constant
-' XXXX_20120705.CR3
-'   - moved calls to soil table below heat flux plate code
-'   - added else statements to place NANs in soil table if either sensor not used
-'   - changed optional sensor config from n2o deployed at CFNT to LIND+heat flux plate & dec_5TM
-'   - verified heat flux calibration routine works OK
-' XXXX_20120627.CR3 
-'   - integrated finished, deactivated los gatos code from LIND_20120601.CR3
-'   - added analogous code for recording Picarro co2/ch4 analyzer
-'   - removed base sensors from conditional statements
-'   - includes all site-specific cal. constants (NRlite,PAR,HFP,SITE_PRESS,etc) and now
-'     selects appropriate set based on serial number of data logger
-'   - revised mult/offset for 034B wind speed from 0.799/0.2811 to 0.7989/0.28
-'   - added conditional to only apply NRLite correction when U > 5 m/s
-'   - added soil moisture probes + heat flux plate code
-'   - (!) changed wiring details for 034B wind vane (SE 11 -> SE 1)
-'   - removed remaining unused legacy code
-'   - double-checked all table intervals & retrievals for 5 vs 30 consistency
-' CFNT_20120427.CR3 [pto]
-'   - removed history beyond last entry
-'   - finished adding code for 6band net radiometers
-'   - disabled Los Gatos instrument code
-'   - verified cal. constants are correct
-' CFNT_20120420.CR3 [pto]
-'   - reintroduced Los Gatos instrument, cleaned up its namespace, added *_extra tables
-'   - respecified all integration times to a constant, INTEG (merged in A_INTEG)
-'   - implemented input constants for GPS, LGR,
-'   - moved paneltemp measurement from 10hz to slow scan
-'   - set everything to short integration time (250)
-
+'  ...prior entries removed to minimize file size
 
 '========================================================================================
 '================================  USER-EDITABLE VALUES  ================================
@@ -96,13 +69,15 @@ Const HFP_CAL_INTERVAL = 3*60*60      'frequency of cal. interval, seconds
 '----- PROGRAM OPERATION CONSTANTS -----
 Const FAST_INTV = 100     'length of primary scan interval, milliseconds
 Const SLOW_INTV = 1       'length of secondary scan interval, seconds
+Const SHFP_INTV = 4       'length of heat flux plate scan interval, seconds
 Const STAT_OUT_5 = 5   	  'stats output interval #1, minutes
 Const STAT_OUT_30 = 30		  'stats output interval #2, minutes; use multiple of STAT_INT1
 Const DAILY_MEDNUM = 480  '# of values to include in median for daily stats
 Const SDM_PER = 30         'default SDM clock speed
 Const INTEG = 250          'analog measurement integration time (250/_50hz/_60hz)
 Const FAST_BUFFER_SIZE = 600  '= 60sec = 1min buffer
-Const SLOW_BUFFER_SIZE = 120  '= 2min buffer
+Const SLOW_BUFFER_SIZE = 60  '= 1min buffer
+Const SHFP_BUFFER_SIZE = 24  '= 2min buffer
 Const NMBR_WND_SAMPLES = 3000/FAST_INTV  '#pts to compute 3sec mean horizontal wind
 
 '----- BASE SENSORS ANALOG INPUT MAP ------ 
@@ -185,7 +160,7 @@ Const LAB2_LI190_SENS    = 6.5
 Const LAB2_SENSOR_6RAD   = False
 Const LAB2_SENSOR_HFP    = False
 
-Const LAB3_SERIAL_NO     = 0
+Const LAB3_SERIAL_NO     = 6506
 Const LAB3_CSAT_AZIMUTH  = 0
 Const LAB3_NRLITE_SENS   = 0
 Const LAB3_LI190_SENS    = 0
@@ -300,7 +275,7 @@ Dim irga_disable_f As Boolean               'TRUE when EC150 sends bad data.
 Dim cov_array_sonic(1,4)                   'used to hold input data for cov instructions 
 Dim cov_array_cs(3,4)  
 
-Public etcvar(4)
+Dim etcvar(4)
 Alias etcvar(1)  = divisor                  'used to find molar mixing ratio.
 Alias etcvar(2)  = rho_d_mean               'Density of dry air used in WPL [kg / m^3].
 Alias etcvar(3)  = sigma_wpl                'density of water vapor / density of dry air.
@@ -453,36 +428,36 @@ Units nmbr_clock_change = samples
 '**********  Decagon 5TM soil moisture/temp **********
 ' Required so soil table can record NAN if probes are not used.
 Public fiveTM(15)
-Alias fiveTM(1)  = soil_5TM_ID5_epsilon
+Alias fiveTM(1)  = soil_5TM_ID5_E
 Alias fiveTM(2)  = soil_5TM_ID5_T
 Alias fiveTM(3)  = soil_5TM_ID5_VWC
-Alias fiveTM(4)  = soil_5TM_ID6_epsilon
+Alias fiveTM(4)  = soil_5TM_ID6_E
 Alias fiveTM(5)  = soil_5TM_ID6_T
 Alias fiveTM(6)  = soil_5TM_ID6_VWC
-Alias fiveTM(7)  = soil_5TM_ID7_epsilon
+Alias fiveTM(7)  = soil_5TM_ID7_E
 Alias fiveTM(8)  = soil_5TM_ID7_T
 Alias fiveTM(9)  = soil_5TM_ID7_VWC
-Alias fiveTM(10) = soil_5TM_ID8_epsilon
+Alias fiveTM(10) = soil_5TM_ID8_E
 Alias fiveTM(11) = soil_5TM_ID8_T
 Alias fiveTM(12) = soil_5TM_ID8_VWC
-Alias fiveTM(13) = soil_5TM_ID9_epsilon
+Alias fiveTM(13) = soil_5TM_ID9_E
 Alias fiveTM(14) = soil_5TM_ID9_T
 Alias fiveTM(15) = soil_5TM_ID9_VWC
-Units soil_5TM_ID5_epsilon = dimensionless
-Units soil_5TM_ID5_T       = C
-Units soil_5TM_ID5_VWC     = v/v
-Units soil_5TM_ID6_epsilon = dimensionless
-Units soil_5TM_ID6_T       = C
-Units soil_5TM_ID6_VWC     = v/v
-Units soil_5TM_ID7_epsilon = dimensionless
-Units soil_5TM_ID7_T       = C
-Units soil_5TM_ID7_VWC     = v/v
-Units soil_5TM_ID8_epsilon = dimensionless
-Units soil_5TM_ID8_T       = C
-Units soil_5TM_ID8_VWC     = v/v
-Units soil_5TM_ID9_epsilon = dimensionless
-Units soil_5TM_ID9_T       = C
-Units soil_5TM_ID9_VWC     = v/v
+Units soil_5TM_ID5_E   = dimless
+Units soil_5TM_ID5_T   = C
+Units soil_5TM_ID5_VWC = v/v
+Units soil_5TM_ID6_E   = dimless
+Units soil_5TM_ID6_T   = C
+Units soil_5TM_ID6_VWC = v/v
+Units soil_5TM_ID7_E   = dimless
+Units soil_5TM_ID7_T   = C
+Units soil_5TM_ID7_VWC = v/v
+Units soil_5TM_ID8_E   = dimless
+Units soil_5TM_ID8_T   = C
+Units soil_5TM_ID8_VWC = v/v
+Units soil_5TM_ID9_E   = dimless
+Units soil_5TM_ID9_T   = C
+Units soil_5TM_ID9_VWC = v/v
 
 
 '**********  HFP01SC heat flux plate  **********
@@ -497,7 +472,7 @@ Units soil_hfp1_sensitivity = W/m^2/mV
 Units soil_hfp2_sensitivity = W/m^2/mV
 Public hfp_isCalibrating As Boolean
 
-Const HFP_CAL_RUNAVG = 10/SLOW_INTV   'use 10 sec running averages
+Const HFP_CAL_RUNAVG = 20/SHFP_INTV   'use 20 sec running averages
 Const HFP_CAL_T_START = 120            'starting time into cal. interval, seconds
 Const HFP_CAL_T_HEATON = HFP_CAL_T_START + 20
 Const HFP_CAL_T_END = HFP_CAL_T_START + 190
@@ -816,19 +791,19 @@ DataTable (stats5,TRUE,-1)
   Sample(1,Met1_rslt_wnd_dir,FP2)
   Sample(1,Met1_std_wnd_dir,FP2)
   Totalize(1,Rain_mm,FP2,Rain_mm=NAN)
-  Average(1,soil_5TM_ID5_epsilon,IEEE4,soil_5TM_ID5_epsilon=NAN)
+  Average(1,soil_5TM_ID5_E,IEEE4,soil_5TM_ID5_E=NAN)
   Average(1,soil_5TM_ID5_T,FP2,soil_5TM_ID5_T=NAN)
   Average(1,soil_5TM_ID5_VWC,FP2,soil_5TM_ID5_VWC=NAN)
-  Average(1,soil_5TM_ID6_epsilon,IEEE4,soil_5TM_ID6_epsilon=NAN)
+  Average(1,soil_5TM_ID6_E,IEEE4,soil_5TM_ID6_E=NAN)
   Average(1,soil_5TM_ID6_T,FP2,soil_5TM_ID6_T=NAN)
   Average(1,soil_5TM_ID6_VWC,FP2,soil_5TM_ID6_VWC=NAN)
-  Average(1,soil_5TM_ID7_epsilon,IEEE4,soil_5TM_ID7_epsilon=NAN)
+  Average(1,soil_5TM_ID7_E,IEEE4,soil_5TM_ID7_E=NAN)
   Average(1,soil_5TM_ID7_T,FP2,soil_5TM_ID7_T=NAN)
   Average(1,soil_5TM_ID7_VWC,FP2,soil_5TM_ID7_VWC=NAN)
-  Average(1,soil_5TM_ID8_epsilon,IEEE4,soil_5TM_ID8_epsilon=NAN)
+  Average(1,soil_5TM_ID8_E,IEEE4,soil_5TM_ID8_E=NAN)
   Average(1,soil_5TM_ID8_T,FP2,soil_5TM_ID8_T=NAN)
   Average(1,soil_5TM_ID8_VWC,FP2,soil_5TM_ID8_VWC=NAN)
-  Average(1,soil_5TM_ID9_epsilon,IEEE4,soil_5TM_ID9_epsilon=NAN)
+  Average(1,soil_5TM_ID9_E,IEEE4,soil_5TM_ID9_E=NAN)
   Average(1,soil_5TM_ID9_T,FP2,soil_5TM_ID9_T=NAN)
   Average(1,soil_5TM_ID9_VWC,FP2,soil_5TM_ID9_VWC=NAN)
   Average (1,panel_tmpr,FP2,(panel_tmpr=NAN))
@@ -891,19 +866,19 @@ DataTable (stats30,TRUE,-1)
   Sample(1,Met1_rslt_wnd_dir,FP2)
   Sample(1,Met1_std_wnd_dir,FP2)
   Totalize(1,Rain_mm,FP2,Rain_mm=NAN)
-  Average(1,soil_5TM_ID5_epsilon,IEEE4,soil_5TM_ID5_epsilon=NAN)
+  Average(1,soil_5TM_ID5_E,IEEE4,soil_5TM_ID5_E=NAN)
   Average(1,soil_5TM_ID5_T,FP2,soil_5TM_ID5_T=NAN)
   Average(1,soil_5TM_ID5_VWC,FP2,soil_5TM_ID5_VWC=NAN)
-  Average(1,soil_5TM_ID6_epsilon,IEEE4,soil_5TM_ID6_epsilon=NAN)
+  Average(1,soil_5TM_ID6_E,IEEE4,soil_5TM_ID6_E=NAN)
   Average(1,soil_5TM_ID6_T,FP2,soil_5TM_ID6_T=NAN)
   Average(1,soil_5TM_ID6_VWC,FP2,soil_5TM_ID6_VWC=NAN)
-  Average(1,soil_5TM_ID7_epsilon,IEEE4,soil_5TM_ID7_epsilon=NAN)
+  Average(1,soil_5TM_ID7_E,IEEE4,soil_5TM_ID7_E=NAN)
   Average(1,soil_5TM_ID7_T,FP2,soil_5TM_ID7_T=NAN)
   Average(1,soil_5TM_ID7_VWC,FP2,soil_5TM_ID7_VWC=NAN)
-  Average(1,soil_5TM_ID8_epsilon,IEEE4,soil_5TM_ID8_epsilon=NAN)
+  Average(1,soil_5TM_ID8_E,IEEE4,soil_5TM_ID8_E=NAN)
   Average(1,soil_5TM_ID8_T,FP2,soil_5TM_ID8_T=NAN)
   Average(1,soil_5TM_ID8_VWC,FP2,soil_5TM_ID8_VWC=NAN)
-  Average(1,soil_5TM_ID9_epsilon,IEEE4,soil_5TM_ID9_epsilon=NAN)
+  Average(1,soil_5TM_ID9_E,IEEE4,soil_5TM_ID9_E=NAN)
   Average(1,soil_5TM_ID9_T,FP2,soil_5TM_ID9_T=NAN)
   Average(1,soil_5TM_ID9_VWC,FP2,soil_5TM_ID9_VWC=NAN)
   Average (1,panel_tmpr,FP2,(panel_tmpr=NAN))
@@ -978,6 +953,12 @@ EndTable
     Sample (1,soil_hfp1_sensitivity,IEEE4)
     Average(1,soil_hfp2_heat_flux,  IEEE4,hfp_isCalibrating OR soil_hfp2_heat_flux = NAN)
     Sample (1,soil_hfp2_sensitivity,IEEE4)
+    Totalize (1,n,UINT2,hfp_isCalibrating OR soil_hfp1_heat_flux = NAN)
+      FieldNames("hfp1_samples_Tot")
+    Totalize (1,n,UINT2,hfp_isCalibrating OR soil_hfp2_heat_flux = NAN)
+      FieldNames("hfp2_samples_Tot")
+    Totalize (1,n,UINT2,FALSE)
+      FieldNames("tblcalls_Tot")
   EndTable
 
   DataTable(stats30_hfp,TRUE,-1)
@@ -987,6 +968,12 @@ EndTable
     Sample (1,soil_hfp1_sensitivity,IEEE4)
     Average(1,soil_hfp2_heat_flux,  IEEE4,hfp_isCalibrating OR soil_hfp2_heat_flux = NAN)
     Sample (1,soil_hfp2_sensitivity,IEEE4)
+    Totalize (1,n,UINT2,hfp_isCalibrating OR soil_hfp1_heat_flux = NAN)
+      FieldNames("hfp1_samples_Tot")
+    Totalize (1,n,UINT2,hfp_isCalibrating OR soil_hfp2_heat_flux = NAN)
+      FieldNames("hfp2_samples_Tot")
+    Totalize (1,n,UINT2,FALSE)
+      FieldNames("tblcalls_Tot")
   EndTable
 #EndIf
 
@@ -1020,6 +1007,8 @@ DataTable (stats5_6rad,sensor_dec_6rad,-1)
   Average(1,dec_6rad_dnlook(4),IEEE4,dec_6rad_dnlook(4)=nan)
   Average(1,dec_6rad_dnlook(5),IEEE4,dec_6rad_dnlook(5)=nan)
   Average(1,dec_6rad_dnlook(6),IEEE4,dec_6rad_dnlook(6)=nan)
+  Totalize(1,n,UINT2,FALSE)
+    FieldNames("tblcalls_Tot")
 EndTable
 
 DataTable (stats30_6rad,sensor_dec_6rad,-1)
@@ -1037,6 +1026,8 @@ DataTable (stats30_6rad,sensor_dec_6rad,-1)
   Average(1,dec_6rad_dnlook(4),IEEE4,dec_6rad_dnlook(4)=nan)
   Average(1,dec_6rad_dnlook(5),IEEE4,dec_6rad_dnlook(5)=nan)
   Average(1,dec_6rad_dnlook(6),IEEE4,dec_6rad_dnlook(6)=nan)
+  Totalize(1,n,UINT2,FALSE)
+    FieldNames("tblcalls_Tot")
 EndTable
 
 '========================================================================================
@@ -1104,7 +1095,7 @@ BeginProg
     If ((WindDir >= 360) OR (WindDir < 0)) Then (WindDir = 0)
     PulseCount(WS_ms,1,oh34B_WS_PULSE,2,1,oh34B_WS_MULT,oh34B_WS_OFFSET)
     If (WS_ms <= oh34B_WS_OFFSET) Then (WS_ms = 0)
-
+    
     '== TE525 rain gage acquisition
     PulseCount(Rain_mm,1,TE525_PULSE,2,0,TE525_MULT,TE525_OFFSET)
     
@@ -1121,8 +1112,6 @@ BeginProg
     #If ( SENSOR_LGR_N2OCO = TRUE ) Then
       VoltDiff(lgr_n2o,1,mv5000,LGR_N2O_DIFF,TRUE,0,INTEG,LGR_N2O_MULT,LGR_N2O_OFFSET)
       VoltDiff(lgr_co,1,mv5000,LGR_CO_DIFF,TRUE,0,INTEG,LGR_CO_MULT,LGR_CO_OFFSET)
-    #Else
-      Move(lgrn2oco(1),2,NAN,1)
     #EndIf
 
     '== optional Picarro CO2/CH4 acquisition
@@ -1130,8 +1119,6 @@ BeginProg
       VoltDiff(pic_co2,1,mv5000,PIC_CO2_DIFF,TRUE,0,INTEG,PIC_CO2_MULT,PIC_CO2_OFFSET)
       VoltDiff(pic_ch4,1,mv5000,PIC_CH4_DIFF,TRUE,0,INTEG,PIC_CH4_MULT,PIC_CH4_OFFSET)
       VoltDiff(pic_h2o,1,mv5000,PIC_H2O_DIFF,TRUE,0,INTEG,PIC_H2O_MULT,PIC_H2O_OFFSET)
-    #Else
-      Move(picco2ch4(1),3,NAN,1)
     #EndIf
     
     '== record if either optional trace gas analyzer present
@@ -1320,18 +1307,18 @@ BeginProg
     Else
       Rn = Rn_meas
     EndIf
-    
+
       '== Decagon soil moisture probes
-    SDI12Recorder(soil_5TM_ID5_epsilon,SDI_COM_ADDR,DEC_5TM_ID5_SDI_ADDR,"M!",1.0,0)
-    SDI12Recorder(soil_5TM_ID6_epsilon,SDI_COM_ADDR,DEC_5TM_ID6_SDI_ADDR,"M!",1.0,0)
-    SDI12Recorder(soil_5TM_ID7_epsilon,SDI_COM_ADDR,DEC_5TM_ID7_SDI_ADDR,"M!",1.0,0)
-    SDI12Recorder(soil_5TM_ID8_epsilon,SDI_COM_ADDR,DEC_5TM_ID8_SDI_ADDR,"M!",1.0,0)
-    SDI12Recorder(soil_5TM_ID9_epsilon,SDI_COM_ADDR,DEC_5TM_ID9_SDI_ADDR,"M!",1.0,0)
-    soil_5TM_ID5_VWC = Topp_equation(soil_5TM_ID5_epsilon)
-    soil_5TM_ID6_VWC = Topp_equation(soil_5TM_ID6_epsilon)
-    soil_5TM_ID7_VWC = Topp_equation(soil_5TM_ID7_epsilon)
-    soil_5TM_ID8_VWC = Topp_equation(soil_5TM_ID8_epsilon)
-    soil_5TM_ID9_VWC = Topp_equation(soil_5TM_ID9_epsilon)
+    SDI12Recorder(soil_5TM_ID5_E,SDI_COM_ADDR,DEC_5TM_ID5_SDI_ADDR,"M!",1.0,0)
+    SDI12Recorder(soil_5TM_ID6_E,SDI_COM_ADDR,DEC_5TM_ID6_SDI_ADDR,"M!",1.0,0)
+    SDI12Recorder(soil_5TM_ID7_E,SDI_COM_ADDR,DEC_5TM_ID7_SDI_ADDR,"M!",1.0,0)
+    SDI12Recorder(soil_5TM_ID8_E,SDI_COM_ADDR,DEC_5TM_ID8_SDI_ADDR,"M!",1.0,0)
+    SDI12Recorder(soil_5TM_ID9_E,SDI_COM_ADDR,DEC_5TM_ID9_SDI_ADDR,"M!",1.0,0)
+    soil_5TM_ID5_VWC = Topp_equation(soil_5TM_ID5_E)
+    soil_5TM_ID6_VWC = Topp_equation(soil_5TM_ID6_E)
+    soil_5TM_ID7_VWC = Topp_equation(soil_5TM_ID7_E)
+    soil_5TM_ID8_VWC = Topp_equation(soil_5TM_ID8_E)
+    soil_5TM_ID9_VWC = Topp_equation(soil_5TM_ID9_E)
     
     '== LI190SB 
     VoltDiff (PAR_mV,1,mV20,LI190_DIFF,True,0,INTEG,1,0) 'MULT/OFF applied below
@@ -1349,9 +1336,15 @@ BeginProg
       CallTable(stats5_6rad)
       CallTable(stats30_6rad)
     EndIf
-    
-    '== optional Huskeflux heat flux plate
-    #If ( SENSOR_HFP01SC = TRUE ) Then
+        
+    CallTable(site_daily)
+    slowsequence_finished_f = TRUE
+  NextScan
+  
+  '== optional Huskeflux heat flux plate
+  #If ( SENSOR_HFP01SC = TRUE ) Then
+    SlowSequence
+    Scan (SHFP_INTV,Sec,SHFP_BUFFER_SIZE,0)
       VoltDiff(hfp1_mVs,1,mv200,HFP_1_SGNL_DIFF,TRUE,0,INTEG,1,0)    'millivolts
       VoltDiff(hfp2_mVs,1,mv200,HFP_2_SGNL_DIFF,TRUE,0,INTEG,1,0)
       VoltSe(hfp1_Vh,1,mv5000,HFP_1_HEAT_SE,TRUE,0,INTEG,(1/1000),0)
@@ -1400,9 +1393,6 @@ BeginProg
       
       CallTable(stats5_hfp)
       CallTable(stats30_hfp)
-    #EndIf
-
-    CallTable(site_daily)
-    slowsequence_finished_f = TRUE
-  NextScan
+    NextScan
+  #EndIf
 EndProg
