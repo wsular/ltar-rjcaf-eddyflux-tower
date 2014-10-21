@@ -1,6 +1,19 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20120827_XXXX
+-------------
+
+### Data Table Changes
+
+* Deactivated globally: **stats5_hfp/stats30_hfp**
+* Split **tsdata_gases** into **tsdata_lgrn2oco** and **tsdata_picco2ch4**
+
+### Other Changes
+
+* Globally deactivate soil heat flux plate
+
+
 20120824_LIND
 -------------
 

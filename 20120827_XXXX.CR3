@@ -8,6 +8,10 @@
 '   meteorological statistics are produced in five and thirty minute intervals. 
 ' 
 'Version history
+' 20120827_CFNT.CR3 / *_CFCT.CR3 / *_MMTN.CR3
+'   - deactivated HFP01SC; left Picarro CO2/CH4 inactive
+'   - re-separated Los Gatos & Picarro data tables since no stats are maintained now and
+'     total # of tables is < 1/2 of max permitted
 ' XXXX_20120824.CR3
 '   - reduced slow scan buffer to 1min again
 '   - renamed soil_5TM_ID*_epsilon => soil_5TM_ID*_E; change dimensionless=>dimless
@@ -42,7 +46,7 @@ Const UTC_OFFSET = -8    'offset from UTC as +/- hours; PST = -8
 'Set values to TRUE if instrument is at site; FALSE if not
 Const SENSOR_LGR_N2OCO   = False  '                Los Gatos N2O/CO analyzer
 Const SENSOR_PIC_CO2CH4  = False  'G2301-f         Picarro CO2/CH4/H2O analyzer
-Const SENSOR_HFP01SC     = True  'HFP01SC         soil heat flux plates
+Const SENSOR_HFP01SC     = False  'HFP01SC         soil heat flux plates
 
 '----- OPTIONAL SENSORS ANALOG INPUT MAPS -----
 'Confirm the analog output of these sensors before using
@@ -130,42 +134,36 @@ Const CFNT_CSAT_AZIMUTH  = 186
 Const CFNT_NRLITE_SENS   = 13.3
 Const CFNT_LI190_SENS    = 6.26
 Const CFNT_SENSOR_6RAD   = True
-Const CFNT_SENSOR_HFP    = False
 
 Const LIND_SERIAL_NO     = 6035
 Const LIND_CSAT_AZIMUTH  = 188
 Const LIND_NRLITE_SENS   = 12.6
 Const LIND_LI190_SENS    = 6.84
 Const LIND_SENSOR_6RAD   = False
-Const LIND_SENSOR_HFP    = False
 
 Const CFCT_SERIAL_NO     = 6503
 Const CFCT_CSAT_AZIMUTH  = 184+15
 Const CFCT_NRLITE_SENS   = 12.2
 Const CFCT_LI190_SENS    = 6.18
 Const CFCT_SENSOR_6RAD   = True
-Const CFCT_SENSOR_HFP    = False
 
 Const MMTN_SERIAL_NO     = 6504
 Const MMTN_CSAT_AZIMUTH  = 180
 Const MMTN_NRLITE_SENS   = 12.2
 Const MMTN_LI190_SENS    = 6.69
 Const MMTN_SENSOR_6RAD   = False
-Const MMTN_SENSOR_HFP    = False
 
 Const LAB2_SERIAL_NO     = 6505
 Const LAB2_CSAT_AZIMUTH  = 0
 Const LAB2_NRLITE_SENS   = 12.0
 Const LAB2_LI190_SENS    = 6.5
 Const LAB2_SENSOR_6RAD   = False
-Const LAB2_SENSOR_HFP    = False
 
 Const LAB3_SERIAL_NO     = 6506
 Const LAB3_CSAT_AZIMUTH  = 0
 Const LAB3_NRLITE_SENS   = 0
 Const LAB3_LI190_SENS    = 0
 Const LAB3_SENSOR_6RAD   = False
-Const LAB3_SENSOR_HFP    = False
 
 '----- FIXED CALIBRATION VALUES ------
 Const HMP_T_MULT       = (60 - -80)/1000    '-80 to +60 *C over 1V = 0.14
@@ -978,13 +976,21 @@ EndTable
 #EndIf
 
 
-#If ( SENSOR_LGR_N2OCO=TRUE OR SENSOR_PIC_CO2CH4=TRUE ) Then
-  DataTable (tsdata_gases,TRUE,-1)
+#If ( SENSOR_LGR_N2OCO=TRUE ) Then
+  DataTable (tsdata_lgrn2oco,TRUE,-1)
     DataInterval (0,FAST_INTV,mSec,100)
     CardOut (0,-1)
     Sample(1,lgr_n2o,IEEE4)
     Sample(1,lgr_co,IEEE4)
-  
+    'Sample(1,lgr_h2o,IEEE4)
+  EndTable
+#EndIf
+
+
+#If ( SENSOR_PIC_CO2CH4=TRUE ) Then
+  DataTable (tsdata_picco2ch4,TRUE,-1)
+    DataInterval (0,FAST_INTV,msec,100)
+    CardOut(0,-1)
     Sample (1,pic_co2,IEEE4)
     Sample (1,pic_ch4,IEEE4)
     Sample (1,pic_h2o,IEEE4)
@@ -1112,6 +1118,8 @@ BeginProg
     #If ( SENSOR_LGR_N2OCO = TRUE ) Then
       VoltDiff(lgr_n2o,1,mv5000,LGR_N2O_DIFF,TRUE,0,INTEG,LGR_N2O_MULT,LGR_N2O_OFFSET)
       VoltDiff(lgr_co,1,mv5000,LGR_CO_DIFF,TRUE,0,INTEG,LGR_CO_MULT,LGR_CO_OFFSET)
+      'VoltDiff(lgr_h2o,1,mv5000,LGR_H2O_DIFF,TRUE,0,INTEG,LGR_H2O_MULT,LGR_H2O_OFFSET)
+      CallTable(tsdata_lgrn2oco)
     #EndIf
 
     '== optional Picarro CO2/CH4 acquisition
@@ -1119,11 +1127,7 @@ BeginProg
       VoltDiff(pic_co2,1,mv5000,PIC_CO2_DIFF,TRUE,0,INTEG,PIC_CO2_MULT,PIC_CO2_OFFSET)
       VoltDiff(pic_ch4,1,mv5000,PIC_CH4_DIFF,TRUE,0,INTEG,PIC_CH4_MULT,PIC_CH4_OFFSET)
       VoltDiff(pic_h2o,1,mv5000,PIC_H2O_DIFF,TRUE,0,INTEG,PIC_H2O_MULT,PIC_H2O_OFFSET)
-    #EndIf
-    
-    '== record if either optional trace gas analyzer present
-    #If ( SENSOR_LGR_N2OCO=TRUE OR SENSOR_PIC_CO2CH4=TRUE ) Then
-      CallTable(tsdata_gases)
+      CallTable(tsdata_picco2ch4)
     #EndIf
 
     If ( scan_count >= OFFSET ) Then  'IF HAVE ENUF SCANS TO DO STATS,
