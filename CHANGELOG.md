@@ -153,6 +153,24 @@ voltage signals for N2O, CO and H2O.
     * No stats created for auxilary trace gas analyzers (LGR, Picarro)
 
 
+20120727_LIND
+-------------
+
+> **This version is a stub branch of 20120220_CFNT**
+
+### Data Table Changes
+
+* Increase size of 'site_info' table 1 -> 20 to allow to unintended restarts
+
+### Other Changes
+
+* Update auxilary sensors to match site
+    * Deactivate Decagon 6-band radiometers    
+    * Deactivate Los Gatos N2O/CO
+    * Activate soil heat flux plate
+* Add duplicate statements to end soil heat flux calibration interval
+
+
 20120720_CFNT
 -------------
 
@@ -301,7 +319,7 @@ Consult the reference sheet `wiring_details.ods` for details.
 * Comment out Los Gatos N2O/CO analyzer code
 
 
-20140504_LIND
+20120504_LIND
 -------------
 
 ### Issues Fixed
@@ -442,6 +460,18 @@ This vesion was manually (imperfectly) merged against **20120215_CFNT**.
 * Simplify significantly the evaluation of sonic anemometer diagnostic word
 * Also simplify the evaluation of IRGA diagnostic word
 * Exclude negative values from PAR sensor
+
+
+20120309_CFNT
+-------------
+
+> **This version is a stub branch of 20120224_LIND**
+
+### Issues Fixed
+
+* Correct data table reference; before this fix, since 20120215_CFNT, values
+  from the T/RH probe recorded in 30-min data table were mistakenly duplicates
+  of most recent 5-min period values. 
 
 
 20120224_LIND
@@ -618,6 +648,8 @@ This version diverged from an earlier, unretained draft of **20120215_CFNT**.
 
 20111121_LIND
 -------------
+
+> **This is a stub branch of 20111101_CFNT**
 
 This is the first release deployed at the Lind, WA site.
 
