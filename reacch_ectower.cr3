@@ -7,15 +7,6 @@
 '   to generate near real-time surface fluxes of CO2, latent & sensible heat. Additional 
 '   meteorological statistics are produced in five and thirty minute intervals. 
 ' 
-'Version history
-' 20130123_CFNT.CR3
-'   - activated HFP
-'   - corrected some units
-'   - adjusted scan intervals for slow-response sensors and HFP
-' 20120827_CFNT.CR3 / *_CFCT.CR3 / *_MMTN.CR3
-'   - deactivated HFP01SC; left Picarro CO2/CH4 inactive
-'   - re-separated Los Gatos & Picarro data tables since no stats are maintained now and
-'     total # of tables is < 1/2 of max permitted
 
 '========================================================================================
 '================================  USER-EDITABLE VALUES  ================================
@@ -28,9 +19,9 @@ Const UTC_OFFSET = -8    'offset from UTC as +/- hours; PST = -8
 
 '----- OPTIONAL DEPLOYMENT SENSORS -----
 'Set values to TRUE if instrument is at site; FALSE if not
-Const SENSOR_LGR_N2OCO   = False  '                Los Gatos N2O/CO analyzer
+Const SENSOR_LGR_N2OCO   = True   '                Los Gatos N2O/CO analyzer
 Const SENSOR_PIC_CO2CH4  = False  'G2301-f         Picarro CO2/CH4/H2O analyzer
-Const SENSOR_HFP01SC     = True   'HFP01SC         soil heat flux plates
+Const SENSOR_HFP01SC     = False  'HFP01SC         soil heat flux plates
 
 '----- OPTIONAL SENSORS ANALOG INPUT MAPS -----
 'Confirm the analog output of these sensors before using
@@ -38,8 +29,8 @@ Const LGR_N2O_MULT   = (500 - 0) / 5000  '0-500ppb over 0-5V
 Const LGR_N2O_OFFSET = 0
 Const LGR_CO_MULT    = (500 - 0) / 5000   '0-500ppb over 0-5V
 Const LGR_CO_OFFSET  = 0
-'Const LGR_H2O_MULT   = 'reserved for future use
-'Const LGR_H2O_OFFSET =
+Const LGR_H2O_MULT   = (5000 - 0) / 5000  'assume in mV for now
+Const LGR_H2O_OFFSET = 0
 Const PIC_CO2_MULT   = (800-300)/5000 '300 - 800 ppm over 0-5V
 Const PIC_CO2_OFFSET = 300
 Const PIC_CH4_MULT   = (3.5-1.5)/5000 '1.5 - 3.5 ppm over 0-5V
@@ -56,15 +47,15 @@ Const HFP_CAL_INTERVAL = 3*60*60      'frequency of cal. interval, seconds
 
 '----- PROGRAM OPERATION CONSTANTS -----
 Const FAST_INTV = 100     'length of primary scan interval, milliseconds
-Const SLOW_INTV = 3       'length of secondary scan interval, seconds
+Const SLOW_INTV = 1       'length of secondary scan interval, seconds
 Const SHFP_INTV = 5       'length of heat flux plate scan interval, seconds
 Const STAT_OUT_5 = 5   	  'stats output interval #1, minutes
 Const STAT_OUT_30 = 30		  'stats output interval #2, minutes; use multiple of STAT_INT1
 Const DAILY_MEDNUM = 480  '# of values to include in median for daily stats
 Const SDM_PER = 30         'default SDM clock speed
 Const INTEG = 250          'analog measurement integration time (250/_50hz/_60hz)
-Const FAST_BUFFER_SIZE = 600  '= 60sec = 1min buffer
-Const SLOW_BUFFER_SIZE = 60  '= 1min buffer
+Const FAST_BUFFER_SIZE = 1200  '= 120sec = 2min buffer
+Const SLOW_BUFFER_SIZE = 120  '= 2min buffer
 Const SHFP_BUFFER_SIZE = 24  '= 2min buffer
 Const NMBR_WND_SAMPLES = 3000/FAST_INTV  '#pts to compute 3sec mean horizontal wind
 
@@ -96,7 +87,7 @@ Const HFP_2_HEAT_SE   = 28   '   plate #2                       = D14L
 Const HFP_HEAT_SW12   = 1    'hfp heater power source SW-12V # (1 or 2)
 Const LGR_N2O_DIFF    = 8    'Los Gatos N2O diff input chan #
 Const LGR_CO_DIFF     = 9    'Los Gatos CO diff input chan #
-' 10 is reserved for h2o in the future
+Const LGR_H2O_DIFF    = 10   'Los Gatos H2O diff input chan #
 Const PIC_CO2_DIFF    = 11   'Picarro CO2 diff input chan #
 Const PIC_CH4_DIFF    = 12   'Picarro CH4 diff input chan #
 Const PIC_H2O_DIFF    = 13   'Picarro H2O diff. input chan #
@@ -118,36 +109,42 @@ Const CFNT_CSAT_AZIMUTH  = 186
 Const CFNT_NRLITE_SENS   = 13.3
 Const CFNT_LI190_SENS    = 6.26
 Const CFNT_SENSOR_6RAD   = True
+Const CFNT_SENSOR_SHFP   = True
 
 Const LIND_SERIAL_NO     = 6035
 Const LIND_CSAT_AZIMUTH  = 188
 Const LIND_NRLITE_SENS   = 12.6
 Const LIND_LI190_SENS    = 6.84
 Const LIND_SENSOR_6RAD   = False
+Const LIND_SENSOR_SHFP   = False
 
 Const CFCT_SERIAL_NO     = 6503
 Const CFCT_CSAT_AZIMUTH  = 184+15
 Const CFCT_NRLITE_SENS   = 12.2
 Const CFCT_LI190_SENS    = 6.18
 Const CFCT_SENSOR_6RAD   = True
+Const CFCT_SENSOR_SHFP   = False
 
 Const MMTN_SERIAL_NO     = 6504
 Const MMTN_CSAT_AZIMUTH  = 180
 Const MMTN_NRLITE_SENS   = 12.2
 Const MMTN_LI190_SENS    = 6.69
 Const MMTN_SENSOR_6RAD   = False
+Const MMTN_SENSOR_SHFP   = False
 
 Const LAB2_SERIAL_NO     = 6505
 Const LAB2_CSAT_AZIMUTH  = 0
 Const LAB2_NRLITE_SENS   = 12.0
 Const LAB2_LI190_SENS    = 6.5
 Const LAB2_SENSOR_6RAD   = False
+Const LAB2_SENSOR_SHFP   = False
 
 Const LAB3_SERIAL_NO     = 6506
 Const LAB3_CSAT_AZIMUTH  = 0
-Const LAB3_NRLITE_SENS   = 0
-Const LAB3_LI190_SENS    = 0
+Const LAB3_NRLITE_SENS   = 12.0
+Const LAB3_LI190_SENS    = 6.5
 Const LAB3_SENSOR_6RAD   = False
+Const LAB3_SENSOR_SHFP   = False
 
 '----- FIXED CALIBRATION VALUES ------
 Const HMP_T_MULT       = (60 - -80)/1000    '-80 to +60 *C over 1V = 0.14
@@ -198,6 +195,7 @@ Dim n = {1}
 Units n = samples
 
 Dim sensor_dec_6rad As Boolean        'for flagging 6band radiometer data tables on/off
+Dim sensor_shfp As Boolean            'for flagging shfp-related code on/off
 
 
 '***********  CR3000  ************
@@ -263,7 +261,7 @@ Alias etcvar(2)  = rho_d_mean               'Density of dry air used in WPL [kg 
 Alias etcvar(3)  = sigma_wpl                'density of water vapor / density of dry air.
 Alias etcvar(4)  = Td_tmp
 
-Public results(20)
+Public results(19)
 Alias results(1)  = Ts_absolute       'sonic temp in Kelvin
 Alias results(2)  = Xc                'CO2 mixing ratio
 Alias results(3)  = Xv                'H2O mixing ratio
@@ -271,19 +269,18 @@ Alias results(4)  = L                 'Obukohov length
 Alias results(5)  = Hs                'Sensible heat flux using sonic temperature.
 Alias results(6)  = tau               'Momentum flux.
 Alias results(7)  = u_star            'Friction velocity.
-Alias results(8)  = wnd_dir_compass
-Alias results(9)  = sonic_uptime
-Alias results(10) = Fc_wpl         'Carbon dioxide flux (EC150), with WPL
-Alias results(11) = LE_wpl         'Latent heat flux (EC150), with WPL
-Alias results(12) = Hc             'Sensible heat flux with h2o-corrected sonic temp 
-Alias results(13) = irga_uptime
-Alias results(14) = rho_a_mean
-Alias results(15) = Fc_irga      'Carbon dioxide flux (EC150), without WPL
-Alias results(16) = LE_irga      'Latent heat flux (EC150), without WPL
-Alias results(17) = CO2_wpl_LE   'Carbon dioxide flux (EC150), WPL latent heat flux.
-Alias results(18) = CO2_wpl_H    'Carbon dioxide flux (EC150), WPL sensible heat flux.
-Alias results(19) = H2O_wpl_LE   'Latent heat flux (EC150), WPL latent heat flux.
-Alias results(20) = H2O_wpl_H    'Latent heat flux (EC150), WPL sensible heat flux.
+Alias results(8)  = sonic_uptime
+Alias results(9)  = Fc_wpl         'Carbon dioxide flux (EC150), with WPL
+Alias results(10) = LE_wpl         'Latent heat flux (EC150), with WPL
+Alias results(11) = Hc             'Sensible heat flux with h2o-corrected sonic temp 
+Alias results(12) = irga_uptime
+Alias results(13) = rho_a_mean
+Alias results(14) = Fc_irga      'Carbon dioxide flux (EC150), without WPL
+Alias results(15) = LE_irga      'Latent heat flux (EC150), without WPL
+Alias results(16) = CO2_wpl_LE   'Carbon dioxide flux (EC150), WPL latent heat flux.
+Alias results(17) = CO2_wpl_H    'Carbon dioxide flux (EC150), WPL sensible heat flux.
+Alias results(18) = H2O_wpl_LE   'Latent heat flux (EC150), WPL latent heat flux.
+Alias results(19) = H2O_wpl_H    'Latent heat flux (EC150), WPL sensible heat flux.
 Units Ts_absolute = Kelvin
 Units Xc = ppm
 Units Xv = ppt
@@ -291,7 +288,6 @@ Units L = m
 Units Hs = W/m^2
 Units tau = kg/(m s^2)
 Units u_star = m/s
-Units wnd_dir_compass = degrees
 Units sonic_uptime = unity
 Units Fc_wpl = mg/(m^2 s)
 Units LE_wpl = W/m^2
@@ -485,12 +481,13 @@ Alias hfp_selfcal(8,2) = hfp2_Vh_th        'ref voltage after heating in cal cyc
 
 
 '**********  Los Gatos N2O/CO analyzer  **********
-Public lgrn2oco(2)                          'data variables
+Public lgrn2oco(3)                          'data variables
 Alias lgrn2oco(1) = lgr_n2o
 Alias lgrn2oco(2) = lgr_co
-'reserved for h2o in the future
+Alias lgrn2oco(3) = lgr_h2o
 Units lgr_n2o = ppm
 Units lgr_co = ppm
+Units lgr_h2o = mV
 
 
 '**********  Picarro CO2/CH4 analyzer  **********
@@ -526,7 +523,7 @@ Alias work_stats_out(9) = Uy_Uz_cov
 Alias work_stats_out(10) = Uz_Std
 Alias work_stats_out(11) = wnd_spd          'results of windvector instruction, 4 qntys
 Alias work_stats_out(12) = rslt_wnd_spd
-Alias work_stats_out(13) = wnd_dir_sonic
+Alias work_stats_out(13) = rslt_wnd_dir
 Alias work_stats_out(14) = std_wnd_dir
 Alias work_stats_out(15) = Ts_Avg
 Alias work_stats_out(16) = sonic_samples     'result of first totalize instruction
@@ -576,7 +573,7 @@ Units Uy_Uz_cov = (m/s)^2
 Units Uz_Std = m/s
 Units wnd_spd = m/s
 Units rslt_wnd_spd = m/s
-Units wnd_dir_sonic = degrees
+Units rslt_wnd_dir = degrees
 Units std_wnd_dir = degrees
 Units Ts_Avg = C
 Units CO2_stdev = mg/m^3
@@ -624,7 +621,7 @@ DataTable (work_5min,TRUE,1)
   DataInterval (0,STAT_OUT_5,Min,1)
   
   Covariance (4,cov_array_sonic(1,1),IEEE4,sonic_disable_f,10)
-  WindVector (1,Uy,Ux,IEEE4,sonic_disable_f,0,1,2)
+  WindVector (1,-1*Uy,Ux,IEEE4,sonic_disable_f,0,1,2)
   Average(1,Ts,IEEE4,sonic_disable_f) 
   Totalize (1,n,IEEE4,sonic_disable_f)
     FieldNames("sonic_samples_Tot") 'reqd to prevent name conflict
@@ -659,7 +656,7 @@ DataTable (work_30min,TRUE,1)
   DataInterval (0,STAT_OUT_30,Min,1)
   
   Covariance (4,cov_array_sonic(1,1),IEEE4,sonic_disable_f,10)
-  WindVector (1,Uy,Ux,IEEE4,sonic_disable_f,0,1,2)
+  WindVector (1,-1*Uy,Ux,IEEE4,sonic_disable_f,0,1,2)
   Average(1,Ts,IEEE4,sonic_disable_f) 
   Totalize (1,n,IEEE4,sonic_disable_f)
     FieldNames("sonic_samples_Tot") 'reqd to prevent name conflict
@@ -722,7 +719,7 @@ EndTable
 DataTable (stats5,TRUE,-1)
   DataInterval (0,STAT_OUT_5,Min,10)
   CardOut (0,-1)
-  Sample(1,L,FP2)                       'monin obukhov length, meters
+  Sample(1,L,IEEE4)                     'monin obukhov length, meters
   Sample(1,u_star,FP2)                  'friction velocity, m/s  
   Sample(1,tau,FP2)                     'momemtum flux, kg/(m s^2)
   Sample(1,Fc_wpl,IEEE4)                'density-corrected (WPL) CO2 flux, mg/m3
@@ -737,8 +734,7 @@ DataTable (stats5,TRUE,-1)
     FieldNames("Uz_Std")
   Sample(1,wnd_spd,FP2)                 'mean scalar wind speed, m/s
   Sample(1,rslt_wnd_spd,FP2)            'vector mean wind speed, m/s
-  Sample(1,wnd_dir_compass,FP2)         'mean wind direction rel2 north, degrees
-	  FieldNames("rslt_wnd_dir")
+  Sample(1,rslt_wnd_dir,FP2)         'mean wind direction rel2 north, degrees
   Sample(1,std_wnd_dir,FP2)             'scalar stdev of wind direction, degrees
   Sample (1,sonic_uptime,FP2)
   Sample(1,CO2_ppm_Avg,FP2)
@@ -797,7 +793,7 @@ EndTable
 DataTable (stats30,TRUE,-1)
   DataInterval (0,STAT_OUT_30,Min,10)
   CardOut (0,-1)
-  Sample(1,L,FP2)                       'monin obukhov length, meters
+  Sample(1,L,IEEE4)                     'monin obukhov length, meters
   Sample(1,u_star,FP2)                  'friction velocity, m/s  
   Sample(1,tau,FP2)                     'momemtum flux, kg/(m s^2)
   Sample(1,Fc_wpl,IEEE4)                'density-corrected (WPL) CO2 flux, mg/m3
@@ -812,8 +808,7 @@ DataTable (stats30,TRUE,-1)
     FieldNames("Uz_Std")
   Sample(1,wnd_spd,FP2)                 'mean scalar wind speed, m/s
   Sample(1,rslt_wnd_spd,FP2)            'vector mean wind speed, m/s
-  Sample(1,wnd_dir_compass,FP2)         'mean wind direction rel2 north, degrees
-	  FieldNames("rslt_wnd_dir")
+  Sample(1,rslt_wnd_dir,FP2)         'mean wind direction rel2 north, degrees
   Sample(1,std_wnd_dir,FP2)             'scalar stdev of wind direction, degrees
   Sample (1,sonic_uptime,FP2)
   Sample(1,CO2_ppm_Avg,FP2)
@@ -927,37 +922,37 @@ EndTable
 '========================================================================================
 '===========================  SUPPLEMENTAL OUTPUT DATA TABLES  ==========================
 '========================================================================================
-#If ( SENSOR_HFP01SC = TRUE ) Then
-  DataTable(stats5_hfp,TRUE,-1)
-    DataInterval(0,STAT_OUT_5,min,10)
-    CardOut(0,-1)
-    Average(1,soil_hfp1_heat_flux,  IEEE4,hfp_isCalibrating OR soil_hfp1_heat_flux = NAN)
-    Sample (1,soil_hfp1_sensitivity,IEEE4)
-    Average(1,soil_hfp2_heat_flux,  IEEE4,hfp_isCalibrating OR soil_hfp2_heat_flux = NAN)
-    Sample (1,soil_hfp2_sensitivity,IEEE4)
-    Totalize (1,n,UINT2,hfp_isCalibrating OR soil_hfp1_heat_flux = NAN)
-      FieldNames("hfp1_samples_Tot")
-    Totalize (1,n,UINT2,hfp_isCalibrating OR soil_hfp2_heat_flux = NAN)
-      FieldNames("hfp2_samples_Tot")
-    Totalize (1,n,UINT2,FALSE)
-      FieldNames("tblcalls_Tot")
-  EndTable
-
-  DataTable(stats30_hfp,TRUE,-1)
-    DataInterval(0,STAT_OUT_30,min,10)
-    CardOut(0,-1)
-    Average(1,soil_hfp1_heat_flux,  IEEE4,hfp_isCalibrating OR soil_hfp1_heat_flux = NAN)
-    Sample (1,soil_hfp1_sensitivity,IEEE4)
-    Average(1,soil_hfp2_heat_flux,  IEEE4,hfp_isCalibrating OR soil_hfp2_heat_flux = NAN)
-    Sample (1,soil_hfp2_sensitivity,IEEE4)
-    Totalize (1,n,UINT2,hfp_isCalibrating OR soil_hfp1_heat_flux = NAN)
-      FieldNames("hfp1_samples_Tot")
-    Totalize (1,n,UINT2,hfp_isCalibrating OR soil_hfp2_heat_flux = NAN)
-      FieldNames("hfp2_samples_Tot")
-    Totalize (1,n,UINT2,FALSE)
-      FieldNames("tblcalls_Tot")
-  EndTable
-#EndIf
+'#If ( SENSOR_HFP01SC = TRUE ) Then
+'  DataTable(stats5_hfp,sensor_shfp,-1)
+'    DataInterval(0,STAT_OUT_5,min,10)
+'    CardOut(0,-1)
+'    Average(1,soil_hfp1_heat_flux,  IEEE4,hfp_isCalibrating OR soil_hfp1_heat_flux = NAN)
+'    Sample (1,soil_hfp1_sensitivity,IEEE4)
+'    Average(1,soil_hfp2_heat_flux,  IEEE4,hfp_isCalibrating OR soil_hfp2_heat_flux = NAN)
+'    Sample (1,soil_hfp2_sensitivity,IEEE4)
+'    Totalize (1,n,UINT2,hfp_isCalibrating OR soil_hfp1_heat_flux = NAN)
+'      FieldNames("hfp1_samples_Tot")
+'    Totalize (1,n,UINT2,hfp_isCalibrating OR soil_hfp2_heat_flux = NAN)
+'      FieldNames("hfp2_samples_Tot")
+'    Totalize (1,n,UINT2,FALSE)
+'      FieldNames("tblcalls_Tot")
+'  EndTable
+'
+'  DataTable(stats30_hfp,sensor_shfp,-1)
+'    DataInterval(0,STAT_OUT_30,min,10)
+'    CardOut(0,-1)
+'    Average(1,soil_hfp1_heat_flux,  IEEE4,hfp_isCalibrating OR soil_hfp1_heat_flux = NAN)
+'    Sample (1,soil_hfp1_sensitivity,IEEE4)
+'    Average(1,soil_hfp2_heat_flux,  IEEE4,hfp_isCalibrating OR soil_hfp2_heat_flux = NAN)
+'    Sample (1,soil_hfp2_sensitivity,IEEE4)
+'    Totalize (1,n,UINT2,hfp_isCalibrating OR soil_hfp1_heat_flux = NAN)
+'      FieldNames("hfp1_samples_Tot")
+'    Totalize (1,n,UINT2,hfp_isCalibrating OR soil_hfp2_heat_flux = NAN)
+'      FieldNames("hfp2_samples_Tot")
+'    Totalize (1,n,UINT2,FALSE)
+'      FieldNames("tblcalls_Tot")
+'  EndTable
+'#EndIf
 
 
 #If ( SENSOR_LGR_N2OCO=TRUE ) Then
@@ -966,7 +961,7 @@ EndTable
     CardOut (0,-1)
     Sample(1,lgr_n2o,IEEE4)
     Sample(1,lgr_co,IEEE4)
-    'Sample(1,lgr_h2o,IEEE4)
+    Sample(1,lgr_h2o,IEEE4)
   EndTable
 #EndIf
 
@@ -1031,49 +1026,61 @@ EndFunction
 '========================================================================================
 '================================  PROGRAM  =============================================
 '========================================================================================
-PipeLineMode
+'PipeLineMode
 BeginProg
   If     ( Status.SerialNumber = CFNT_SERIAL_NO ) Then     'Cook farm no till
     csat_azimuth    = CFNT_CSAT_AZIMUTH
     nrlite_sens     = CFNT_NRLITE_SENS
     li190_sens      = CFNT_LI190_SENS
     sensor_dec_6rad = CFNT_SENSOR_6RAD
+    sensor_shfp     = CFNT_SENSOR_SHFP
   ElseIf ( Status.SerialNumber = LIND_SERIAL_NO ) Then     'Lind dryland station
     csat_azimuth    = LIND_CSAT_AZIMUTH
     nrlite_sens     = LIND_NRLITE_SENS
     li190_sens      = LIND_LI190_SENS
     sensor_dec_6rad = LIND_SENSOR_6RAD
+    sensor_shfp     = LIND_SENSOR_SHFP
   ElseIf ( Status.SerialNumber = CFCT_SERIAL_NO ) Then     'Clark farm conventional till
     csat_azimuth    = CFCT_CSAT_AZIMUTH
     nrlite_sens     = CFCT_NRLITE_SENS
     li190_sens      = CFCT_LI190_SENS
     sensor_dec_6rad = CFCT_SENSOR_6RAD
+    sensor_shfp     = CFCT_SENSOR_SHFP
   ElseIf ( Status.SerialNumber = MMTN_SERIAL_NO ) Then      'Moscow Mountain Road
     csat_azimuth    = MMTN_CSAT_AZIMUTH
     nrlite_sens     = MMTN_NRLITE_SENS
     li190_sens      = MMTN_LI190_SENS
     sensor_dec_6rad = MMTN_SENSOR_6RAD
+    sensor_shfp     = MMTN_SENSOR_SHFP
   ElseIf ( Status.SerialNumber = LAB2_SERIAL_NO ) Then
     csat_azimuth    = LAB2_CSAT_AZIMUTH
     nrlite_sens     = LAB2_NRLITE_SENS
     li190_sens      = LAB2_LI190_SENS
     sensor_dec_6rad = LAB2_SENSOR_6RAD
+    sensor_shfp     = LAB2_SENSOR_SHFP
   ElseIf ( Status.SerialNumber = LAB3_SERIAL_NO ) Then
     csat_azimuth    = LAB3_CSAT_AZIMUTH
     nrlite_sens     = LAB3_NRLITE_SENS
     li190_sens      = LAB3_LI190_SENS
     sensor_dec_6rad = LAB3_SENSOR_6RAD
+    sensor_shfp     = LAB3_SENSOR_SHFP
   Else    'error case
     csat_azimuth    = NaN
     nrlite_sens     = NaN
     li190_sens      = NaN
     sensor_dec_6rad = False
+    sensor_shfp     = False
   EndIf
   nrlite_mult = 1000/nrlite_sens
   li190_dens_mult = 1000/(li190_sens*0.604)
   li190_tot_mult = (1/(li190_sens*0.604))*(FAST_INTV/1000)
-  soil_hfp1_sensitivity = 1000/HFP_1_SENS
-  soil_hfp2_sensitivity = 1000/HFP_2_SENS
+  If (sensor_shfp) Then
+    soil_hfp1_sensitivity = 1000/HFP_1_SENS
+    soil_hfp2_sensitivity = 1000/HFP_2_SENS
+  Else
+    soil_hfp1_sensitivity = 0
+    soil_hfp2_sensitivity = 0
+  EndIf
   hfp_isCalibrating = False
 
   CallTable (site_info)
@@ -1102,7 +1109,7 @@ BeginProg
     #If ( SENSOR_LGR_N2OCO = TRUE ) Then
       VoltDiff(lgr_n2o,1,mv5000,LGR_N2O_DIFF,TRUE,0,INTEG,LGR_N2O_MULT,LGR_N2O_OFFSET)
       VoltDiff(lgr_co,1,mv5000,LGR_CO_DIFF,TRUE,0,INTEG,LGR_CO_MULT,LGR_CO_OFFSET)
-      'VoltDiff(lgr_h2o,1,mv5000,LGR_H2O_DIFF,TRUE,0,INTEG,LGR_H2O_MULT,LGR_H2O_OFFSET)
+      VoltDiff(lgr_h2o,1,mv5000,LGR_H2O_DIFF,TRUE,0,INTEG,LGR_H2O_MULT,LGR_H2O_OFFSET)
       CallTable(tsdata_lgrn2oco)
     #EndIf
 
@@ -1171,9 +1178,9 @@ BeginProg
         
         sonic_uptime = sonic_samples/sonic_possible
         'Rotate the CSAT3A sonic head RHC system so the negative x-axis points north.
-        wnd_dir_compass = (360+csat_azimuth-wnd_dir_sonic) MOD 360
+'        wnd_dir_compass = (360+csat_azimuth-wnd_dir_sonic) MOD 360
         'Make the CSAT3A sonic head wind direction fall between 0 to 180 degrees and 0 to -180 degrees.
-        If ( wnd_dir_sonic > 180 ) Then ( wnd_dir_sonic = wnd_dir_sonic-360 )
+'        If ( wnd_dir_sonic > 180 ) Then ( wnd_dir_sonic = wnd_dir_sonic-360 )
         tau = SQR ((Ux_Uz_cov*Ux_Uz_cov)+(Uy_Uz_cov*Uy_Uz_cov))
         u_star = SQR (tau)
         Ts_Std = SQR (Ts_Std)
@@ -1221,9 +1228,9 @@ BeginProg
         
         sonic_uptime = sonic_samples/sonic_possible
         'Rotate the CSAT3A sonic head RHC system so the negative x-axis points north.
-        wnd_dir_compass = (360+csat_azimuth-wnd_dir_sonic) MOD 360
+'        wnd_dir_compass = (360+csat_azimuth-wnd_dir_sonic) MOD 360
         'Make the CSAT3A sonic head wind direction fall between 0 to 180 degrees and 0 to -180 degrees.
-        If ( wnd_dir_sonic > 180 ) Then ( wnd_dir_sonic = wnd_dir_sonic-360 )
+'        If ( wnd_dir_sonic > 180 ) Then ( wnd_dir_sonic = wnd_dir_sonic-360 )
         tau = SQR ((Ux_Uz_cov*Ux_Uz_cov)+(Uy_Uz_cov*Uy_Uz_cov))
         u_star = SQR (tau)
         Ts_Std = SQR (Ts_Std)
@@ -1330,57 +1337,59 @@ BeginProg
   NextScan
   
   '== optional Huskeflux heat flux plate
-  #If ( SENSOR_HFP01SC = TRUE ) Then
-    SlowSequence
-    Scan (SHFP_INTV,Sec,SHFP_BUFFER_SIZE,0)
-      VoltDiff(hfp1_mVs,1,mv200,HFP_1_SGNL_DIFF,TRUE,0,INTEG,1,0)    'millivolts
-      VoltDiff(hfp2_mVs,1,mv200,HFP_2_SGNL_DIFF,TRUE,0,INTEG,1,0)
-      VoltSe(hfp1_Vh,1,mv5000,HFP_1_HEAT_SE,TRUE,0,INTEG,(1/1000),0)
-      VoltSe(hfp2_Vh,1,mv5000,HFP_2_HEAT_SE,TRUE,0,INTEG,(1/1000),0) 'volts
-      PortSet(9,hfp_sw12_isOn)
-
-      soil_hfp1_heat_flux = hfp1_mVs * soil_hfp1_sensitivity
-      soil_hfp2_heat_flux = hfp2_mVs * soil_hfp2_sensitivity
-      AvgRun(hfp1_mVs_runavg,1,hfp1_mVs,HFP_CAL_RUNAVG)
-      AvgRun(hfp2_mVs_runavg,1,hfp2_mVs,HFP_CAL_RUNAVG)
-      AvgRun(hfp1_Vh_runavg,1,hfp1_Vh,HFP_CAL_RUNAVG)
-      AvgRun(hfp2_Vh_runavg,1,hfp2_Vh,HFP_CAL_RUNAVG)
-      
-      If TimeIntoInterval(HFP_CAL_T_START,HFP_CAL_INTERVAL,sec) Then
-        hfp_isCalibrating = TRUE
-        hfp1_mVs_t0 = hfp1_mVs_runavg
-        hfp2_mVs_t0 = hfp2_mVs_runavg
-      EndIf
-      
-      If TimeIntoInterval(HFP_CAL_T_HEATON,HFP_CAL_INTERVAL,sec) Then 
-        hfp_sw12_isOn = TRUE
-      EndIf
-      
-      If TimeIntoInterval(HFP_CAL_T_END,HFP_CAL_INTERVAL,sec) Then
-        hfp1_mVs_th   = hfp1_mVs_runavg
-        hfp1_Vh_th = hfp1_Vh_runavg
-        hfp2_mVs_th   = hfp2_mVs_runavg
-        hfp2_Vh_th = hfp2_Vh_runavg
-      EndIf
-      
-      If TimeIntoInterval(HFP_CAL_T_HEATOFF,HFP_CAL_INTERVAL,sec) Then
-        hfp_sw12_isOn  = FALSE
-        soil_hfp1_sensitivity = (hfp1_Vh_th*hfp1_Vh_th*HFP_1_SELFCAL_MULT) / ABS(hfp1_mVs_t0 - hfp1_mVs_th) 
-        If ( ABS((soil_hfp1_sensitivity / (1000/HFP_1_SENS)) - 1) >= 0.25 ) Then
-          soil_hfp1_sensitivity = 1000/HFP_1_SENS
-        EndIf
-        soil_hfp2_sensitivity = (hfp2_Vh_th*hfp2_Vh_th*HFP_2_SELFCAL_MULT) / ABS(hfp2_mVs_t0 - hfp2_mVs_th)
-        If ( ABS((soil_hfp2_sensitivity / (1000/HFP_2_SENS)) - 1) >= 0.25 ) Then
-          soil_hfp2_sensitivity = 1000/HFP_2_SENS
-        EndIf
-      EndIf
-
-      If TimeIntoInterval(HFP_CAL_T_FINISH,HFP_CAL_INTERVAL,sec) Then
-        hfp_isCalibrating = FALSE
-      EndIf
-      
-      CallTable(stats5_hfp)
-      CallTable(stats30_hfp)
-    NextScan
-  #EndIf
+'  #If ( SENSOR_HFP01SC = TRUE ) Then
+'  SlowSequence
+'  Scan (SHFP_INTV,Sec,SHFP_BUFFER_SIZE,0)
+'    If (sensor_shfp) Then
+'      VoltDiff(hfp1_mVs,1,mv200,HFP_1_SGNL_DIFF,TRUE,0,INTEG,1,0)    'millivolts
+'      VoltDiff(hfp2_mVs,1,mv200,HFP_2_SGNL_DIFF,TRUE,0,INTEG,1,0)
+'      VoltSe(hfp1_Vh,1,mv5000,HFP_1_HEAT_SE,TRUE,0,INTEG,(1/1000),0)
+'      VoltSe(hfp2_Vh,1,mv5000,HFP_2_HEAT_SE,TRUE,0,INTEG,(1/1000),0) 'volts
+'      PortSet(9,hfp_sw12_isOn)
+'
+'      soil_hfp1_heat_flux = hfp1_mVs * soil_hfp1_sensitivity
+'      soil_hfp2_heat_flux = hfp2_mVs * soil_hfp2_sensitivity
+'      AvgRun(hfp1_mVs_runavg,1,hfp1_mVs,HFP_CAL_RUNAVG)
+'      AvgRun(hfp2_mVs_runavg,1,hfp2_mVs,HFP_CAL_RUNAVG)
+'      AvgRun(hfp1_Vh_runavg,1,hfp1_Vh,HFP_CAL_RUNAVG)
+'      AvgRun(hfp2_Vh_runavg,1,hfp2_Vh,HFP_CAL_RUNAVG)
+'      
+'      If TimeIntoInterval(HFP_CAL_T_START,HFP_CAL_INTERVAL,sec) Then
+'        hfp_isCalibrating = TRUE
+'        hfp1_mVs_t0 = hfp1_mVs_runavg
+'        hfp2_mVs_t0 = hfp2_mVs_runavg
+'      EndIf
+'      
+'      If TimeIntoInterval(HFP_CAL_T_HEATON,HFP_CAL_INTERVAL,sec) Then 
+'        hfp_sw12_isOn = TRUE
+'      EndIf
+'      
+'      If TimeIntoInterval(HFP_CAL_T_END,HFP_CAL_INTERVAL,sec) Then
+'        hfp1_mVs_th   = hfp1_mVs_runavg
+'        hfp1_Vh_th = hfp1_Vh_runavg
+'        hfp2_mVs_th   = hfp2_mVs_runavg
+'        hfp2_Vh_th = hfp2_Vh_runavg
+'      EndIf
+'      
+'      If TimeIntoInterval(HFP_CAL_T_HEATOFF,HFP_CAL_INTERVAL,sec) Then
+'        hfp_sw12_isOn  = FALSE
+'        soil_hfp1_sensitivity = (hfp1_Vh_th*hfp1_Vh_th*HFP_1_SELFCAL_MULT) / ABS(hfp1_mVs_t0 - hfp1_mVs_th) 
+'        If ( ABS((soil_hfp1_sensitivity / (1000/HFP_1_SENS)) - 1) >= 0.25 ) Then
+'          soil_hfp1_sensitivity = 1000/HFP_1_SENS
+'        EndIf
+'        soil_hfp2_sensitivity = (hfp2_Vh_th*hfp2_Vh_th*HFP_2_SELFCAL_MULT) / ABS(hfp2_mVs_t0 - hfp2_mVs_th)
+'        If ( ABS((soil_hfp2_sensitivity / (1000/HFP_2_SENS)) - 1) >= 0.25 ) Then
+'          soil_hfp2_sensitivity = 1000/HFP_2_SENS
+'        EndIf
+'      EndIf
+'
+'      If TimeIntoInterval(HFP_CAL_T_FINISH,HFP_CAL_INTERVAL,sec) Then
+'        hfp_isCalibrating = FALSE
+'      EndIf
+'      
+'      CallTable(stats5_hfp)
+'      CallTable(stats30_hfp)
+'    EndIf
+'  NextScan
+'  #EndIf
 EndProg

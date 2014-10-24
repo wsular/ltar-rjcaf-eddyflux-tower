@@ -1,6 +1,50 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20130416_MMTN
+-------------
+
+This version has the Los Gatos analyzer channels enabled; it expects analog 
+voltage signals for N2O, CO and H2O.
+
+### Known Issues
+
+* In 'stats5/stats30' data tables, `rslt_wnd_dir` is not adjusted for sonic's
+  orientation; add the sonic azimuth value to recorded WD for correct WD
+    * HOW FAR BACK DOES THIS GO
+    * since now recording `rslt_wnd_dir` instead of saving `wnd_dir_compass` as
+      that name, the lack of compensation is important, also it means previous
+      program versions are unaffected
+
+### Enhancements
+
+* Add support H2O signal from Los Gatos (LGR) N2O/CO analyzer
+    * Analog voltage input on DIFF 10 
+    * Units are mV, must be post-scaled to engineering units
+
+### Data Table Changes
+
+* Enable 'tsdata_lgrn2oco' table
+* Increase data type size of Obukhov length `L` from FP2 -> IEEE4
+
+### Other Changes
+
+* **Activate** the Los Gatos N2O/CO analyzer inputs
+    * Current implentation requires program operate in `SequentialMode` instead
+      of `PipeLineMode`
+* Increase flux (high-freq) scan and met (slow) scan buffers 1 -> 2 minutes
+* Revert secondary, slow scan interval 3 -> 1 sec
+* Simplify processing of resultant wind direction 
+    * Introduces error mentioned under Known Issues
+    * Calculate directly into geo-compass (left-handed) instead of sensor 
+      (right-handed) coordinates
+* Soil heat flux related
+    * Comment out data tables, measurement code & processing 
+    * Add framework for automatic activation based on logger serial number
+    * Decrease scan frequency from 4 -> 5 seconds
+    * Set sensitivity values to 0 if sensors are deactivated
+
+
 20130123_CFNT
 -------------
 
