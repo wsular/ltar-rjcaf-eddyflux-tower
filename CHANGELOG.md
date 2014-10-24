@@ -1,6 +1,30 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20130123_CFNT
+-------------
+
+### Issues Fixed
+
+* Change some variables' units:
+    * `rho_d_mean_hmp`: kg/m^3 -> g/m^3  
+      *Was introduced in version tagged 20120627_CFCT but never saved to data 
+      tables*
+    * `nmbr_clock_change`: samples -> occurrences  
+      *Represents number of clock changes*
+
+### Data Table Changes
+
+* Re-activated globally: **stats5_hfp/stats30_hfp**
+* Within **site_daily**, change units of nmbr_clock_change (see above)
+
+### Other Changes
+
+* Modify some scan intervals:
+    * secondary, slow sensor scan: 1 -> 3 sec
+    * heat flux plate scan: 4 -> 5 sec
+
+
 20120827_XXXX
 -------------
 

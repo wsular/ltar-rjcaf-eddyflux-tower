@@ -8,30 +8,14 @@
 '   meteorological statistics are produced in five and thirty minute intervals. 
 ' 
 'Version history
+' 20130123_CFNT.CR3
+'   - activated HFP
+'   - corrected some units
+'   - adjusted scan intervals for slow-response sensors and HFP
 ' 20120827_CFNT.CR3 / *_CFCT.CR3 / *_MMTN.CR3
 '   - deactivated HFP01SC; left Picarro CO2/CH4 inactive
 '   - re-separated Los Gatos & Picarro data tables since no stats are maintained now and
 '     total # of tables is < 1/2 of max permitted
-' XXXX_20120824.CR3
-'   - reduced slow scan buffer to 1min again
-'   - renamed soil_5TM_ID*_epsilon => soil_5TM_ID*_E; change dimensionless=>dimless
-'   - relocated soil heat flux plate code into its own slow scan @ 1/4 Hz; increased
-'     running average time 10->20s to compensate for less points in average
-' XXXX_20120810.CR3
-'   - merged los gatos n2o/co and picarro ch4/co2 (& any future gases) fast data into one
-'      table; removed stats tables entirely
-'   - added support for h2o from Picarro ch4/co2(/h2o) & reserved input for h2o with n2o/co
-'   - generally removed data tables from conditional compilations and set Triggers instead
-'   - seperated 6rad channels in table in order to add !=nan processing condition
-'   - removed soil moisture probes from conditionals & merged into stats data table
-'   - integrated 6rad sensor-present flag into site-specific constants
-'   - removed min_uptime related processing entirely
-' XXXX_20120720.CR3
-'	  - added heat flux post-calibration delay so cooling down doesn't contaminate data
-' 	- changed cal start from 10sec to 2 min after hour to facilitate data processing
-'   - increased hfp cal interval from 2 to 3 hours
-'   - increased slow (1hz) scan buffer from 1 to 2 minutes
-'  ...prior entries removed to minimize file size
 
 '========================================================================================
 '================================  USER-EDITABLE VALUES  ================================
@@ -46,7 +30,7 @@ Const UTC_OFFSET = -8    'offset from UTC as +/- hours; PST = -8
 'Set values to TRUE if instrument is at site; FALSE if not
 Const SENSOR_LGR_N2OCO   = False  '                Los Gatos N2O/CO analyzer
 Const SENSOR_PIC_CO2CH4  = False  'G2301-f         Picarro CO2/CH4/H2O analyzer
-Const SENSOR_HFP01SC     = False  'HFP01SC         soil heat flux plates
+Const SENSOR_HFP01SC     = True   'HFP01SC         soil heat flux plates
 
 '----- OPTIONAL SENSORS ANALOG INPUT MAPS -----
 'Confirm the analog output of these sensors before using
@@ -72,8 +56,8 @@ Const HFP_CAL_INTERVAL = 3*60*60      'frequency of cal. interval, seconds
 
 '----- PROGRAM OPERATION CONSTANTS -----
 Const FAST_INTV = 100     'length of primary scan interval, milliseconds
-Const SLOW_INTV = 1       'length of secondary scan interval, seconds
-Const SHFP_INTV = 4       'length of heat flux plate scan interval, seconds
+Const SLOW_INTV = 3       'length of secondary scan interval, seconds
+Const SHFP_INTV = 5       'length of heat flux plate scan interval, seconds
 Const STAT_OUT_5 = 5   	  'stats output interval #1, minutes
 Const STAT_OUT_30 = 30		  'stats output interval #2, minutes; use multiple of STAT_INT1
 Const DAILY_MEDNUM = 480  '# of values to include in median for daily stats
@@ -334,7 +318,7 @@ Units e_hmp = kPa
 Units e_sat_hmp = kPa
 
 Public rho_d_mean_hmp                 'Density of dry air used in Webb et al. term [kg / m^3]
-Units rho_d_mean_hmp = kg/m^3
+Units rho_d_mean_hmp = g/m^3
 
 Public hmp_stats(3)
 Alias hmp_stats(1) = H2O_hmp_mean
@@ -420,7 +404,7 @@ Units pps = ms
 Units dt_since_gprmc = s
 Units gps_ready = unitless
 Units max_clock_change = ms
-Units nmbr_clock_change = samples
+Units nmbr_clock_change = occurrences
 
 
 '**********  Decagon 5TM soil moisture/temp **********
