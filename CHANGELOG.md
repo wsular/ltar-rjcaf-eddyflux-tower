@@ -1,8 +1,26 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20131018_XXXX
+-------------
+
+### Issues Fixed
+
+* Remove duplicate suffix from column 'CO2_ppm_Avg_Avg' -> 'CO2_ppm_Avg'
+
+### Other Changes
+
+* Internally, change handling of sonic & IRGA diagnostic flags
+* Discard temperature and do not calculate volumetric water content if 
+  dielectric value from soil moisture probes is null ("NAN")
+
+
 20131012_CFNT
 -------------
+
+### Known Issues
+
+* Duplicate suffix column remains ('CO2_ppm_Avg_Avg')
 
 ### Other Changes
 
@@ -17,6 +35,10 @@ Change Log for GHG Monitoring Tower Program
 
 * Correct sonic azimuth 245 -> 254
 
+### Known Issues
+
+* Duplicate suffix column remains ('CO2_ppm_Avg_Avg')
+
 
 20130619_MSLK
 -------------
@@ -29,6 +51,7 @@ Change Log for GHG Monitoring Tower Program
 ### Known Issues
 
 * Sonic azimmuth is incorrectly specified as 245 instead of 254
+* Duplicate suffix column remains ('CO2_ppm_Avg_Avg')
 
 ### Enhancements
 

@@ -3,7 +3,7 @@
 ' Laboratory for Atmospheric Research
 ' Washington State University
 '
-' Last edited: 2013-06-18
+' Last edited: 2013-10-18
 ' By: Patrick O'Keeffe <pokeeffe@wsu.edu>
 '
 ' Derived from copyrighted works purchased from Campbell Scientific, Inc.
@@ -315,7 +315,7 @@ Alias etcvar(4)  = Td_tmp
 
 Public results(19)
 Alias results(1)  = Ts_absolute       'sonic temp in Kelvin
-Alias results(2)  = CO2_ppm_Avg                'CO2 mixing ratio
+Alias results(2)  = CO2_ppm                'CO2 mixing ratio
 Alias results(3)  = Xv                'H2O mixing ratio
 Alias results(4)  = L                 'Obukohov length
 Alias results(5)  = Hs                'Sensible heat flux using sonic temperature.
@@ -334,7 +334,7 @@ Alias results(17) = CO2_wpl_H    'Carbon dioxide flux (EC150), WPL sensible heat
 Alias results(18) = H2O_wpl_LE   'Latent heat flux (EC150), WPL latent heat flux.
 Alias results(19) = H2O_wpl_H    'Latent heat flux (EC150), WPL sensible heat flux.
 Units Ts_absolute = Kelvin
-Units CO2_ppm_Avg = ppm
+Units CO2_ppm = ppm
 Units Xv = ppt
 Units L = m
 Units Hs = W/m^2
@@ -745,7 +745,7 @@ DataTable (stats5,TRUE,-1)
   Sample(1,rslt_wnd_dir,FP2)         'mean wind direction rel2 north, degrees
   Sample(1,std_wnd_dir,FP2)             'scalar stdev of wind direction, degrees
   Sample(1,sonic_uptime,FP2)
-  Average(1,CO2_ppm_Avg,FP2,irga_disable_f)
+  Average(1,CO2_ppm,FP2,irga_disable_f)
   Sample (1,CO2_mg_m3_Avg,FP2)                'mean of CO2 conc, mg/m3
   Sample (1,CO2_mg_m3_Std,FP2)               'stdev of CO2 conc, mg/m3
   Average(1,CO2_signal,FP2,irga_disable_f)
@@ -815,7 +815,7 @@ DataTable (stats30,TRUE,-1)
   Sample(1,rslt_wnd_dir,FP2)         'mean wind direction rel2 north, degrees
   Sample(1,std_wnd_dir,FP2)             'scalar stdev of wind direction, degrees
   Sample(1,sonic_uptime,FP2)
-  Average(1,CO2_ppm_Avg,FP2,irga_disable_f)
+  Average(1,CO2_ppm,FP2,irga_disable_f)
   Sample (1,CO2_mg_m3_Avg,FP2)                'mean of CO2 conc, mg/m3
   Sample (1,CO2_mg_m3_Std,FP2)               'stdev of CO2 conc, mg/m3
   Average(1,CO2_signal,FP2,irga_disable_f)
@@ -1242,33 +1242,31 @@ BeginProg
       Move (CO2,7,dly_data_out(6),7) '+H2O,diag_irga,amb_tmpr,amb_press,CO2_signal,H2O_signal
       If ( (diag_sonic <> NAN) AND (diag_sonic <> -1) ) Then 
         sonic_disable_f = diag_sonic AND &h3f  '= 0011 1111
-        If ( NOT sonic_disable_f ) Then
-          Ts_absolute = Ts + 273.15
-        Else
-          Ts_absolute = NAN
-        EndIf
       Else 
+        Move(Ux,5,NAN,1)
         sonic_disable_f = TRUE
-        Ts_absolute = NAN
       EndIf
+      Ts_absolute = IIF(sonic_disable_f, NAN, Ts+273.15)
       If ( (diag_irga <> NAN) AND (diag_irga <> -1) ) Then 
-        irga_disable_f = sonic_disable_f OR (diag_irga AND &h1) 'bit 1 always HI for warning (?)
-        If ( NOT irga_disable_f ) Then
-          Td_tmp = LOG (H2O*R*(amb_tmpr+273.15)/(11.0178*(1.00072+3.2e-5*amb_press+5.9e-9*amb_press*amb_tmpr*amb_tmpr))) 
-          'eqns: Td_tmp = ln (H2O*R*(T+273.15)/(Mv*0.61121*f)); Mv = 18 g/mol, f = 1.00072+3.2e-5*P+5.9e-9*P*T*T
-          Td = (240.97*Td_tmp)/(17.502-Td_tmp) 'Buck (1981) Eq. (2a, 3a, & 6) and Leuning (2004) Eq. (6.23)
-          'Compute fast response air temperature from sonic temperature and EC150 vapor density.
-          Tc = Ts_absolute/(1+0.32*H2O*R*Ts_absolute/(amb_press*18)) - 273.15'Kaimal and Gaynor (1991) Eq. (3).
-          divisor = (amb_press/(R*(Tc+273.15)))-(H2O/18) 'mixing ratio (X/dry air)
-          CO2_ppm_Avg=CO2/(0.044*divisor)
-          Xv=H2O/(0.018*divisor)
-        EndIf
+        irga_disable_f = sonic_disable_f OR (diag_irga AND &h1) 'bit 0 always HI for warning 
       Else
+        Move(CO2,7,NAN,1)
         irga_disable_f = TRUE
-        Td = NAN
-        Tc = NAN
-        CO2_ppm_Avg = NAN
-        Xv = NAN
+      EndIf
+      If ( NOT irga_disable_f ) Then
+        Td_tmp = LOG (H2O*R*(amb_tmpr+273.15)/(11.0178*(1.00072+3.2e-5*amb_press+5.9e-9*amb_press*amb_tmpr*amb_tmpr))) 
+        'eqns: Td_tmp = ln (H2O*R*(T+273.15)/(Mv*0.61121*f)); Mv = 18 g/mol, f = 1.00072+3.2e-5*P+5.9e-9*P*T*T
+        Td = (240.97*Td_tmp)/(17.502-Td_tmp) 'Buck (1981) Eq. (2a, 3a, & 6) and Leuning (2004) Eq. (6.23)
+        'Compute fast response air temperature from sonic temperature and EC150 vapor density.
+        Tc = Ts_absolute/(1+0.32*H2O*R*Ts_absolute/(amb_press*18)) - 273.15'Kaimal and Gaynor (1991) Eq. (3).
+        divisor = (amb_press/(R*(Tc+273.15)))-(H2O/18) 'mixing ratio (X/dry air)
+        CO2_ppm=CO2/(0.044*divisor)
+        Xv=H2O/(0.018*divisor)
+      Else
+        Td=NAN
+        Tc=NAN
+        CO2_ppm=NAN
+        Xv=NAN
       EndIf
 
       'sonic cov for stats 1
@@ -1483,15 +1481,44 @@ BeginProg
 
     '== Decagon soil moisture probes
     SDI12Recorder(soil_5TM_ID5_E,SDI_COM_ADDR,DEC_5TM_ID5_SDI_ADDR,"M!",1.0,0)
+    If (soil_5TM_ID5_E = NAN) Then 
+      soil_5TM_ID5_T = NAN
+      soil_5TM_ID5_VWC = NAN
+    Else
+      soil_5TM_ID5_VWC = Topp_equation(soil_5TM_ID5_E)
+    EndIf
+
     SDI12Recorder(soil_5TM_ID6_E,SDI_COM_ADDR,DEC_5TM_ID6_SDI_ADDR,"M!",1.0,0)
+    If (soil_5TM_ID6_E = NAN) Then 
+      soil_5TM_ID6_T = NAN
+      soil_5TM_ID6_VWC = NAN
+    Else
+      soil_5TM_ID6_VWC = Topp_equation(soil_5TM_ID6_E)
+    EndIf
+
     SDI12Recorder(soil_5TM_ID7_E,SDI_COM_ADDR,DEC_5TM_ID7_SDI_ADDR,"M!",1.0,0)
+    If (soil_5TM_ID7_E = NAN) Then 
+      soil_5TM_ID7_T = NAN
+      soil_5TM_ID7_VWC = NAN
+    Else
+      soil_5TM_ID7_VWC = Topp_equation(soil_5TM_ID7_E)
+    EndIf
+
     SDI12Recorder(soil_5TM_ID8_E,SDI_COM_ADDR,DEC_5TM_ID8_SDI_ADDR,"M!",1.0,0)
+    If (soil_5TM_ID8_E = NAN) Then 
+      soil_5TM_ID8_T = NAN
+      soil_5TM_ID8_VWC = NAN
+    Else
+      soil_5TM_ID8_VWC = Topp_equation(soil_5TM_ID8_E)
+    EndIf
+
     SDI12Recorder(soil_5TM_ID9_E,SDI_COM_ADDR,DEC_5TM_ID9_SDI_ADDR,"M!",1.0,0)
-    soil_5TM_ID5_VWC = Topp_equation(soil_5TM_ID5_E)
-    soil_5TM_ID6_VWC = Topp_equation(soil_5TM_ID6_E)
-    soil_5TM_ID7_VWC = Topp_equation(soil_5TM_ID7_E)
-    soil_5TM_ID8_VWC = Topp_equation(soil_5TM_ID8_E)
-    soil_5TM_ID9_VWC = Topp_equation(soil_5TM_ID9_E)
+    If (soil_5TM_ID9_E = NAN) Then 
+      soil_5TM_ID9_T = NAN
+      soil_5TM_ID9_VWC = NAN
+    Else
+      soil_5TM_ID9_VWC = Topp_equation(soil_5TM_ID9_E)
+    EndIf
 
     If (sensor_shfp) Then
       VoltDiff(hfp1_mVs,1,mv200,HFP_1_SGNL_DIFF,TRUE,0,INTEG,1,0)    'millivolts
