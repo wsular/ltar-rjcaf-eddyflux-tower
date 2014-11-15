@@ -1,6 +1,14 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20140217_XXXX
+-------------
+
+### Other Changes
+
+* Remove reviewer-flag from program source code comments
+
+
 20131018_XXXX
 -------------
 

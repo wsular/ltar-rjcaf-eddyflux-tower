@@ -129,7 +129,7 @@ Const MMTN_LI190_SENS    = 6.69
 Const MMTN_SENSOR_SHFP   = False
 
 Const MSLK_SERIAL_NO     = 6505
-Const MSLK_CSAT_AZIMUTH  = 254 'updateme
+Const MSLK_CSAT_AZIMUTH  = 254
 Const MSLK_NRLITE_SENS   = 12.3
 Const MSLK_LI190_SENS    = 6.5
 Const MSLK_SENSOR_SHFP   = False
