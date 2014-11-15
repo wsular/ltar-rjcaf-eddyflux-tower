@@ -1,6 +1,29 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20130619_MSLK
+-------------
+
+### Issues Fixed
+
+* Correct array length declaration  (4 -> 2) for variable `dec_ndvi_up`; this
+  is a cosmetic fix
+
+### Known Issues
+
+* Sonic azimmuth is incorrectly specified as 245 instead of 254
+
+### Enhancements
+
+* Add site-specific values for new monitoring site in Moses Lake, WA
+* Move save confirmation within 'Sensor Setup' menu into submenu
+
+### Other Changes
+
+* When Decagon NDVI/PRI sensors are inactive, set data destinations to null
+  values ("NAN") only once instead of each scan
+
+
 20130507_XXXX
 -------------
 
