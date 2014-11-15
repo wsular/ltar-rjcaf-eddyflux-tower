@@ -1,6 +1,14 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20130711_MSLK
+-------------
+
+### Issues Fixed
+
+* Correct sonic azimuth 245 -> 254
+
+
 20130619_MSLK
 -------------
 
