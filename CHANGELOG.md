@@ -1,6 +1,74 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20130507_XXXX
+-------------
+
+### Issues Fixed
+
+* Increase number of records retained for 'site_info' table 1 -> 1000
+
+### Known Issues
+
+* Column has duplicated suffix ('CO2_ppm_Avg_Avg') in 'stats5/stats30' tables
+
+### Enhancements
+
+* New durable settings file used to track activation flags for Los Gatos N2O/CO,
+  Picarro CO2/CH4, and new Decagon NDVI/PRI sensors, as well as scaling offsets
+  and multipliers for Los Gatos & Picarro signals
+* Support for new Decagon NDVI/PRI light sensors
+
+### Wiring Changes
+
+* Remove Decagon 6-band radiometers from C5/G/12V
+* Add Decagon NDVI/PRI sensors to C5/G/12V
+
+### Data Table Changes
+
+* Removed tables:
+    * stats5_6rad/stats30_6rad
+    * tsdata_lgrn2oco/tsdata_picco2ch4
+* New tables:
+    * tsdata_extra 
+        * output at 10 Hz
+        * contains both LGR N2O/CO/H2O and Picarro CO2/CH4/H2O; if either is 
+          missing, associated columns will be null values ("NAN")
+        * units for all columns are "scale-dependent"
+    * stats5_ui/stats30_ui
+        * output on 5- and 30-min intervals
+        * contains 9 columns (averages of ndvi/pri|up/down and total # of calls
+          to tables)
+    * extra_info
+        * output whenever settings change, up to 1000 records
+        * tracks presence of Decagon NDVI/PRI, LGR N2O/CO and Picarro CO2/CH4
+          sensors, also multipliers/offsets for LGR & Picarro
+    * diagnostics
+        * output on 5-min intervals
+        * contains number of total scans, skipped scans and watchdog errors
+* Changes to 'stats5/stats30'
+    * Add soil heat flux and plate sensitivity (4 columns total), after soil
+      moisture probes
+* Changes to 'site_daily'
+    * Modify size from auto-allocate -> 60
+    * Add min/max battery voltage and min/max temperature from T/RH probe
+* Changes to 'site_info'
+    * FIX: increase number of records retained 1 -> 1000
+    * Remove columns tracking presence of Decagon 6-band radiometers, LGR 
+      N2O/CO and Picarro CO2/CH4
+
+### Other Changes
+
+* Return fast & slow scan buffers 2 -> 1 min
+* Modify soil heat flux plate calibration interval 3 -> 6 hours
+* Acquire data from GPS receiver & soil moisture probes within soil heat flux
+  plate scan (1/5 Hz) instead of 'slow' scan (1 Hz)
+* New menu "Sensor Setup" contains options to enable/disable Decagon NDVI/PRI,
+  LGR N2O/CO, and Picarro CO2/CH4 sensors
+* Internally, fieldnames are promoted upwards to become variable names
+* Restore copyright notice
+
+
 20130416_MMTN
 -------------
 
