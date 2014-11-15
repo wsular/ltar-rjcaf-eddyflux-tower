@@ -1069,7 +1069,7 @@ EndSub
 Sub set_default_choices()
   choice_dec_ndvi       = False
   choice_dec_pri        = False
-  choice_lgr_n2oco      = False
+  choice_lgr_n2oco      = TRUE
   choice_lgr_n2o_mult   = 1.0
   choice_lgr_n2o_offset = 0
   choice_lgr_co_mult    = 1.0

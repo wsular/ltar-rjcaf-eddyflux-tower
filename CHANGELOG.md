@@ -1,6 +1,15 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20131012_CFNT
+-------------
+
+### Other Changes
+
+* Attempt to enable Los Gatos N2O/CO by editing default value within subroutine
+  `set_default_choices()`
+
+
 20130507_XXXX
 -------------
 
