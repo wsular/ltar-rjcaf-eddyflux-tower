@@ -1,6 +1,20 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20140610_MMTN
+-------------
+
+### Issues Fixed
+
+* Update sensitivity value for PAR sensor, which was exchanged May 6, 2014:
+  previous sensor (Q45241) value 6.69 -> 6.03 of current sensor (Q45933)
+
+### Other Changes
+
+* Change input channel of PAR sensor (LI190SB) DF 5 -> DF 6; also add to
+  ConstTable to facilitate in-field investigation/troubleshooting
+
+
 20140217_XXXX
 -------------
 

@@ -42,7 +42,16 @@ Const NMBR_WND_SAMPLES = 3000/FAST_INTV  '#pts to compute 3sec mean horizontal w
 Const HMP_T_DIFF      = 2     'HMP T diff input chan #
 Const HMP_RH_DIFF     = 3     'HMP RH diff input chan #
 Const NRLITE_DIFF     = 4     'NR-Lite2 diff input chan #
-Const LI190_DIFF      = 5     'LI190SB diff input chan #
+
+'XXX - the system deployed at MMTN site has an issue whereby the PAR data does
+'  not track the net rad. data; exchanging sensors did not resolve the problem
+'  so we are going to swap the sensor around different datalogger terminals
+'Originally, this was = 5
+ConstTable
+  Const LI190_DIFF      = 6     'LI190SB diff input chan #
+EndConstTable
+'XXX
+
 Const oh34B_WD_SE     = 1     '034B single ended input chan # = D1H
 Const oh34B_WD_VX     = 1     '034B voltage excitation chan #
 Const oh34B_WS_PULSE  = 1     '034B pulse input chan #
@@ -125,7 +134,7 @@ Const CFCT_SENSOR_SHFP   = False
 Const MMTN_SERIAL_NO     = 6504
 Const MMTN_CSAT_AZIMUTH  = 180 
 Const MMTN_NRLITE_SENS   = 12.2
-Const MMTN_LI190_SENS    = 6.69
+Const MMTN_LI190_SENS    = 6.03
 Const MMTN_SENSOR_SHFP   = False
 
 Const MSLK_SERIAL_NO     = 6505
