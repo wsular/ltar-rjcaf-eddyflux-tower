@@ -1,19 +1,9 @@
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-' REgional Approaches to Climate CHange 
-' Laboratory for Atmospheric Research
-' Washington State University
+' REgional Approaches to Climate CHange (2011-2016)    reacchpna.org
+' Laboratory for Atmospheric Research at Washington State University
+' https://bitbucket.org/wsular/2011-reacch-tower-logger
 '
-' By: Patrick O'Keeffe <pokeeffe@wsu.edu>
-'
-' Derived from copyrighted works purchased from Campbell Scientific, Inc.
-'
-' Description: This program combines fast measurements of CO2 and H2O with 3D wind speeds  
-'   to generate near real-time surface fluxes of CO2, latent & sensible heat. Additional 
-'   meteorological statistics are produced in five and thirty minute intervals. 
-' 
-'========================================================================================
 '==========================  SEMI-EDITABLE VALUES  ======================================
-'========================================================================================
 '----- TIMEZONE -----
 'This must be set as a constant for use with GPS instruction. It cannot be dynamically 
 'assigned based on logger's serial # because of this fact.
@@ -97,12 +87,6 @@ Const DEC_PRI_DN_SDI_ADDR = 3
 ' *_NRLITE_SENS        sensitivity of NR-Lite2 net rad., uV/W/m^2
 ' *_LI190_SENS         sensitivity of LI-190SB quantum PAR sensor, uA/mmol/s/m^2
 ' *_SENSOR_HFP         boolean: is the pair of soil heat flux plates installed at the site?
-' *_SENSOR_NDVI        boolean: did UI install Decagon "NDVI" sensors at the site?
-' *_SENSOR_PRI         boolean: did UI install Decagon "PRI" sensors at the site?
-'
-' Also, some default values are always false but could possibly be read True from a calfile:
-'   sensor_lgr_n2oco
-'   sensor_pic_co2ch4
 '
 Const CFNT_SERIAL_NO     = 6034
 Const CFNT_CSAT_AZIMUTH  = 186
@@ -134,13 +118,6 @@ Const MSLK_NRLITE_SENS   = 12.3
 Const MSLK_LI190_SENS    = 6.5
 Const MSLK_SENSOR_SHFP   = False
 
-'Const LAB1_SERIAL_NO     = 6506
-'Const LAB1_CSAT_AZIMUTH  = 0
-'Const LAB1_NRLITE_SENS   = 12.0
-'Const LAB1_LI190_SENS    = 6.5
-'Const LAB1_SENSOR_SHFP   = False
-
-
 '----- FIXED CALIBRATION VALUES ------
 Const HMP_T_MULT       = (60 - -80)/1000    '-80 to +60 *C over 1V = 0.14
 Const HMP_T_OFFSET     = -80
@@ -171,9 +148,7 @@ Const HFP_2_R_SELF  = 99.4
 Const HFP_2_A_SELF  = 0.003885
 
 
-'========================================================================================
 '==========================  NO USER-SERVICEABLE PARTS BELOW  ===========================
-'========================================================================================
 '-----  PHYSICAL CONSTANTS  -----
 Const MU_WPL = 29/18       'Ratio of the molecular weight of dry air to water vapor
 Const R = .0083143         'Universal gas constant [kPa m^3/(K mol)]
@@ -287,7 +262,6 @@ Alias irga(5) = amb_press
 Alias irga(6) = CO2_signal
 Alias irga(7) = H2O_signal
 Alias irga(8) = Tc
-Alias irga(9) = Td
 Units CO2 = mg/m^3
 Units H2O = g/m^3
 Units diag_irga = bitmap
@@ -296,7 +270,6 @@ Units amb_press = kPa
 Units CO2_signal = unity
 Units H2O_signal = unity
 Units Tc = C
-Units Td = C
 
 Dim mask As Long
 Dim diag_sonic_tmp As Long                 'used to break out the CSAT3A sonic head diagnostic bits.
@@ -307,11 +280,10 @@ Dim irga_disable_f As Boolean               'TRUE when EC150 sends bad data.
 Dim cov_array_sonic(1,4)                   'used to hold input data for cov instructions 
 Dim cov_array_cs(3,4)  
 
-Dim etcvar(4)
+Dim etcvar(3)
 Alias etcvar(1)  = divisor                  'used to find molar mixing ratio.
 Alias etcvar(2)  = rho_d_mean               'Density of dry air used in WPL [kg / m^3].
 Alias etcvar(3)  = sigma_wpl                'density of water vapor / density of dry air.
-Alias etcvar(4)  = Td_tmp
 
 Public results(19)
 Alias results(1)  = Ts_absolute       'sonic temp in Kelvin
@@ -644,10 +616,7 @@ Units e_hmp_Avg = kPa
 Units e_sat_hmp_Avg = kPa
 Units samples_possible = samples
 
-'========================================================================================
 '===========================  PROCESSING DATA TABLES  ===================================
-'========================================================================================
-
 DataTable(work_delay_ec100,TRUE,OFFSET) 'handles lagging CSAT+IRGA data
   TableHide
   Sample(12,sonic_irga_raw(1),IEEE4)
@@ -695,9 +664,7 @@ DataTable(work_30min,TRUE,1)
   Totalize(1,n,IEEE4,False)
 EndTable
 
-'========================================================================================
 '===========================  BASE OUTPUT DATA TABLES  ==================================
-'========================================================================================
 
 'time series data @ 10hz
 DataTable (tsdata,TRUE,-1)
@@ -959,9 +926,7 @@ DataTable(extra_info,True,10)
   Sample(1,pic_h2o_offset,IEEE4)
 EndTable
 
-'========================================================================================
 '===========================  SUPPLEMENTAL OUTPUT DATA TABLES  ==========================
-'========================================================================================
 DataTable(tsdata_extra,(sensor_lgr_n2oco OR sensor_pic_co2ch4),-1)
   DataInterval(0,FAST_INTV,mSec,100)
   CardOut(0,-1)
@@ -1005,17 +970,13 @@ DataTable(stats30_ui,(sensor_dec_ndvi OR sensor_dec_pri),-1)
 EndTable
 
 
-'========================================================================================
 '===============================  FUNCTIONS  ============================================
-'========================================================================================
 Function Topp_equation( dielectric )
   Return 4.3e-6*dielectric^3 - 5.5e-4*dielectric^2 + 2.92e-2*dielectric - 5.3e-2
 EndFunction
 
 
-'========================================================================================
 '===============================  SUBROUTINES  ==========================================
-'========================================================================================
 Sub load_site_values()
   If     ( Status.SerialNumber = CFNT_SERIAL_NO ) Then     'Cook farm no till
     csat_azimuth    = CFNT_CSAT_AZIMUTH
@@ -1042,11 +1003,6 @@ Sub load_site_values()
     nrlite_sens     = MSLK_NRLITE_SENS
     li190_sens      = MSLK_LI190_SENS
     sensor_shfp     = MSLK_SENSOR_SHFP
-'  ElseIf ( Status.SerialNumber = LAB1_SERIAL_NO ) Then
-'    csat_azimuth    = LAB1_CSAT_AZIMUTH
-'    nrlite_sens     = LAB1_NRLITE_SENS
-'    li190_sens      = LAB1_LI190_SENS
-'    sensor_shfp     = LAB1_SENSOR_SHFP
   Else    'error case
     csat_azimuth    = NaN
     nrlite_sens     = NaN
@@ -1095,10 +1051,28 @@ Sub save_current_choices()
   Calfile(settings,NUM_SETTINGS,SETTINGS_FILE,WRITEFILE)
 EndSub
 
+Sub setup()
+  filehandle = FileOpen(SETTINGS_FILE,"rb",0) ' attempt to open file
+  FileClose(filehandle)
+  If (filehandle = 0) Then 'if file not found
+    set_default_choices()
+  Else    
+    Calfile(settings,NUM_SETTINGS,SETTINGS_FILE,READFILE)
+    populate_choices()
+  EndIf
+  save_current_choices()
 
-'========================================================================================
+  CallTable (site_info)
+  CallTable(extra_info)
+
+  Move(lgrn2oco(1),3,NAN,1)
+  Move(picco2ch4(1),3,NAN,1)
+  Move(fiveTM(1),15,NAN,1)
+  SDMSpeed (SDM_PER)
+EndSub
+
+
 '================================  MENU  ================================================
-'========================================================================================
 Const Enable = True
 Const Disable = False
 Const Yes = True
@@ -1146,60 +1120,11 @@ DisplayMenu("Sensor Setup", 0) 'add submenu to main
   EndSubMenu
 EndMenu
 
-'DisplayMenu("Sensor Data", 0)
-'  SubMenu("sonic anem.")
-    'inst WD
-    'inst WS
-    'Ts
-    'diag
-'  EndSubMenu
-'  SubMenu("irga")
-    'co2 ppm
-    'h2o %v/v
-    'T
-    'P
-'  EndSubMenu
-'  SubMenu("T/RH probe")
-    'T
-    'RH
-'  EndSubMenu
-'  SubMenu("wind set")
-    'WS
-    'WD
-'  EndSubMenu
-'  SubMenu("netrad")
-    'DisplayValue
-'  EndSubMenu
-'  SubMenu("PAR")
-    'DisplayValue
-'  EndSubMenu
-'  SubMenu("sonic anem.")
-    'DisplayValue
-'  EndSubMenu
-'EndMenu
-
-
-'========================================================================================
 '================================  PROGRAM  =============================================
-'========================================================================================
 BeginProg
   load_site_values()
-  
-  filehandle = FileOpen(SETTINGS_FILE,"rb",0) ' attempt to open file
-  FileClose(filehandle)
-  If (filehandle = 0) Then 'if file not found
-    set_default_choices()
-  Else    
-    Calfile(settings,NUM_SETTINGS,SETTINGS_FILE,READFILE)
-    populate_choices()
-  EndIf
-  save_current_choices()
-  Move(lgrn2oco(1),3,NAN,1)
-  Move(picco2ch4(1),3,NAN,1)
+  setup()
 
-  CallTable (site_info)
-  CallTable(extra_info)
-  SDMSpeed (SDM_PER)
   Scan (FAST_INTV,mSec,FAST_BUFFER_SIZE,0)
         
     '== 034B wind vane acquisition 
@@ -1254,16 +1179,11 @@ BeginProg
         irga_disable_f = TRUE
       EndIf
       If ( NOT irga_disable_f ) Then
-        Td_tmp = LOG (H2O*R*(amb_tmpr+273.15)/(11.0178*(1.00072+3.2e-5*amb_press+5.9e-9*amb_press*amb_tmpr*amb_tmpr))) 
-        'eqns: Td_tmp = ln (H2O*R*(T+273.15)/(Mv*0.61121*f)); Mv = 18 g/mol, f = 1.00072+3.2e-5*P+5.9e-9*P*T*T
-        Td = (240.97*Td_tmp)/(17.502-Td_tmp) 'Buck (1981) Eq. (2a, 3a, & 6) and Leuning (2004) Eq. (6.23)
-        'Compute fast response air temperature from sonic temperature and EC150 vapor density.
         Tc = Ts_absolute/(1+0.32*H2O*R*Ts_absolute/(amb_press*18)) - 273.15'Kaimal and Gaynor (1991) Eq. (3).
         divisor = (amb_press/(R*(Tc+273.15)))-(H2O/18) 'mixing ratio (X/dry air)
         CO2_ppm=CO2/(0.044*divisor)
         Xv=H2O/(0.018*divisor)
       Else
-        Td=NAN
         Tc=NAN
         CO2_ppm=NAN
         Xv=NAN
@@ -1405,9 +1325,7 @@ BeginProg
   NextScan
 
 
-  '===========================================================================
   '====================== SLOW SCAN INTERVAL =================================
-  '===========================================================================
   SlowSequence
   Scan (SLOW_INTV,Sec,SLOW_BUFFER_SIZE,0)
     PanelTemp (panel_tmpr,INTEG)
@@ -1469,9 +1387,7 @@ BeginProg
     just_had_1hz_scan = TRUE
   NextScan
 
-  '===========================================================================
   '====================== SOIL SCAN INTERVAL =================================
-  '===========================================================================
   SlowSequence
   Scan (SOIL_INTV,Sec,SOIL_BUFFER_SIZE,0)
 
