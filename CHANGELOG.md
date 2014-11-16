@@ -1,6 +1,29 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+Next version
+------------
+
+### Enhancements
+
+* Transition back to conditional compilation for auxiliary sensors:
+  Decagon NDVI/PRI radiometers, Los Gatos N2O/CO, Picarro CO2/CH4, Huskeflux
+  soil heat flux plate
+    * No longer produces empty tables if sensors are not used (solves problem
+      with CardConvert halting for user interaction when empty tables are
+      encountered, improving automation scripts)
+    * Increase available recording time by not allocating space for sensors
+      which are not used
+
+### Other Changes
+
+* New datalogger menu structure
+    * previous top-level menu items are now under 'System Menu' submenu
+    * previous 'Sensor Setup' submenu is now 'Settings' submenu
+    * new submenu 'Initial Setup' contains options to enable/disable auxiliary
+      sensors (described under *Enhancements* above)
+
+
 20140616_MMTN
 -------------
 
