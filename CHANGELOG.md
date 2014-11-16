@@ -1,6 +1,16 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+20140616_MMTN
+-------------
+
+### Other Changes
+
+* Revert PAR sensor signal input location back: DF 6 -> DF 5
+* Update MMTN datalogger serial number to reflect fact physical datalogger
+  unit (S/N 6504) was exchanged with current spare (S/N 6506)
+
+
 20140610_MMTN
 -------------
 

@@ -3,7 +3,7 @@
 ' Laboratory for Atmospheric Research
 ' Washington State University
 '
-' Last edited: 2013-10-18
+' Last edited: 2013-06-16
 ' By: Patrick O'Keeffe <pokeeffe@wsu.edu>
 '
 ' Derived from copyrighted works purchased from Campbell Scientific, Inc.
@@ -42,15 +42,7 @@ Const NMBR_WND_SAMPLES = 3000/FAST_INTV  '#pts to compute 3sec mean horizontal w
 Const HMP_T_DIFF      = 2     'HMP T diff input chan #
 Const HMP_RH_DIFF     = 3     'HMP RH diff input chan #
 Const NRLITE_DIFF     = 4     'NR-Lite2 diff input chan #
-
-'XXX - the system deployed at MMTN site has an issue whereby the PAR data does
-'  not track the net rad. data; exchanging sensors did not resolve the problem
-'  so we are going to swap the sensor around different datalogger terminals
-'Originally, this was = 5
-ConstTable
-  Const LI190_DIFF      = 6     'LI190SB diff input chan #
-EndConstTable
-'XXX
+Const LI190_DIFF      = 5     'LI190SB diff input chan #
 
 Const oh34B_WD_SE     = 1     '034B single ended input chan # = D1H
 Const oh34B_WD_VX     = 1     '034B voltage excitation chan #
@@ -131,7 +123,7 @@ Const CFCT_NRLITE_SENS   = 12.2
 Const CFCT_LI190_SENS    = 6.18
 Const CFCT_SENSOR_SHFP   = False
 
-Const MMTN_SERIAL_NO     = 6504
+Const MMTN_SERIAL_NO     = 6506
 Const MMTN_CSAT_AZIMUTH  = 180 
 Const MMTN_NRLITE_SENS   = 12.2
 Const MMTN_LI190_SENS    = 6.03
@@ -143,11 +135,11 @@ Const MSLK_NRLITE_SENS   = 12.3
 Const MSLK_LI190_SENS    = 6.5
 Const MSLK_SENSOR_SHFP   = False
 
-Const LAB1_SERIAL_NO     = 6506
-Const LAB1_CSAT_AZIMUTH  = 0
-Const LAB1_NRLITE_SENS   = 12.0
-Const LAB1_LI190_SENS    = 6.5
-Const LAB1_SENSOR_SHFP   = False
+'Const LAB1_SERIAL_NO     = 6506
+'Const LAB1_CSAT_AZIMUTH  = 0
+'Const LAB1_NRLITE_SENS   = 12.0
+'Const LAB1_LI190_SENS    = 6.5
+'Const LAB1_SENSOR_SHFP   = False
 
 
 '----- FIXED CALIBRATION VALUES ------
@@ -1051,11 +1043,11 @@ Sub load_site_values()
     nrlite_sens     = MSLK_NRLITE_SENS
     li190_sens      = MSLK_LI190_SENS
     sensor_shfp     = MSLK_SENSOR_SHFP
-  ElseIf ( Status.SerialNumber = LAB1_SERIAL_NO ) Then
-    csat_azimuth    = LAB1_CSAT_AZIMUTH
-    nrlite_sens     = LAB1_NRLITE_SENS
-    li190_sens      = LAB1_LI190_SENS
-    sensor_shfp     = LAB1_SENSOR_SHFP
+'  ElseIf ( Status.SerialNumber = LAB1_SERIAL_NO ) Then
+'    csat_azimuth    = LAB1_CSAT_AZIMUTH
+'    nrlite_sens     = LAB1_NRLITE_SENS
+'    li190_sens      = LAB1_LI190_SENS
+'    sensor_shfp     = LAB1_SENSOR_SHFP
   Else    'error case
     csat_azimuth    = NaN
     nrlite_sens     = NaN
