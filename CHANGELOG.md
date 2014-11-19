@@ -4,6 +4,16 @@ Change Log for GHG Monitoring Tower Program
 Next version
 ------------
 
+> <div style="border: 1px solid red; padding: 4px">**Incompatible settings file**  
+> After deployment, program settings must be **completely reset** before
+> reprogramming with site-specific values.</div>
+
+### Known Issues
+
+* *Required actions after deployment*
+    * Reset program settings (or delete settings file from CPU drive) and
+      re-program with correct site-specific values
+
 ### Enhancements
 
 * Transition back to conditional compilation for auxiliary sensors:
@@ -14,6 +24,9 @@ Next version
       encountered, improving automation scripts)
     * Increase available recording time by not allocating space for sensors
       which are not used
+* Also use conditional compilation to enable/disable soil moisture probes;
+  data tables are unchanged but if probes are disabled, only NANs are recorded
+  instead of potentially misleading data
 
 ### Other Changes
 

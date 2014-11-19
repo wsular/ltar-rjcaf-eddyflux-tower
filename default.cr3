@@ -12,7 +12,7 @@ Const UTC_OFFSET = -8    'offset from UTC as +/- hours; PST = -8
 '----- PROGRAM TIMING -----
 Const FAST_INTV = 100     'length of primary scan interval, milliseconds
 Const SLOW_INTV = 1       'length of secondary scan interval, seconds
-Const SOIL_INTV = 5       'length of heat flux plate scan interval, seconds
+Const SOIL_INTV = 15      'length of slowest sensors (soil probes, gps, shfp)
 Const STAT_OUT_5 = 5   	  'stats output interval #1, minutes
 Const STAT_OUT_30 = 30		  'stats output interval #2, minutes; use multiple of STAT_INT1
 Const SDM_PER = 30         'default SDM clock speed
@@ -75,50 +75,6 @@ ConstTable
   Const PIC_CH4_ENABLED = False
 EndConstTable
 
-
-'----- SITE-SPECIFIC DEFAULT VALUES ------
-' These values are used by the datalogger when a calibration file is not available on the
-' datalogger's CPU. If it cannot find the calfile, it looks up the appropriate values to 
-' use based on the serial number of the datalogger (!). HOWEVER, if there is a calfile 
-' available, these values are not explicitly used -- they are read from the calfile. Values
-' read from a calfile may not be the same as these default values (though this really only 
-' applies to boolean sensor flags, not sensitivities, etc)
-'
-' Note that site timezone is specified via the UTC_OFFSET constant above; due to limitations 
-' of the datalogger programming language, it is not possible to use the same technique for it
-' as is used for these values.
-'
-' *_SERIAL_NO          integer serial number of datalogger at monitoring site
-' *_CSAT_AZIMUTH       direction the sonic anemometer is pointing w.r.t _TRUE_ north. 
-'                      it may be more clear to future users to express as azimuth+declination
-' *_NRLITE_SENS        sensitivity of NR-Lite2 net rad., uV/W/m^2
-' *_LI190_SENS         sensitivity of LI-190SB quantum PAR sensor, uA/mmol/s/m^2
-'
-Const CFNT_SERIAL_NO     = 6034
-Const CFNT_CSAT_AZIMUTH  = 186
-Const CFNT_NRLITE_SENS   = 13.3
-Const CFNT_LI190_SENS    = 6.26
-
-Const LIND_SERIAL_NO     = 6035
-Const LIND_CSAT_AZIMUTH  = 188
-Const LIND_NRLITE_SENS   = 12.6
-Const LIND_LI190_SENS    = 6.84
-
-Const CFCT_SERIAL_NO     = 6503
-Const CFCT_CSAT_AZIMUTH  = 184+15
-Const CFCT_NRLITE_SENS   = 12.2
-Const CFCT_LI190_SENS    = 6.18
-
-Const MMTN_SERIAL_NO     = 6506
-Const MMTN_CSAT_AZIMUTH  = 180 
-Const MMTN_NRLITE_SENS   = 12.2
-Const MMTN_LI190_SENS    = 6.03
-
-Const MSLK_SERIAL_NO     = 6505
-Const MSLK_CSAT_AZIMUTH  = 254
-Const MSLK_NRLITE_SENS   = 12.3
-Const MSLK_LI190_SENS    = 6.5
-
 '----- FIXED CALIBRATION VALUES ------
 Const HMP_T_MULT       = (60 - -80)/1000    '-80 to +60 *C over 1V = 0.14
 Const HMP_T_OFFSET     = -80
@@ -163,7 +119,7 @@ Units n = samples
 Dim sensor_shfp As Boolean 'set based on site SN
 
 '----- RETAINED SETTINGS -----
-Const NUM_SETTINGS = {18} 'set to length of settings array
+Const NUM_SETTINGS = {26} 'set to length of settings array
 Const WRITEFILE = 0
 Const READFILE = 1
 
@@ -186,6 +142,14 @@ Alias settings(15) = pic_ch4_mult
 Alias settings(16) = pic_ch4_offset
 Alias settings(17) = pic_h2o_mult
 Alias settings(18) = pic_h2o_offset
+Alias settings(19) = sonic_azimuth
+Alias settings(20) = NRLite2_sens
+Alias settings(21) = LI190SB_sens
+Alias settings(22) = soil_5_enabled
+Alias settings(23) = soil_6_enabled
+Alias settings(24) = soil_7_enabled
+Alias settings(25) = soil_8_enabled
+Alias settings(26) = soil_9_enabled
 Units hfp1_sens = uV/W/m^2
 Units hfp1_R = ohms
 Units hfp1_A = m^2
@@ -193,6 +157,9 @@ Units hfp2_sens = uV/W/m^2
 Units hfp2_R = ohms
 Units hfp2_A = m^2
 'ignore mults & offsets
+Units sonic_azimuth = degEofTN
+Units NRLite2_sens = uV/W/m^2
+Units LI190SB_sens = uA/mmol/s/m^2
 
 Dim choice(NUM_SETTINGS)
 Alias choice(1)  = choice_hfp1_sens
@@ -212,7 +179,15 @@ Alias choice(14) = choice_pic_co2_offset
 Alias choice(15) = choice_pic_ch4_mult
 Alias choice(16) = choice_pic_ch4_offset
 Alias choice(17) = choice_pic_h2o_mult
-Alias choice(18) = choice_pic_h2o_offset 
+Alias choice(18) = choice_pic_h2o_offset
+Alias choice(19) = choice_sonic_azimuth
+Alias choice(20) = choice_NRLite2_sens
+Alias choice(21) = choice_LI190SB_sens
+Alias choice(22) = choice_soil_5_enabled
+Alias choice(23) = choice_soil_6_enabled
+Alias choice(24) = choice_soil_7_enabled
+Alias choice(25) = choice_soil_8_enabled
+Alias choice(26) = choice_soil_9_enabled
 
 '----- SELF-MONITORING -----
 Dim SkippedScans(3)
@@ -237,9 +212,6 @@ Const OFFSET = 17          'min # recs req'd to compensate for IRGA/CSAT lags on
 Const BANDWIDTH = 20            '20 = 20 Hz
 Const DELAY_EC150 = INT (4000/FAST_INTV/BANDWIDTH) 'Automatically computed lag of the EC150 data.
 Const EC150_REC_BCK = OFFSET-DELAY_EC150 'Number of records back to align EC150 data.
-
-Dim csat_azimuth                      'set automatically depending on logger serial no.
-Units csat_azimuth = degreesEofTN
 
 Dim sonic_irga_raw(12)                     'unlagged EC150 irga + CSAT3A sonic data
 
@@ -345,8 +317,6 @@ Units RH_hmp_Avg = %
 
 
 '**********  NR-Lite2  **********
-Dim nrlite_sens
-Units nrlite_sens = uV/W/m^2
 Dim nrlite_mult
 
 Public NRLITE(2)
@@ -360,8 +330,6 @@ Public hor_wind_raw
 
 
 '**********  LI190SB quantum PAR sensor  ***********
-Dim li190_sens
-Units li190_sens = uA/mmol/s/m^2
 Dim li190_dens_mult
 Dim li190_tot_mult
 
@@ -869,15 +837,9 @@ DataTable (site_info,TRUE,10)
   Sample(1,UTC_OFFSET,FP2)
     FieldNames("UTC_offset")
     Units UTC_OFFSET = hours
-  Sample(1,csat_azimuth,FP2)
-    FieldNames("sonic_azimuth")
-    Units sonic_azimuth = degEofTN
-  Sample(1,nrlite_sens,FP2)           'NR-Lite2 sensitivity
-    FieldNames("NRLite2_sens")
-    Units NRLite2_sens = uV/W/m^2
-  Sample(1,li190_sens,FP2)            'LI-190SB sensitivity
-    FieldNames("LI190SB_sens")
-    Units LI190SB_sens = uA/mmol/s/m^2
+  Sample(1,sonic_azimuth,FP2)
+  Sample(1,NRLite2_sens,FP2)
+  Sample(1,LI190SB_sens,FP2)
   Sample(1,soil_hfp1_sensitivity,IEEE4)            'heat flux plate #1 info
     FieldNames("HFP_1_sens")
     Units HFP_1_SENS = W/m^2/mV
@@ -976,37 +938,6 @@ EndFunction
 
 
 '===============================  SUBROUTINES  ==========================================
-Sub load_site_values()
-  If     ( Status.SerialNumber = CFNT_SERIAL_NO ) Then     'Cook farm no till
-    csat_azimuth    = CFNT_CSAT_AZIMUTH
-    nrlite_sens     = CFNT_NRLITE_SENS
-    li190_sens      = CFNT_LI190_SENS
-  ElseIf ( Status.SerialNumber = LIND_SERIAL_NO ) Then     'Lind dryland station
-    csat_azimuth    = LIND_CSAT_AZIMUTH
-    nrlite_sens     = LIND_NRLITE_SENS
-    li190_sens      = LIND_LI190_SENS
-  ElseIf ( Status.SerialNumber = CFCT_SERIAL_NO ) Then     'Clark farm conventional till
-    csat_azimuth    = CFCT_CSAT_AZIMUTH
-    nrlite_sens     = CFCT_NRLITE_SENS
-    li190_sens      = CFCT_LI190_SENS
-  ElseIf ( Status.SerialNumber = MMTN_SERIAL_NO ) Then      'Moscow Mountain Road
-    csat_azimuth    = MMTN_CSAT_AZIMUTH
-    nrlite_sens     = MMTN_NRLITE_SENS
-    li190_sens      = MMTN_LI190_SENS
-  ElseIf ( Status.SerialNumber = MSLK_SERIAL_NO ) Then
-    csat_azimuth    = MSLK_CSAT_AZIMUTH
-    nrlite_sens     = MSLK_NRLITE_SENS
-    li190_sens      = MSLK_LI190_SENS
-  Else    'error case
-    csat_azimuth    = NaN
-    nrlite_sens     = NaN
-    li190_sens      = NaN
-  EndIf
-  nrlite_mult = 1000/nrlite_sens
-  li190_dens_mult = 1000/(li190_sens*0.604)
-  li190_tot_mult = (1/(li190_sens*0.604))*(FAST_INTV/1000)
-EndSub
-
 Sub set_default_choices()
   choice_hfp1_sens      = 0
   choice_hfp1_R         = 0
@@ -1026,6 +957,9 @@ Sub set_default_choices()
   choice_pic_ch4_offset = 0
   choice_pic_h2o_mult   = 1.0
   choice_pic_h2o_offset = 0
+  choice_sonic_azimuth  = NAN
+  choice_NRLite2_sens   = 0
+  choice_LI190SB_sens   = 0
 EndSub
 
 Sub populate_choices()
@@ -1039,6 +973,9 @@ Sub save_current_choices()
   Calfile(settings,NUM_SETTINGS,SETTINGS_FILE,WRITEFILE)
 
   'update dependent variables
+  nrlite_mult = 1000/NRLite2_sens
+  li190_dens_mult = 1000/(LI190SB_sens*0.604)
+  li190_tot_mult = (1/(LI190SB_sens*0.604))*(FAST_INTV/1000)  
   #If (SHFP_ENABLED) Then
     soil_hfp1_sensitivity = 1000/hfp1_sens
     soil_hfp2_sensitivity = 1000/hfp2_sens
@@ -1086,7 +1023,7 @@ Const Apply = True
 Const Disable = False
 Const No = False
 Const Cancel = False
-Dim save_changes As Boolean
+Public save_changes As Boolean
 Dim recompile As Boolean
 
 DisplayMenu("REACCH DAQ", -1) 'add submenu to main
@@ -1117,6 +1054,21 @@ DisplayMenu("REACCH DAQ", -1) 'add submenu to main
   EndSubMenu
 
   SubMenu("Settings")
+    MenuItem("Sonic azimuth", choice_sonic_azimuth)
+    MenuItem("NR sensitivity", choice_NRLite2_sens)
+    MenuItem("PAR sensitivity", choice_LI190SB_sens)
+    SubMenu("Soil moisture probes")
+      MenuItem("Enable 5 ?", soil_5_enabled)
+        MenuPick(Yes, No)
+      MenuItem("Enable 6 ?", soil_6_enabled)
+        MenuPick(Yes, No)
+      MenuItem("Enable 7 ?", soil_7_enabled)
+        MenuPick(Yes, No)
+      MenuItem("Enable 8 ?", soil_8_enabled)
+        MenuPick(Yes, No)
+      MenuItem("Enable 9 ?", soil_9_enabled)
+        MenuPick(Yes, No)
+    EndSubMenu
     #If (SHFP_ENABLED) Then
       SubMenu("Soil heat flux plate")
         DisplayLine("Plate #1 (DF 6):")
@@ -1164,7 +1116,6 @@ EndMenu
 
 '================================  PROGRAM  =============================================
 BeginProg
-  load_site_values()
   setup()
 
   Scan (FAST_INTV,mSec,FAST_BUFFER_SIZE,0)
@@ -1255,7 +1206,7 @@ BeginProg
         irga_uptime = irga_samples/samples_possible
         
         'add azimuth to calculated wind dir
-        rslt_wnd_dir = (360 + rslt_wnd_dir + csat_azimuth) MOD 360
+        rslt_wnd_dir = (360 + rslt_wnd_dir + sonic_azimuth) MOD 360
         tau = SQR ((Ux_Uz_cov*Ux_Uz_cov)+(Uy_Uz_cov*Uy_Uz_cov))
         u_star = SQR (tau)
         Ts_Std = SQR (Ts_Std)
@@ -1301,7 +1252,7 @@ BeginProg
         irga_uptime = irga_samples/samples_possible
         
         'add azimuth to calculated wind dir
-        rslt_wnd_dir = (360 + rslt_wnd_dir + csat_azimuth) MOD 360
+        rslt_wnd_dir = (360 + rslt_wnd_dir + sonic_azimuth) MOD 360
         tau = SQR ((Ux_Uz_cov*Ux_Uz_cov)+(Uy_Uz_cov*Uy_Uz_cov))
         u_star = SQR (tau)
         Ts_Std = SQR (Ts_Std)
@@ -1407,6 +1358,7 @@ BeginProg
     If (save_changes) Then
       save_changes = False 'reset b4 we forget
       save_current_choices()
+      CallTable(site_info)
       CallTable(extra_info)
     EndIf
     
@@ -1422,44 +1374,50 @@ BeginProg
     CallTable(site_daily)
 
     '== Decagon soil moisture probes
-    SDI12Recorder(soil_5TM_ID5_E,SDI_COM_ADDR,DEC_5TM_ID5_SDI_ADDR,"M!",1.0,0)
-    If (soil_5TM_ID5_E = NAN) Then 
-      soil_5TM_ID5_T = NAN
-      soil_5TM_ID5_VWC = NAN
-    Else
-      soil_5TM_ID5_VWC = Topp_equation(soil_5TM_ID5_E)
+    If (soil_5_enabled) Then
+      SDI12Recorder(soil_5TM_ID5_E,SDI_COM_ADDR,DEC_5TM_ID5_SDI_ADDR,"M!",1.0,0)
+      If (soil_5TM_ID5_E = NAN) Then 
+        soil_5TM_ID5_T = NAN
+        soil_5TM_ID5_VWC = NAN
+      Else
+        soil_5TM_ID5_VWC = Topp_equation(soil_5TM_ID5_E)
+      EndIf
     EndIf
-
-    SDI12Recorder(soil_5TM_ID6_E,SDI_COM_ADDR,DEC_5TM_ID6_SDI_ADDR,"M!",1.0,0)
-    If (soil_5TM_ID6_E = NAN) Then 
-      soil_5TM_ID6_T = NAN
-      soil_5TM_ID6_VWC = NAN
-    Else
-      soil_5TM_ID6_VWC = Topp_equation(soil_5TM_ID6_E)
+    If (soil_6_enabled) Then
+      SDI12Recorder(soil_5TM_ID6_E,SDI_COM_ADDR,DEC_5TM_ID6_SDI_ADDR,"M!",1.0,0)
+      If (soil_5TM_ID6_E = NAN) Then 
+        soil_5TM_ID6_T = NAN
+        soil_5TM_ID6_VWC = NAN
+      Else
+        soil_5TM_ID6_VWC = Topp_equation(soil_5TM_ID6_E)
+      EndIf
     EndIf
-
-    SDI12Recorder(soil_5TM_ID7_E,SDI_COM_ADDR,DEC_5TM_ID7_SDI_ADDR,"M!",1.0,0)
-    If (soil_5TM_ID7_E = NAN) Then 
-      soil_5TM_ID7_T = NAN
-      soil_5TM_ID7_VWC = NAN
-    Else
-      soil_5TM_ID7_VWC = Topp_equation(soil_5TM_ID7_E)
+    If (soil_7_enabled) Then
+      SDI12Recorder(soil_5TM_ID7_E,SDI_COM_ADDR,DEC_5TM_ID7_SDI_ADDR,"M!",1.0,0)
+      If (soil_5TM_ID7_E = NAN) Then 
+        soil_5TM_ID7_T = NAN
+        soil_5TM_ID7_VWC = NAN
+      Else
+        soil_5TM_ID7_VWC = Topp_equation(soil_5TM_ID7_E)
+      EndIf
     EndIf
-
-    SDI12Recorder(soil_5TM_ID8_E,SDI_COM_ADDR,DEC_5TM_ID8_SDI_ADDR,"M!",1.0,0)
-    If (soil_5TM_ID8_E = NAN) Then 
-      soil_5TM_ID8_T = NAN
-      soil_5TM_ID8_VWC = NAN
-    Else
-      soil_5TM_ID8_VWC = Topp_equation(soil_5TM_ID8_E)
+    If (soil_8_enabled) Then
+      SDI12Recorder(soil_5TM_ID8_E,SDI_COM_ADDR,DEC_5TM_ID8_SDI_ADDR,"M!",1.0,0)
+      If (soil_5TM_ID8_E = NAN) Then 
+        soil_5TM_ID8_T = NAN
+        soil_5TM_ID8_VWC = NAN
+      Else
+        soil_5TM_ID8_VWC = Topp_equation(soil_5TM_ID8_E)
+      EndIf
     EndIf
-
-    SDI12Recorder(soil_5TM_ID9_E,SDI_COM_ADDR,DEC_5TM_ID9_SDI_ADDR,"M!",1.0,0)
-    If (soil_5TM_ID9_E = NAN) Then 
-      soil_5TM_ID9_T = NAN
-      soil_5TM_ID9_VWC = NAN
-    Else
-      soil_5TM_ID9_VWC = Topp_equation(soil_5TM_ID9_E)
+    If (soil_9_enabled) Then
+      SDI12Recorder(soil_5TM_ID9_E,SDI_COM_ADDR,DEC_5TM_ID9_SDI_ADDR,"M!",1.0,0)
+      If (soil_5TM_ID9_E = NAN) Then 
+        soil_5TM_ID9_T = NAN
+        soil_5TM_ID9_VWC = NAN
+      Else
+        soil_5TM_ID9_VWC = Topp_equation(soil_5TM_ID9_E)
+      EndIf
     EndIf
 
     #If (SHFP_ENABLED) Then
