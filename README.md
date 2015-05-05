@@ -23,7 +23,8 @@ and access credentials.
 
 ### License ####
 
-This work is adapted from proprietary works purchased from Campbell Scientific
+This work is licensed under [The MIT License][3] adapted from proprietary works purchased from Campbell Scientific
 Inc, who reserves all rights to that original work (which is not present in
-this repository) All new work is licensed under the FIXME
+this repository).
 
+  [3]: http://opensource.org/licenses/MIT
