@@ -1,16 +1,16 @@
-*Third-party documentation*
+*Reference documents*
 
 To minimize total repository size and respect potentially incongruous terms of 
 redistribution, copies of documentation produced by third-parties are not
-checked into this repository. However, all sources are/were available on the public
-internet. To retrieve third-party documentation, either:
+checked into this repository. However, all sources are/were available on the 
+public Internet. To retrieve third-party documentation, either:
 
   1.  Manually visit the URLs listed in the plain-text document `_sources.txt`
   2.  Run the Python script `_fetch.py` with the plain-text document as its
       single argument. 
       * On Windows machines, drag-n-dropping `_sources.txt` onto `_fetch.py` is
         generally sufficient. 
-      * On other platforms, it may need to explicitly specified: 
+      * On other platforms, it may need to be explicitly specified: 
         `python _fetch.py _sources.txt`
 
 The document `_sources.txt` contains many lines of url/file name pairs. To be

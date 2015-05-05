@@ -7,6 +7,6 @@ Thumbs.db
 # LibeOffice lock files
 *.ods#
 
-/references/*.pdf
-/references/*.zip
-/references/*.cr1
+/ref/*.pdf
+/ref/*.zip
+/ref/*.cr1
