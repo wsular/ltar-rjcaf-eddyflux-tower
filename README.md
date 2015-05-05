@@ -1,22 +1,25 @@
 Greenhouse Gas Monitoring Tower Datalogger Program
 ==================================================
 
-Regional Approaches to Climate Change (2011-2016)
--------------------------------------------------
+Vineyard Pilot Study (2015)
+---------------------------
 
-This repository contains the operating program run by the datalogger at each
-greenhouse gas (eddy-covariance) monitoring tower. The program combines 10 Hz
-measurements of CO2 and H2O with 3D wind speeds to generate near real-time 
-surface fluxes of CO2, latent & sensible heat. Additional meteorological 
-statistics are produced at 5 & 30 minute intervals. 
+This is an adaption of the [datalogger program][1] running at greenhouse gas 
+monitoring towers which are part of the [REACCH project][2]. The program 
+combines 10 Hz measurements of CO2 and H2O with 3D wind speeds to generate near
+real-time surface fluxes of CO2, latent & sensible heat. Additional 
+meteorological statistics are produced at 5 & 30 minute intervals. 
 
-> Online: <https://bitbucket.org/wsular/2011-reacch-tower-logger>
+  [1]: https://bitbucket.org/wsular/2011-reacch-tower-logger
+  [2]: http://www.reacchpna.org
 
-This work is a part of the 
-[Regional Approaches to Climate Change for Pacific Northwest Agriculture](http://www.reacchpna.org)
-project, USDA NIFA award #2011-68002-30191. It is maintained by the Washington 
-State University [Laboratory for Atmospheric Research](http://lar.wsu.edu) 
-within the context of the Objective 2 Greenhouse Gas Monitoring team.
+The main repository (here) contains the datalogger program only. A second, 
+private repository hosts deployment-specific information like network addresses 
+and access credentials. 
+
+* Main repository (public): <https://bitbucket.org/wsular/2015-vineyard-tower-logger>
+* Deployment-specific (private): <https://bitbucket.org/wsular/2015-vineyard-tower-secrets>
+
 
 ### License ####
 
