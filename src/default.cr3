@@ -935,23 +935,29 @@ EndTable
 '================================= EMAIL =====================================
 Include "CPU:email.cr3"  'contains non-public settings
 Const CRLF = CHR(13) & CHR(10)
-Public smtp_response As String * 80
-Public email_results
-Public test_email As Boolean
+Dim smtp_response As String * 80
+Dim test_email As Boolean
+Dim self As String * 16
 
 Sub send_startup_email()
   Dim subject As String * 78, msg As String * 512
   subject = "Start-up notification from Vineyard DAQ"
-  msg = ("This is the Vineyard datalogger. I've just finished my " & _
-    "start-up routine and would like to share this important information "& _
-    "with you: " & CRLF & CRLF)
+  msg = ("This is " & self & ". I'm back online and would like you to " & _
+    "how it went. "& CRLF & CRLF)
   'HINT both CompileResults and CardStatus come with a trailing <CR><LF> but 
   'CardStatus has a CRLF pair in the middle which must be stripped out
   msg &= "Compile results: " & RTrim(Status.CompileResults(1))
   msg &= "Card status: " & RTrim(Replace(Status.CardStatus(1), CRLF, " "))
   msg &= CRLF & "Program error count: " & Status.ProgErrors & CRLF
   msg &= "Watchdog error count: " & Status.WatchdogErrors & CRLF
-  email_results = EmailSend(SMTP,TO_ADDR,FROM_ADDR,subject,msg,"",USER,PASSWORD,smtp_response)
+  EmailSend(SMTP,TO_ADDR,FROM_ADDR,subject,msg,"",USER,PASSWORD,smtp_response)
+EndSub
+
+Sub send_test_email()
+  Dim subject As String * 78, msg As String * 512
+  subject = "Test email from " & self
+  msg = "Testing 1.. 2.. 3.." & CRLF
+  EmailSend(SMTP,TO_ADDR,FROM_ADDR,subject,msg,"",USER,PASSWORD,smtp_response)
 EndSub
 
 
@@ -1037,6 +1043,7 @@ Sub setup()
   Move(picco2ch4(1),3,NAN,1)
   Move(fiveTM(1),15,NAN,1)
   SDMSpeed (SDM_PER)
+  self = Status.StationName
 EndSub
 
 
@@ -1139,6 +1146,7 @@ DisplayMenu("REACCH DAQ", -1) 'add submenu to main
   
   SubMenu("Debug")
     MenuItem("Send test email", test_email)
+      MenuPick(Cancel,Yes)
   EndSubMenu
 EndMenu
 
@@ -1148,10 +1156,6 @@ BeginProg
   send_startup_email()
 
   Scan (FAST_INTV,mSec,FAST_BUFFER_SIZE,0)
-    If (test_email) Then
-      test_email = False
-      send_startup_email()
-    EndIf
         
     '== 034B wind vane acquisition 
     BrHalf(WindDir,1,mV5000,oh34B_WD_SE,oh34B_WD_VX,1,5000,True,0,INTEG,oh34B_WD_MULT,oh34B_WD_OFFSET)
@@ -1387,7 +1391,12 @@ BeginProg
       CallTable(stats5_ui)
       CallTable(stats30_ui)
     #EndIf
-    
+
+    If (test_email) Then
+      test_email = False
+      send_test_email()
+    EndIf
+
     If (save_changes) Then
       save_changes = False 'reset b4 we forget
       save_current_choices()
