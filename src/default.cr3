@@ -996,6 +996,11 @@ Sub set_default_choices()
   choice_LI190SB_sens   = 0
   choice_cup_ws_enabled = True
   choice_vane_wd_enabled = True
+  choice_soil_5_enabled = False
+  choice_soil_6_enabled = False
+  choice_soil_7_enabled = False
+  choice_soil_8_enabled = False
+  choice_soil_9_enabled = False
 EndSub
 
 Sub populate_choices()
@@ -1012,6 +1017,11 @@ Sub save_current_choices()
   nrlite_mult = 1000/NRLite2_sens
   li190_dens_mult = 1000/(LI190SB_sens*0.604)
   li190_tot_mult = (1/(LI190SB_sens*0.604))*(FAST_INTV/1000)
+  If (NOT soil_5_enabled) Then Move(fiveTM(1),3,NAN,1)
+  If (NOT soil_6_enabled) Then Move(fiveTM(4),3,NAN,1)
+  If (NOT soil_7_enabled) Then Move(fiveTM(7),3,NAN,1)
+  If (NOT soil_8_enabled) Then Move(fiveTM(10),3,NAN,1)
+  If (NOT soil_9_enabled) Then Move(fiveTM(13),3,NAN,1)
   #If (SHFP_ENABLED) Then
     soil_hfp1_sensitivity = 1000/hfp1_sens
     soil_hfp2_sensitivity = 1000/hfp2_sens
