@@ -4,25 +4,37 @@ Change Log for GHG Monitoring Tower Program
 Next version
 ------------
 
-> <div style="border: 1px solid red; padding: 4px">**Incompatible settings file**  
-> After deployment, program settings must be **completely reset** before
-> reprogramming with site-specific values.</div>
+> <div style="border: 1px solid red; padding: 4px">**Security advisement**  
+> A minimum of level 1 datalogger security is **required** for safe operation
+> of this program. If no security level is set, potentially catastropohic
+> changes can be made by anonymous users![^1]</div>
+
+  [^1]: In reality, seriously damaging changes can be made by anonymous users
+        even in previous versions; however, with this release *only* settings
+        and debug values are exposed in the Public table and the risk of
+        unintentional changes is higher.
 
 > <div style="border: 1px solid red; padding: 4px">**New include file**  
 > Before deployment, an encrypted version of the email include file **must** 
 > be stored on the logger's `CPU` drive.</div>
 
+> <div style="border: 1px solid red; padding: 4px">**Incompatible settings file**  
+> After deployment, program settings must be **completely reset** before
+> reprogramming with site-specific values.</div>
+
+
 ### Known Issues
 
-* After deploying this version, the program settings file must be reset and
-  site-specific values must be re-programmed. Be sure to have the relevant
-  values on-hand before deploying this version!
 * *Required actions before deployment*
     * Enable datalogger security at Level 1 or higher
     * Update template `email-template.cr3` as appropriate, then use CRBasic
       Editor's 'Save and Encrypt...' option to save as `email_Enc.cr3`
     * Send `email_Enc.cr3` to the datalogger's CPU drive. Do **not** set 
       'Run now' or 'Run on startup' options when pushing this file
+* *Required actions after deployment*
+    * Reset program settings (or delete settings file from CPU drive) and
+      re-program with correct site-specific values
+
 
 ### Enhancements
 
@@ -41,10 +53,18 @@ Next version
     * Data tables are unchanged but if disabled, only NANs are recorded
     * Can be modified via 'Settings' menu or Public table; made effective
       by changing `save_changes` to True
+* Expose program settings ("Settings" logger menu) values in Public table
+  along with variable to save/apply settings
+    * Allows remote modification of settings via LoggerNet Connect screen
+    * Reduces memory consumption because of fewer variables being cached
+      for public display
 * Notify by email when program starts up or whenever test email is sent
+
 
 ### Other Changes
 
+* Variables can no longer be monitored in the Public since it's repurposed for
+  remote settings access
 * New datalogger menu structure
     * previous top-level menu items are now under 'System Menu' submenu
     * previous 'Sensor Setup' submenu is now 'Settings' submenu

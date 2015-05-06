@@ -105,6 +105,7 @@ Const CP = 1004.67         'Estimate of heat capacity of air [J/(kg K)]
 
 
 '----- PROGRAM OPERATION VARIABLES -----
+Public debug_on As Boolean
 Dim filehandle As Long
 Dim scan_count As Long                                   'Number scans executed.
 Dim just_had_1hz_scan As Boolean                   'Flag used to indicate the SlowSequence has finished its scan.
@@ -124,34 +125,35 @@ Const WRITEFILE = 0
 Const READFILE = 1
 
 Dim settings(NUM_SETTINGS) 'values retained via file written to datalogger CPU
-Alias settings(1)  = hfp1_sens
-Alias settings(2)  = hfp1_R
-Alias settings(3)  = hfp1_A
-Alias settings(4)  = hfp2_sens
-Alias settings(5)  = hfp2_R
-Alias settings(6)  = hfp2_A
-Alias settings(7)  = lgr_n2o_mult
-Alias settings(8)  = lgr_n2o_offset
-Alias settings(9)  = lgr_co_mult
-Alias settings(10) = lgr_co_offset
-Alias settings(11) = lgr_h2o_mult
-Alias settings(12) = lgr_h2o_offset
-Alias settings(13) = pic_co2_mult
-Alias settings(14) = pic_co2_offset
-Alias settings(15) = pic_ch4_mult
-Alias settings(16) = pic_ch4_offset
-Alias settings(17) = pic_h2o_mult
-Alias settings(18) = pic_h2o_offset
-Alias settings(19) = sonic_azimuth
-Alias settings(20) = NRLite2_sens
-Alias settings(21) = LI190SB_sens
-Alias settings(22) = cup_ws_enabled
-Alias settings(23) = vane_wd_enabled
-Alias settings(24) = soil_5_enabled
-Alias settings(25) = soil_6_enabled
-Alias settings(26) = soil_7_enabled
-Alias settings(27) = soil_8_enabled
-Alias settings(28) = soil_9_enabled
+Alias settings(1)  = sonic_azimuth
+Alias settings(2)  = NRLite2_sens
+Alias settings(3)  = LI190SB_sens
+Alias settings(4)  = cup_ws_enabled
+Alias settings(5)  = vane_wd_enabled
+Alias settings(6)  = soil_5_enabled
+Alias settings(7)  = soil_6_enabled
+Alias settings(8)  = soil_7_enabled
+Alias settings(9)  = soil_8_enabled
+Alias settings(10) = soil_9_enabled
+Alias settings(11) = hfp1_sens
+Alias settings(12) = hfp1_R
+Alias settings(13) = hfp1_A
+Alias settings(14) = hfp2_sens
+Alias settings(15) = hfp2_R
+Alias settings(16) = hfp2_A
+Alias settings(17) = lgr_n2o_mult
+Alias settings(18) = lgr_n2o_offset
+Alias settings(19) = lgr_co_mult
+Alias settings(20) = lgr_co_offset
+Alias settings(21) = lgr_h2o_mult
+Alias settings(22) = lgr_h2o_offset
+Alias settings(23) = pic_co2_mult
+Alias settings(24) = pic_co2_offset
+Alias settings(25) = pic_ch4_mult
+Alias settings(26) = pic_ch4_offset
+Alias settings(27) = pic_h2o_mult
+Alias settings(28) = pic_h2o_offset
+
 Units hfp1_sens = uV/W/m^2
 Units hfp1_R = ohms
 Units hfp1_A = m^2
@@ -163,35 +165,35 @@ Units sonic_azimuth = degEofTN
 Units NRLite2_sens = uV/W/m^2
 Units LI190SB_sens = uA/mmol/s/m^2
 
-Dim choice(NUM_SETTINGS)
-Alias choice(1)  = choice_hfp1_sens
-Alias choice(2)  = choice_hfp1_R
-Alias choice(3)  = choice_hfp1_A
-Alias choice(4)  = choice_hfp2_sens
-Alias choice(5)  = choice_hfp2_R
-Alias choice(6)  = choice_hfp2_A
-Alias choice(7)  = choice_lgr_n2o_mult
-Alias choice(8)  = choice_lgr_n2o_offset
-Alias choice(9)  = choice_lgr_co_mult
-Alias choice(10) = choice_lgr_co_offset
-Alias choice(11) = choice_lgr_h2o_mult
-Alias choice(12) = choice_lgr_h2o_offset
-Alias choice(13) = choice_pic_co2_mult
-Alias choice(14) = choice_pic_co2_offset
-Alias choice(15) = choice_pic_ch4_mult
-Alias choice(16) = choice_pic_ch4_offset
-Alias choice(17) = choice_pic_h2o_mult
-Alias choice(18) = choice_pic_h2o_offset
-Alias choice(19) = choice_sonic_azimuth
-Alias choice(20) = choice_NRLite2_sens
-Alias choice(21) = choice_LI190SB_sens
-Alias choice(22) = choice_cup_ws_enabled
-Alias choice(23) = choice_vane_wd_enabled
-Alias choice(24) = choice_soil_5_enabled
-Alias choice(25) = choice_soil_6_enabled
-Alias choice(26) = choice_soil_7_enabled
-Alias choice(27) = choice_soil_8_enabled
-Alias choice(28) = choice_soil_9_enabled
+Public choice(NUM_SETTINGS)
+Alias choice(1)  = set_sonic_azimuth
+Alias choice(2)  = set_NRLite2_sens
+Alias choice(3)  = set_LI190SB_sens
+Alias choice(4)  = set_cup_ws_enabled
+Alias choice(5)  = set_vane_wd_enabled
+Alias choice(6)  = set_soil_5_enabled
+Alias choice(7)  = set_soil_6_enabled
+Alias choice(8)  = set_soil_7_enabled
+Alias choice(9)  = set_soil_8_enabled
+Alias choice(10) = set_soil_9_enabled
+Alias choice(11) = set_hfp1_sens
+Alias choice(12) = set_hfp1_R
+Alias choice(13) = set_hfp1_A
+Alias choice(14) = set_hfp2_sens
+Alias choice(15) = set_hfp2_R
+Alias choice(16) = set_hfp2_A
+Alias choice(17) = set_lgr_n2o_mult
+Alias choice(18) = set_lgr_n2o_offset
+Alias choice(19) = set_lgr_co_mult
+Alias choice(20) = set_lgr_co_offset
+Alias choice(21) = set_lgr_h2o_mult
+Alias choice(22) = set_lgr_h2o_offset
+Alias choice(23) = set_pic_co2_mult
+Alias choice(24) = set_pic_co2_offset
+Alias choice(25) = set_pic_ch4_mult
+Alias choice(26) = set_pic_ch4_offset
+Alias choice(27) = set_pic_h2o_mult
+Alias choice(28) = set_pic_h2o_offset
 
 '----- SELF-MONITORING -----
 Dim SkippedScans(3)
@@ -205,9 +207,9 @@ Units watchdog_errors = counts
 
 
 '***********  CR3000  ************
-Public panel_tmpr
+Dim panel_tmpr
 Units panel_tmpr = C
-Public batt_volt
+Dim batt_volt
 Units batt_volt = V
 
 
@@ -219,17 +221,19 @@ Const EC150_REC_BCK = OFFSET-DELAY_EC150 'Number of records back to align EC150 
 
 Dim sonic_irga_raw(12)                     'unlagged EC150 irga + CSAT3A sonic data
 
-Public sonic(5)                            'lagged working CSAT3A data
+Dim sonic(5)                            'lagged working CSAT3A data
 Alias sonic(1) = Ux
 Alias sonic(2) = Uy
 Alias sonic(3) = Uz
 Alias sonic(4) = Ts
 Alias sonic(5) = diag_sonic
-Units sonic = m/s
+Units Ux = m/s
+Units Uy = m/s
+Units Uz = m/s
 Units Ts = C
 Units diag_sonic = bitmap
 
-Public irga(9)
+Dim irga(9)
 Alias irga(1) = CO2
 Alias irga(2) = H2O
 Alias irga(3) = diag_irga
@@ -261,7 +265,7 @@ Alias etcvar(1)  = divisor                  'used to find molar mixing ratio.
 Alias etcvar(2)  = rho_d_mean               'Density of dry air used in WPL [kg / m^3].
 Alias etcvar(3)  = sigma_wpl                'density of water vapor / density of dry air.
 
-Public results(19)
+Dim results(19)
 Alias results(1)  = Ts_absolute       'sonic temp in Kelvin
 Alias results(2)  = CO2_ppm                'CO2 mixing ratio
 Alias results(3)  = Xv                'H2O mixing ratio
@@ -303,7 +307,7 @@ Units H2O_wpl_H = W/m^2
 
 
 '**********  HMP-155A temp/RH probe  **********
-Public hmp(4)
+Dim hmp(4)
 Alias hmp(1) = T_hmp                  'HMP temperature
 Alias hmp(2) = RH_hmp                 'HMP relative humidity
 Alias hmp(3) = e_hmp                  'HMP vapor pressure
@@ -313,7 +317,7 @@ Units RH_hmp = percent
 Units e_hmp = kPa
 Units e_sat_hmp = kPa
 
-Public hmp_stats(3)
+Dim hmp_stats(3)
 Alias hmp_stats(1) = H2O_hmp_mean
 Alias hmp_stats(2) = RH_hmp_Avg 
 Units H2O_hmp_mean = g/m^3
@@ -323,31 +327,31 @@ Units RH_hmp_Avg = %
 '**********  NR-Lite2  **********
 Dim nrlite_mult
 
-Public NRLITE(2)
-Alias NRLITE(1) = Rn
-Alias NRLITE(2) = Rn_meas
+Dim nrlite(2)
+Alias nrlite(1) = Rn
+Alias nrlite(2) = Rn_meas
 Units Rn = W/m^2
 Units Rn_meas = W/m^2
 
-Public hor_wind
-Public hor_wind_raw
+Dim hor_wind
+Dim hor_wind_raw
 
 
 '**********  LI190SB quantum PAR sensor  ***********
 Dim li190_dens_mult
 Dim li190_tot_mult
 
-Public PAR(3)
-Alias PAR(1) = PAR_mV
-Alias PAR(2) = PAR_flxdens
-Alias PAR(3) = PAR_totflx
+Dim par(3)
+Alias par(1) = PAR_mV
+Alias par(2) = PAR_flxdens
+Alias par(3) = PAR_totflx
 Units PAR_mV = mV
 Units PAR_flxdens = umol/s/m^2
 Units PAR_totflx = mmol/m^2
 
 
 '***********  034B wind vane  **********
-Public oh34B(2)
+Dim oh34B(2)
 Alias oh34B(1) = WS_ms
 Alias oh34B(2) = WindDir
 Units WS_ms = m/s
@@ -355,13 +359,13 @@ Units WindDir = degrees
 
 
 '**********  TE525 rain gage  **********
-Public Rain_mm
+Dim Rain_mm
 Units Rain_mm=mm
 
 
 '**********  GPS16X-HVS  **********
 Dim nmea_sentence(2) As String * 90
-Public gps_data(15)
+Dim gps_data(15)
 Alias gps_data(1) = latitude_a              'Degrees latitude (+ = East; - = West)
 Alias gps_data(2) = latitude_b              'Minutes latitude
 Alias gps_data(3) = longitude_a             'Degress longitude (+ = East; - = West)
@@ -396,7 +400,7 @@ Units nmbr_clock_change = occurrences
 
 '**********  Decagon 5TM soil moisture/temp **********
 ' Required so soil table can record NAN if probes are not used.
-Public fiveTM(15)
+Dim fiveTM(15)
 Alias fiveTM(1)  = soil_5TM_ID5_E
 Alias fiveTM(2)  = soil_5TM_ID5_T
 Alias fiveTM(3)  = soil_5TM_ID5_VWC
@@ -430,7 +434,7 @@ Units soil_5TM_ID9_VWC = v/v
 
 
 '**********  HFP01SC heat flux plate  **********
-Public hfp(4)
+Dim hfp(4)
 Alias hfp(1) = soil_hfp1_heat_flux
 Alias hfp(2) = soil_hfp2_heat_flux
 Alias hfp(3) = soil_hfp1_sensitivity
@@ -439,7 +443,7 @@ Units soil_hfp1_heat_flux = W/m^2
 Units soil_hfp2_heat_flux = W/m^2
 Units soil_hfp1_sensitivity = W/m^2/mV
 Units soil_hfp2_sensitivity = W/m^2/mV
-Public hfp_isCalibrating As Boolean = {False}
+Dim hfp_isCalibrating As Boolean = {False}
   
 #If (SHFP_ENABLED) Then  
   Const HFP_CAL_RUNAVG = 20/SOIL_INTV   'use 20 sec running averages
@@ -452,7 +456,7 @@ Public hfp_isCalibrating As Boolean = {False}
   Dim hfp1_selfcal_mult
   Dim hfp2_selfcal_mult
   
-  Public hfp_sw12_isOn As Boolean
+  Dim hfp_sw12_isOn As Boolean
   Dim hfp_selfcal(8,2)
   Alias hfp_selfcal(1,1) = hfp1_mVs          'inst. value of soil heat flux
   Alias hfp_selfcal(2,1) = hfp1_mVs_runavg   'run avg of soil heat flux
@@ -473,7 +477,7 @@ Public hfp_isCalibrating As Boolean = {False}
 #EndIf
 
 '**********  Los Gatos N2O/CO analyzer  **********
-Public lgrn2oco(3)                          'data variables
+Dim lgrn2oco(3)                          'data variables
 Alias lgrn2oco(1) = lgr_n2o
 Alias lgrn2oco(2) = lgr_co
 Alias lgrn2oco(3) = lgr_h2o
@@ -482,7 +486,7 @@ Units lgr_co = scale-dependent
 Units lgr_h2o = scale-dependent
 
 '**********  Picarro CO2/CH4 analyzer  **********
-Public picco2ch4(3) As Float
+Dim picco2ch4(3) As Float
 Alias picco2ch4(1) = pic_co2
 Alias picco2ch4(2) = pic_ch4
 Alias picco2ch4(3) = pic_h2o
@@ -491,24 +495,22 @@ Units pic_ch4 = scale-dependent
 Units pic_h2o = scale-dependent
 
 '**********  Decagon 2nd gen. sensors (UI) **********
-#If (NDVIPRI_ENABLED) Then
-  Public decagon(8) As Float
-  Alias decagon(1) = dec_ndvi_up1
-  Alias decagon(2) = dec_ndvi_up2
-  Alias decagon(3) = dec_ndvi_dn1
-  Alias decagon(4) = dec_ndvi_dn2
-  Alias decagon(5) = dec_pri_up1
-  Alias decagon(6) = dec_pri_up2
-  Alias decagon(7) = dec_pri_dn1
-  Alias decagon(8) = dec_pri_dn2
-  Units decagon = unknown
-#EndIf
+Dim decagon(8) As Float
+Alias decagon(1) = dec_ndvi_up1
+Alias decagon(2) = dec_ndvi_up2
+Alias decagon(3) = dec_ndvi_dn1
+Alias decagon(4) = dec_ndvi_dn2
+Alias decagon(5) = dec_pri_up1
+Alias decagon(6) = dec_pri_up2
+Alias decagon(7) = dec_pri_dn1
+Alias decagon(8) = dec_pri_dn2
+Units decagon = unknown
 
 
 '**********  Intermediate variables  **********
 Dim dly_data_out(12)                       'used to temporarily store the lagged record.
 
-Public work_stats_out(35)
+Dim work_stats_out(35)
 'sonic processing
 Alias work_stats_out(1) = Ts_Std          'results of covariance instructions, 10 qntys
 Alias work_stats_out(2) = Ts_Ux_cov
@@ -583,6 +585,25 @@ Units e_hmp_Avg = kPa
 Units e_sat_hmp_Avg = kPa
 Units samples_possible = samples
 
+
+'============================  REMOTE MONITORING  ============================
+DataTable(debug,True,2)
+  Sample(2,hmp(1),IEEE4)
+  Sample(2,nrlite(1),IEEE4)
+  Sample(2,par(1),IEEE4)
+  Sample(2,oh34B(1),IEEE4)
+  Sample(1,Rain_mm,IEEE4)
+  Sample(15,gps_data(1),IEEE4)
+  Sample(2,fiveTM(1),IEEE4)
+  Sample(2,fiveTM(4),IEEE4)
+  Sample(2,fiveTM(7),IEEE4)
+  Sample(2,fiveTM(10),IEEE4)
+  Sample(2,fiveTM(13),IEEE4)
+  Sample(4,hfp(1),IEEE4)
+  Sample(8,decagon(1),IEEE4)
+EndTable
+
+
 '===========================  PROCESSING DATA TABLES  ===================================
 DataTable(work_delay_ec100,TRUE,OFFSET) 'handles lagging CSAT+IRGA data
   TableHide
@@ -635,29 +656,16 @@ EndTable
 
 'time series data @ 10hz
 DataTable (tsdata,TRUE,-1)
-  'FieldNames used in this table because the aligned variables need the names
   DataInterval (0,FAST_INTV,mSec,100)
   CardOut (0,-1)
   Sample (4,sonic_irga_raw(1),IEEE4)
     FieldNames ("Ux,Uy,Uz,Ts")
-    Units Ux = m/s
-    Units Uy = m/s
-    Units Uz = m/s
-    Units Ts = C
   Sample (1,sonic_irga_raw(5),FP2)
     FieldNames ("diag_sonic")
-    Units diag_sonic = bitmap
   Sample (5,sonic_irga_raw(6),IEEE4)
     FieldNames ("CO2,H2O,diag_irga,amb_tmpr,amb_press")
-    Units CO2 = mg/m^3
-    Units H2O = g/m^3
-    Units diag_irga = bitmap
-    Units amb_tmpr = C
-    Units amb_press = kPa
   Sample (2,sonic_irga_raw(11),FP2)
     FieldNames ("CO2_signal,H2O_signal")
-    Units CO2_signal = unity
-    Units H2O_signal = unity
 EndTable
 
 '5min statistics
@@ -936,7 +944,7 @@ EndTable
       FieldNames("tblcalls_Tot")
   EndTable
 #EndIf
-
+  
 
 '================================= EMAIL =====================================
 Include "CPU:email.cr3"  'contains non-public settings
@@ -975,34 +983,34 @@ EndFunction
 
 '===============================  SUBROUTINES  ==========================================
 Sub set_default_choices()
-  choice_hfp1_sens      = 0
-  choice_hfp1_R         = 0
-  choice_hfp1_A         = 0
+  set_sonic_azimuth  = NAN
+  set_NRLite2_sens   = 0
+  set_LI190SB_sens   = 0
   set_cup_ws_enabled = False
   set_vane_wd_enabled = False
-  choice_hfp2_A         = 0
-  choice_lgr_n2o_mult   = 1.0
-  choice_lgr_n2o_offset = 0
-  choice_lgr_co_mult    = 1.0
-  choice_lgr_co_offset  = 0
-  choice_lgr_h2o_mult   = 1.0
-  choice_lgr_h2o_offset = 0
-  choice_pic_co2_mult   = 1.0
-  choice_pic_co2_offset = 0
-  choice_pic_ch4_mult   = 1.0
-  choice_pic_ch4_offset = 0
-  choice_pic_h2o_mult   = 1.0
-  choice_pic_h2o_offset = 0
-  choice_sonic_azimuth  = NAN
-  choice_NRLite2_sens   = 0
-  choice_LI190SB_sens   = 0
-  choice_cup_ws_enabled = True
-  choice_vane_wd_enabled = True
-  choice_soil_5_enabled = False
-  choice_soil_6_enabled = False
-  choice_soil_7_enabled = False
-  choice_soil_8_enabled = False
-  choice_soil_9_enabled = False
+  set_soil_5_enabled = False
+  set_soil_6_enabled = False
+  set_soil_7_enabled = False
+  set_soil_8_enabled = False
+  set_soil_9_enabled = False
+  set_hfp1_sens      = 0
+  set_hfp1_R         = 0
+  set_hfp1_A         = 0
+  set_hfp2_sens      = 0
+  set_hfp2_R         = 0
+  set_hfp2_A         = 0
+  set_lgr_n2o_mult   = 1.0
+  set_lgr_n2o_offset = 0
+  set_lgr_co_mult    = 1.0
+  set_lgr_co_offset  = 0
+  set_lgr_h2o_mult   = 1.0
+  set_lgr_h2o_offset = 0
+  set_pic_co2_mult   = 1.0
+  set_pic_co2_offset = 0
+  set_pic_ch4_mult   = 1.0
+  set_pic_ch4_offset = 0
+  set_pic_h2o_mult   = 1.0
+  set_pic_h2o_offset = 0
 EndSub
 
 Sub populate_choices()
@@ -1105,9 +1113,9 @@ DisplayMenu("REACCH DAQ", -1) 'add submenu to main
   EndSubMenu
 
   SubMenu("Settings")
-    MenuItem("Sonic azimuth", choice_sonic_azimuth)
-    MenuItem("NR sensitivity", choice_NRLite2_sens)
-    MenuItem("PAR sensitivity", choice_LI190SB_sens)
+    MenuItem("Sonic azimuth", set_sonic_azimuth)
+    MenuItem("NR sensitivity", set_NRLite2_sens)
+    MenuItem("PAR sensitivity", set_LI190SB_sens)
     SubMenu("Cup & vane windset")
       MenuItem("Enable WS?", set_cup_ws_enabled)
         MenuPick(Yes, No)
@@ -1129,37 +1137,37 @@ DisplayMenu("REACCH DAQ", -1) 'add submenu to main
     #If (SHFP_ENABLED) Then
       SubMenu("Soil heat flux plate")
         DisplayLine("Plate #1 (DF 6):")
-        MenuItem("Sensitivity", choice_hfp1_sens)
-        MenuItem("Resistance", choice_hfp1_R)
-        MenuItem("Area", choice_hfp1_A)
+        MenuItem("Sensitivity", set_hfp1_sens)
+        MenuItem("Resistance", set_hfp1_R)
+        MenuItem("Area", set_hfp1_A)
         DisplayLine("Plate #2 (DF 7):")
-        MenuItem("Sensitivity", choice_hfp2_sens)
-        MenuItem("Resistance", choice_hfp2_R)
-        MenuItem("Area", choice_hfp2_A)
+        MenuItem("Sensitivity", set_hfp2_sens)
+        MenuItem("Resistance", set_hfp2_R)
+        MenuItem("Area", set_hfp2_A)
       EndSubMenu
     #Else
       DisplayLine("SHFP disabled")
     #EndIf
     #If (LGR_N2O_ENABLED) Then
       SubMenu("LGR N2O/CO/H2O")
-        MenuItem("N2O Mult. (units/mV)", choice_lgr_n2o_mult)
-        MenuItem("N2O Offset (units@0mV)", choice_lgr_n2o_offset)
-        MenuItem("CO Mult. (units/mV)", choice_lgr_co_mult)
-        MenuItem("CO Offset (units@0mV)", choice_lgr_co_offset)
-        MenuItem("H2O Mult. (units/mV)", choice_lgr_h2o_mult)
-        MenuItem("H2O Offset (units@0mV)", choice_lgr_h2o_offset)
+        MenuItem("N2O Mult. (units/mV)", set_lgr_n2o_mult)
+        MenuItem("N2O Offset (units@0mV)", set_lgr_n2o_offset)
+        MenuItem("CO Mult. (units/mV)", set_lgr_co_mult)
+        MenuItem("CO Offset (units@0mV)", set_lgr_co_offset)
+        MenuItem("H2O Mult. (units/mV)", set_lgr_h2o_mult)
+        MenuItem("H2O Offset (units@0mV)", set_lgr_h2o_offset)
       EndSubMenu
     #Else
       DisplayLine("N2O/CO disabled")
     #EndIf
     #If (PIC_CH4_ENABLED) Then
       SubMenu("Picarro CO2/CH4/H2O")
-        MenuItem("CO2 Mult. (units/mV)", choice_pic_co2_mult)
-        MenuItem("CO2 Offset (units@0mV)", choice_pic_co2_offset)
-        MenuItem("CH4 Mult. (units/mV)", choice_pic_ch4_mult)
-        MenuItem("CH4 Offset (units@0mV)", choice_pic_ch4_offset)
-        MenuItem("H2O Mult. (units/mV)", choice_pic_h2o_mult)
-        MenuItem("H2O Offset (units@0mV)", choice_pic_h2o_offset)
+        MenuItem("CO2 Mult. (units/mV)", set_pic_co2_mult)
+        MenuItem("CO2 Offset (units@0mV)", set_pic_co2_offset)
+        MenuItem("CH4 Mult. (units/mV)", set_pic_ch4_mult)
+        MenuItem("CH4 Offset (units@0mV)", set_pic_ch4_offset)
+        MenuItem("H2O Mult. (units/mV)", set_pic_h2o_mult)
+        MenuItem("H2O Offset (units@0mV)", set_pic_h2o_offset)
       EndSubMenu
     #Else
       DisplayLine("CH4/CO2 disabled")
@@ -1171,7 +1179,75 @@ DisplayMenu("REACCH DAQ", -1) 'add submenu to main
   EndSubMenu
   
   SubMenu("Debug")
-    MenuItem("Send test email", test_email)
+    SubMenu("Monitor sensors")
+      DisplayValue("sonic Ux", sonic_irga_raw(1))
+      DisplayValue("sonic Uy", sonic_irga_raw(2))
+      DisplayValue("sonic Uz", sonic_irga_raw(3))
+      DisplayValue("sonic Ts", sonic_irga_raw(4))
+      DisplayValue("sonic diag", sonic_irga_raw(5))
+      DisplayValue("irga CO2", sonic_irga_raw(6))
+      DisplayValue("irga H2O", sonic_irga_raw(7))
+      DisplayValue("irga diag", sonic_irga_raw(8))
+      DisplayValue("irga tmpr", sonic_irga_raw(9))
+      DisplayValue("irga press", sonic_irga_raw(10))
+      DisplayValue("irga CO2 sig", sonic_irga_raw(11))
+      DisplayValue("irga H2O sig", sonic_irga_raw(12))
+      DisplayValue("HMP tmpr", T_hmp)
+      DisplayValue("HMP RH", RH_hmp)
+      DisplayValue("NR Rn", Rn)
+      DisplayValue("NR Rn meas", Rn_meas)
+      DisplayValue("PAR mV", PAR_mV)
+      DisplayValue("PAR flx dens", PAR_flxdens)
+      DisplayValue("034B WS", WS_ms)
+      DisplayValue("034B WD", WindDir)
+      DisplayValue("Rain", Rain_mm)
+      DisplayValue("GPS lat deg", latitude_a)
+      DisplayValue("GPS lat min", latitude_b)
+      DisplayValue("GPS long deg", longitude_a)
+      DisplayValue("GPS long min", longitude_b)
+      DisplayValue("GPS speed", speed)
+      DisplayValue("GPS course", course)
+      DisplayValue("GPS mag var", magnetic_variation)
+      DisplayValue("GPS fix qual", fix_quality)
+      DisplayValue("GPS num sats", nmbr_satellites)
+      DisplayValue("GPS altitude", altitude)
+      DisplayValue("GPS pps", pps)
+      DisplayValue("GPS msg time", dt_since_gprmc)
+      DisplayValue("GPS ready", gps_ready)
+      DisplayValue("GPS max adj", max_clock_change)
+      DisplayValue("GPS num adj", nmbr_clock_change)
+      DisplayValue("5TM #5 e", soil_5TM_ID5_E)
+      DisplayValue("5TM #5 tmpr", soil_5TM_ID5_T)
+      DisplayValue("5TM #6 e", soil_5TM_ID6_E)
+      DisplayValue("5TM #6 tmpr", soil_5TM_ID6_T)
+      DisplayValue("5TM #7 e", soil_5TM_ID7_E)
+      DisplayValue("5TM #7 tmpr", soil_5TM_ID7_T)
+      DisplayValue("5TM #8 e", soil_5TM_ID8_E)
+      DisplayValue("5TM #8 tmpr", soil_5TM_ID8_T)
+      DisplayValue("5TM #9 e", soil_5TM_ID9_E)
+      DisplayValue("5TM #9 tmpr", soil_5TM_ID9_T)
+      DisplayValue("SHFP 1 flux", soil_hfp1_heat_flux)
+      DisplayValue("SHFP 1 sens", soil_hfp1_sensitivity)
+      DisplayValue("SHFP 2 flux", soil_hfp2_heat_flux)
+      DisplayValue("SHFP 2 sens", soil_hfp2_sensitivity)
+      DisplayValue("LGR N2O", lgr_n2o)
+      DisplayValue("LGR CO", lgr_co)
+      DisplayValue("LGR H2O", lgr_h2o)
+      DisplayValue("Pic. CO2", pic_co2)
+      DisplayValue("Pic. CH4", pic_ch4)
+      DisplayValue("Pic. H2O", pic_h2o)
+      DisplayValue("NDVI up 1", dec_ndvi_up1)
+      DisplayValue("NDVI up 2", dec_ndvi_up2)
+      DisplayValue("NDVI dn 1", dec_ndvi_dn1)
+      DisplayValue("NDVI dn 2", dec_ndvi_dn2)
+      DisplayValue("PRI up 1", dec_pri_up1)
+      DisplayValue("PRI up 2", dec_pri_up2)
+      DisplayValue("PRI dn 1", dec_pri_dn1)
+      DisplayValue("PRI dn 2", dec_pri_dn2)
+    EndSubMenu
+    MenuItem("Debug table", debug_on)
+      MenuPick(Disable,Enable)
+    MenuItem("Test email", test_email)
       MenuPick(Cancel,Yes)
   EndSubMenu
 EndMenu
@@ -1430,6 +1506,7 @@ BeginProg
       test_email = False
       send_test_email()
     EndIf
+    If (debug_on) Then CallTable debug
 
     If (save_changes) Then
       save_changes = False 'reset b4 we forget
