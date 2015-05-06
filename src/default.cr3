@@ -947,7 +947,7 @@ EndTable
   
 
 '================================= EMAIL =====================================
-Include "CPU:email.cr3"  'contains non-public settings
+Include "CPU:email_Enc.cr3"  'contains non-public settings
 Const CRLF = CHR(13) & CHR(10)
 Dim smtp_response As String * 80
 Dim test_email As Boolean

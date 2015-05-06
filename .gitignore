@@ -1,6 +1,8 @@
 
-# Ignore actual settings file
+# Ignore email settings source file 
+# and encrypted deployment file
 /src/email.cr3
+/src/email_Enc.cr3
 
 Thumbs.db
 
