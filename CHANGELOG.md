@@ -34,9 +34,13 @@ Next version
       encountered, improving automation scripts)
     * Increase available recording time by not allocating space for sensors
       which are not used
-* Also use conditional compilation to enable/disable soil moisture probes;
-  data tables are unchanged but if probes are disabled, only NANs are recorded
-  instead of potentially misleading data
+    * Can only be changed via 'Initial setup' menu or ConstTable; triggers
+      recompilation
+* Use boolean settings to enable/disable: cup and vane wind set, soil moisture 
+  probes
+    * Data tables are unchanged but if disabled, only NANs are recorded
+    * Can be modified via 'Settings' menu or Public table; made effective
+      by changing `save_changes` to True
 * Notify by email when program starts up or whenever test email is sent
 
 ### Other Changes

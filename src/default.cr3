@@ -119,7 +119,7 @@ Units n = samples
 Dim sensor_shfp As Boolean 'set based on site SN
 
 '----- RETAINED SETTINGS -----
-Const NUM_SETTINGS = {26} 'set to length of settings array
+Const NUM_SETTINGS = {28} 'set to length of settings array
 Const WRITEFILE = 0
 Const READFILE = 1
 
@@ -145,11 +145,13 @@ Alias settings(18) = pic_h2o_offset
 Alias settings(19) = sonic_azimuth
 Alias settings(20) = NRLite2_sens
 Alias settings(21) = LI190SB_sens
-Alias settings(22) = soil_5_enabled
-Alias settings(23) = soil_6_enabled
-Alias settings(24) = soil_7_enabled
-Alias settings(25) = soil_8_enabled
-Alias settings(26) = soil_9_enabled
+Alias settings(22) = cup_ws_enabled
+Alias settings(23) = vane_wd_enabled
+Alias settings(24) = soil_5_enabled
+Alias settings(25) = soil_6_enabled
+Alias settings(26) = soil_7_enabled
+Alias settings(27) = soil_8_enabled
+Alias settings(28) = soil_9_enabled
 Units hfp1_sens = uV/W/m^2
 Units hfp1_R = ohms
 Units hfp1_A = m^2
@@ -183,11 +185,13 @@ Alias choice(18) = choice_pic_h2o_offset
 Alias choice(19) = choice_sonic_azimuth
 Alias choice(20) = choice_NRLite2_sens
 Alias choice(21) = choice_LI190SB_sens
-Alias choice(22) = choice_soil_5_enabled
-Alias choice(23) = choice_soil_6_enabled
-Alias choice(24) = choice_soil_7_enabled
-Alias choice(25) = choice_soil_8_enabled
-Alias choice(26) = choice_soil_9_enabled
+Alias choice(22) = choice_cup_ws_enabled
+Alias choice(23) = choice_vane_wd_enabled
+Alias choice(24) = choice_soil_5_enabled
+Alias choice(25) = choice_soil_6_enabled
+Alias choice(26) = choice_soil_7_enabled
+Alias choice(27) = choice_soil_8_enabled
+Alias choice(28) = choice_soil_9_enabled
 
 '----- SELF-MONITORING -----
 Dim SkippedScans(3)
@@ -972,8 +976,8 @@ Sub set_default_choices()
   choice_hfp1_sens      = 0
   choice_hfp1_R         = 0
   choice_hfp1_A         = 0
-  choice_hfp2_sens      = 0
-  choice_hfp2_R         = 0
+  set_cup_ws_enabled = False
+  set_vane_wd_enabled = False
   choice_hfp2_A         = 0
   choice_lgr_n2o_mult   = 1.0
   choice_lgr_n2o_offset = 0
@@ -990,6 +994,8 @@ Sub set_default_choices()
   choice_sonic_azimuth  = NAN
   choice_NRLite2_sens   = 0
   choice_LI190SB_sens   = 0
+  choice_cup_ws_enabled = True
+  choice_vane_wd_enabled = True
 EndSub
 
 Sub populate_choices()
@@ -1005,7 +1011,7 @@ Sub save_current_choices()
   'update dependent variables
   nrlite_mult = 1000/NRLite2_sens
   li190_dens_mult = 1000/(LI190SB_sens*0.604)
-  li190_tot_mult = (1/(LI190SB_sens*0.604))*(FAST_INTV/1000)  
+  li190_tot_mult = (1/(LI190SB_sens*0.604))*(FAST_INTV/1000)
   #If (SHFP_ENABLED) Then
     soil_hfp1_sensitivity = 1000/hfp1_sens
     soil_hfp2_sensitivity = 1000/hfp2_sens
@@ -1088,6 +1094,12 @@ DisplayMenu("REACCH DAQ", -1) 'add submenu to main
     MenuItem("Sonic azimuth", choice_sonic_azimuth)
     MenuItem("NR sensitivity", choice_NRLite2_sens)
     MenuItem("PAR sensitivity", choice_LI190SB_sens)
+    SubMenu("Cup & vane windset")
+      MenuItem("Enable WS?", set_cup_ws_enabled)
+        MenuPick(Yes, No)
+      MenuItem("Enable WD?", set_vane_wd_enabled)
+        MenuPick(Yes, No)
+    EndSubMenu
     SubMenu("Soil moisture probes")
       MenuItem("Enable 5 ?", soil_5_enabled)
         MenuPick(Yes, No)
@@ -1157,11 +1169,19 @@ BeginProg
 
   Scan (FAST_INTV,mSec,FAST_BUFFER_SIZE,0)
         
-    '== 034B wind vane acquisition 
+    '== 034B wind vane acquisition
     BrHalf(WindDir,1,mV5000,oh34B_WD_SE,oh34B_WD_VX,1,5000,True,0,INTEG,oh34B_WD_MULT,oh34B_WD_OFFSET)
-    If ((WindDir >= 360) OR (WindDir < 0)) Then (WindDir = 0)
+    If (vane_wd_enabled) Then
+      If ((WindDir >= 360) OR (WindDir < 0)) Then (WindDir = 0)
+    Else
+      WindDir = NAN
+    EndIf
     PulseCount(WS_ms,1,oh34B_WS_PULSE,2,1,oh34B_WS_MULT,oh34B_WS_OFFSET)
-    If (WS_ms <= oh34B_WS_OFFSET) Then (WS_ms = 0)
+    If (cup_ws_enabled) Then
+      If (WS_ms <= oh34B_WS_OFFSET) Then (WS_ms = 0)
+    Else
+      WS_ms = NAN
+    EndIf
     
     '== TE525 rain gage acquisition
     PulseCount(Rain_mm,1,TE525_PULSE,2,0,TE525_MULT,TE525_OFFSET)
