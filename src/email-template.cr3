@@ -1,0 +1,22 @@
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+' Vineyard Pilot Study (2015)
+' 
+' "Secrets file" containing important non-public information
+'
+' Laboratory for Atmospheric Research
+' Department of Civil & Environmental Engineering
+' Washington State University
+'
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+'                     THIS FILE IS A TEMPLATE
+'
+' Update these values to reflect actual set-up and load onto datalogger 
+' into CPU memory space with the file name `email.cr3`.
+
+Const SMTP = "192.168.1.1:25"          'IP of SMTP server possibly with port#
+Const USER = "cr3000@example.com"      'SMTP account name
+Const PASSWORD = "the_email_password"  'SMTP account password
+Const TO_ADDR = "user@example.com"     'message recipient
+Const FROM_ADDR = USER                 'message sender
+

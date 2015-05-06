@@ -931,6 +931,30 @@ EndTable
   EndTable
 #EndIf
 
+
+'================================= EMAIL =====================================
+Include "CPU:email.cr3"  'contains non-public settings
+Const CRLF = CHR(13) & CHR(10)
+Public smtp_response As String * 80
+Public email_results
+Public test_email As Boolean
+
+Sub send_startup_email()
+  Dim subject As String * 78, msg As String * 512
+  subject = "Start-up notification from Vineyard DAQ"
+  msg = ("This is the Vineyard datalogger. I've just finished my " & _
+    "start-up routine and would like to share this important information "& _
+    "with you: " & CRLF & CRLF)
+  'HINT both CompileResults and CardStatus come with a trailing <CR><LF> but 
+  'CardStatus has a CRLF pair in the middle which must be stripped out
+  msg &= "Compile results: " & RTrim(Status.CompileResults(1))
+  msg &= "Card status: " & RTrim(Replace(Status.CardStatus(1), CRLF, " "))
+  msg &= CRLF & "Program error count: " & Status.ProgErrors & CRLF
+  msg &= "Watchdog error count: " & Status.WatchdogErrors & CRLF
+  email_results = EmailSend(SMTP,TO_ADDR,FROM_ADDR,subject,msg,"",USER,PASSWORD,smtp_response)
+EndSub
+
+
 '===============================  FUNCTIONS  ============================================
 Function Topp_equation( dielectric )
   Return 4.3e-6*dielectric^3 - 5.5e-4*dielectric^2 + 2.92e-2*dielectric - 5.3e-2
@@ -1112,13 +1136,22 @@ DisplayMenu("REACCH DAQ", -1) 'add submenu to main
         MenuPick(Cancel,Yes)
     EndSubMenu
   EndSubMenu
+  
+  SubMenu("Debug")
+    MenuItem("Send test email", test_email)
+  EndSubMenu
 EndMenu
 
 '================================  PROGRAM  =============================================
 BeginProg
   setup()
+  send_startup_email()
 
   Scan (FAST_INTV,mSec,FAST_BUFFER_SIZE,0)
+    If (test_email) Then
+      test_email = False
+      send_startup_email()
+    EndIf
         
     '== 034B wind vane acquisition 
     BrHalf(WindDir,1,mV5000,oh34B_WD_SE,oh34B_WD_VX,1,5000,True,0,INTEG,oh34B_WD_MULT,oh34B_WD_OFFSET)

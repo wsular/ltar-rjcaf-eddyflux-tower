@@ -1,4 +1,7 @@
 
+# Ignore actual settings file
+/src/email.cr3
+
 Thumbs.db
 
 # CSI table definition file

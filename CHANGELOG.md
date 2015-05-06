@@ -8,11 +8,21 @@ Next version
 > After deployment, program settings must be **completely reset** before
 > reprogramming with site-specific values.</div>
 
+> <div style="border: 1px solid red; padding: 4px">**New include file**  
+> Before deployment, an encrypted version of the email include file **must** 
+> be stored on the logger's `CPU` drive.</div>
+
 ### Known Issues
 
-* *Required actions after deployment*
-    * Reset program settings (or delete settings file from CPU drive) and
-      re-program with correct site-specific values
+* After deploying this version, the program settings file must be reset and
+  site-specific values must be re-programmed. Be sure to have the relevant
+  values on-hand before deploying this version!
+* *Required actions before deployment*
+    * Enable datalogger security at Level 1 or higher
+    * Update template `email-template.cr3` as appropriate, then use CRBasic
+      Editor's 'Save and Encrypt...' option to save as `email_Enc.cr3`
+    * Send `email_Enc.cr3` to the datalogger's CPU drive. Do **not** set 
+      'Run now' or 'Run on startup' options when pushing this file
 
 ### Enhancements
 
@@ -27,6 +37,7 @@ Next version
 * Also use conditional compilation to enable/disable soil moisture probes;
   data tables are unchanged but if probes are disabled, only NANs are recorded
   instead of potentially misleading data
+* Notify by email when program starts up or whenever test email is sent
 
 ### Other Changes
 
