@@ -1123,15 +1123,15 @@ DisplayMenu("REACCH DAQ", -1) 'add submenu to main
         MenuPick(Yes, No)
     EndSubMenu
     SubMenu("Soil moisture probes")
-      MenuItem("Enable 5 ?", soil_5_enabled)
+      MenuItem("Enable 5 ?", set_soil_5_enabled)
         MenuPick(Yes, No)
-      MenuItem("Enable 6 ?", soil_6_enabled)
+      MenuItem("Enable 6 ?", set_soil_6_enabled)
         MenuPick(Yes, No)
-      MenuItem("Enable 7 ?", soil_7_enabled)
+      MenuItem("Enable 7 ?", set_soil_7_enabled)
         MenuPick(Yes, No)
-      MenuItem("Enable 8 ?", soil_8_enabled)
+      MenuItem("Enable 8 ?", set_soil_8_enabled)
         MenuPick(Yes, No)
-      MenuItem("Enable 9 ?", soil_9_enabled)
+      MenuItem("Enable 9 ?", set_soil_9_enabled)
         MenuPick(Yes, No)
     EndSubMenu
     #If (SHFP_ENABLED) Then
