@@ -20,6 +20,13 @@ and access credentials.
 * Main repository (public): <https://bitbucket.org/wsular/2015-vineyard-tower-logger>
 * Deployment-specific (private): <https://bitbucket.org/wsular/2015-vineyard-tower-secrets>
 
+### Pre-requisites ###
+
+* [CR3000](https://campbellsci.com/cr3000)
+    * network-enabled with an [NL115](https://campbellsci.com/nl115) module
+    * `CR3000.Std.27` or newer firmware
+* Sensors and hardware (see documentation)
+
 
 ### License ####
 
