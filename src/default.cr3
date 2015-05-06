@@ -1502,10 +1502,6 @@ BeginProg
       CallTable(stats30_ui)
     #EndIf
 
-    If (test_email) Then
-      test_email = False
-      send_test_email()
-    EndIf
     If (debug_on) Then CallTable debug
 
     If (save_changes) Then
@@ -1518,6 +1514,16 @@ BeginProg
     EndIf
     
     just_had_1hz_scan = TRUE
+  NextScan
+
+  '============================ EMAIL THREAD =================================
+  SlowSequence
+  Scan (1,Sec,2,0)
+    'HINT: this is the only scan email events should be sent from!
+    If (test_email) Then
+      test_email = False
+      send_test_email()
+    EndIf
   NextScan
 
   '====================== SOIL SCAN INTERVAL =================================
