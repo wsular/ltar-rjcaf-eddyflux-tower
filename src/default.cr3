@@ -864,29 +864,31 @@ EndTable
 
 'metadata pertaining to optional sensors
 'XXXX TODO how should this table be changed?
-DataTable(extra_info,True,10)
-  CardOut(0,1000)
-  Sample(1,NDVIPRI_ENABLED,Boolean)
-    FieldNames("Decagon_NDVI_installed")
-  Sample(1,NDVIPRI_ENABLED,Boolean)
-    FieldNames("Decagon_PRI_installed")
-  Sample(1,LGR_N2O_ENABLED,Boolean)
-    FieldNames("LGR_n2oco_installed")
-  Sample(1,lgr_n2o_mult,IEEE4)
-  Sample(1,lgr_n2o_offset,IEEE4)
-  Sample(1,lgr_co_mult,IEEE4)
-  Sample(1,lgr_co_offset,IEEE4)
-  Sample(1,lgr_h2o_mult,IEEE4)
-  Sample(1,lgr_h2o_offset,IEEE4)
-  Sample(1,PIC_CH4_ENABLED,Boolean)
-    FieldNames("Picarro_co2ch4_installed")
-  Sample(1,pic_co2_mult,IEEE4)
-  Sample(1,pic_co2_offset,IEEE4)
-  Sample(1,pic_ch4_mult,IEEE4)
-  Sample(1,pic_ch4_offset,IEEE4)
-  Sample(1,pic_h2o_mult,IEEE4)
-  Sample(1,pic_h2o_offset,IEEE4)
-EndTable
+#If (LGR_N2O_ENABLED OR PIC_CH4_ENABLED OR NDVIPRI_ENABLED) Then
+  DataTable(extra_info,True,10)
+    CardOut(0,1000)
+    Sample(1,NDVIPRI_ENABLED,Boolean)
+      FieldNames("Decagon_NDVI_installed")
+    Sample(1,NDVIPRI_ENABLED,Boolean)
+      FieldNames("Decagon_PRI_installed")
+    Sample(1,LGR_N2O_ENABLED,Boolean)
+      FieldNames("LGR_n2oco_installed")
+    Sample(1,lgr_n2o_mult,IEEE4)
+    Sample(1,lgr_n2o_offset,IEEE4)
+    Sample(1,lgr_co_mult,IEEE4)
+    Sample(1,lgr_co_offset,IEEE4)
+    Sample(1,lgr_h2o_mult,IEEE4)
+    Sample(1,lgr_h2o_offset,IEEE4)
+    Sample(1,PIC_CH4_ENABLED,Boolean)
+      FieldNames("Picarro_co2ch4_installed")
+    Sample(1,pic_co2_mult,IEEE4)
+    Sample(1,pic_co2_offset,IEEE4)
+    Sample(1,pic_ch4_mult,IEEE4)
+    Sample(1,pic_ch4_offset,IEEE4)
+    Sample(1,pic_h2o_mult,IEEE4)
+    Sample(1,pic_h2o_offset,IEEE4)
+  EndTable
+#EndIf
 
 '===========================  SUPPLEMENTAL OUTPUT DATA TABLES  ==========================
 #If (LGR_N2O_ENABLED OR PIC_CH4_ENABLED) Then
@@ -1053,7 +1055,9 @@ Sub setup()
   save_current_choices()
 
   CallTable (site_info)
-  CallTable(extra_info)
+  #If (LGR_N2O_ENABLED OR PIC_CH4_ENABLED OR NDVIPRI_ENABLED) Then
+    CallTable(extra_info)
+  #EndIf
 
   Move(lgrn2oco(1),3,NAN,1)
   Move(picco2ch4(1),3,NAN,1)
@@ -1431,7 +1435,9 @@ BeginProg
       save_changes = False 'reset b4 we forget
       save_current_choices()
       CallTable(site_info)
-      CallTable(extra_info)
+      #If (LGR_N2O_ENABLED OR PIC_CH4_ENABLED OR NDVIPRI_ENABLED) Then
+        CallTable(extra_info)
+      #EndIf
     EndIf
     
     just_had_1hz_scan = TRUE
