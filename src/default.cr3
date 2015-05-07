@@ -586,6 +586,12 @@ Units e_hmp_Avg = kPa
 Units e_sat_hmp_Avg = kPa
 Units samples_possible = samples
 
+Dim out_daily(17)
+Alias out_daily(10) = min_battery
+Alias out_daily(12) = max_battery
+Alias out_daily(14) = min_tmpr
+Alias out_daily(16) = max_tmpr
+
 
 '============================  REMOTE MONITORING  ============================
 DataTable(debug,True,2)
@@ -975,6 +981,26 @@ Sub send_test_email()
   Dim subject As String * 40, msg As String * 512
   subject = "Test email from " & self & " CR3000"
   msg = "This is the " & self & " CR3000. Testing 1.. 2.. 3.." & CRLF
+  EmailSend(SMTP,TO_ADDR,FROM_ADDR,subject,msg,"",USER,PASSWORD,smtp_response)
+EndSub
+
+Sub send_daily_email()
+  Dim subject As String * 40, msg As String * 512
+  subject = "Daily notice from " & self & " CR3000"
+  
+  If (site_daily.Output(1,1)) Then
+    GetRecord(out_daily(1),site_daily,1)
+  Else 'load with fake data
+    min_tmpr = -7999
+    max_tmpr = Status.PanelTemp
+    min_battery = -7999
+    max_battery = Status.Battery
+  EndIf
+  msg = "Good morning. Yesterday the temperature ranged from "
+  msg &= FormatFloat(min_tmpr, "%3g") & " to "
+  msg &= FormatFloat(max_tmpr, "%3g") & " degC. Power input varied from "
+  msg &= FormatFloat(min_battery, "%3g") & " to "
+  msg &= FormatFloat(max_battery, "%3g") & " volts." & CRLF
   EmailSend(SMTP,TO_ADDR,FROM_ADDR,subject,msg,"",USER,PASSWORD,smtp_response)
 EndSub
 
@@ -1529,6 +1555,9 @@ BeginProg
     If (test_email) Then
       test_email = False
       send_test_email()
+    EndIf
+    If TimeIntoInterval(6,24,hr) Then
+      send_daily_email()
     EndIf
   NextScan
 
