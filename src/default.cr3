@@ -1436,8 +1436,6 @@ BeginProg
         Hc = rho_a_mean*CP*Tc_Uz_cov
       EndIf 
       CallTable(stats30) '****************************************************
-
-      CallTable(diagnostics)
       
       inbetween_1hz_scan = TRUE
       If ( just_had_1hz_scan ) Then
