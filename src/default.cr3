@@ -954,23 +954,25 @@ Dim test_email As Boolean
 Dim self As String * 16
 
 Sub send_startup_email()
-  Dim subject As String * 78, msg As String * 512
-  subject = "Start-up notification from Vineyard DAQ"
-  msg = ("This is " & self & ". I'm back online and would like you to " & _
-    "how it went. "& CRLF & CRLF)
+  Dim subject As String * 40, msg As String * 512
+  subject = "Start-up notice from " & self & " CR3000"
+  msg = ("This is the " & self & " CR3000. Starting up..." & CRLF & CRLF)
   'HINT both CompileResults and CardStatus come with a trailing <CR><LF> but 
   'CardStatus has a CRLF pair in the middle which must be stripped out
   msg &= "Compile results: " & RTrim(Status.CompileResults(1))
   msg &= "Card status: " & RTrim(Replace(Status.CardStatus(1), CRLF, " "))
   msg &= CRLF & "Program error count: " & Status.ProgErrors & CRLF
   msg &= "Watchdog error count: " & Status.WatchdogErrors & CRLF
+  msg &= "Run signature: " & Status.RunSignature & CRLF
+  msg &= "Program signature: " & Status.ProgSignature & CRLF
+  msg &= "Power input (Volts): " & Status.Battery & CRLF
   EmailSend(SMTP,TO_ADDR,FROM_ADDR,subject,msg,"",USER,PASSWORD,smtp_response)
 EndSub
 
 Sub send_test_email()
-  Dim subject As String * 78, msg As String * 512
-  subject = "Test email from " & self
-  msg = "Testing 1.. 2.. 3.." & CRLF
+  Dim subject As String * 40, msg As String * 512
+  subject = "Test email from " & self & " CR3000"
+  msg = "This is the " & self & " CR3000. Testing 1.. 2.. 3.." & CRLF
   EmailSend(SMTP,TO_ADDR,FROM_ADDR,subject,msg,"",USER,PASSWORD,smtp_response)
 EndSub
 
