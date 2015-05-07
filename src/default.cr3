@@ -106,6 +106,7 @@ Const CP = 1004.67         'Estimate of heat capacity of air [J/(kg K)]
 
 '----- PROGRAM OPERATION VARIABLES -----
 Public debug_on As Boolean
+Dim self As String * 16
 Dim filehandle As Long
 Dim scan_count As Long                                   'Number scans executed.
 Dim just_had_1hz_scan As Boolean                   'Flag used to indicate the SlowSequence has finished its scan.
@@ -653,11 +654,13 @@ DataTable(work_30min,TRUE,1)
 EndTable
 
 '===========================  BASE OUTPUT DATA TABLES  ==================================
+Const DAYS = 42 '6 weeks
 
 'time series data @ 10hz
-DataTable (tsdata,TRUE,-1)
+DataTable (tsdata,TRUE,600   
   DataInterval (0,FAST_INTV,mSec,100)
-  CardOut (0,-1)
+  TableFile("CRD:TOA5_" & self & ".tsdata_", 108, 24, 0, 1, hr, 0, 0)
+  CardOut(0, DAYS*864000)
   Sample (4,sonic_irga_raw(1),IEEE4)
     FieldNames ("Ux,Uy,Uz,Ts")
   Sample (1,sonic_irga_raw(5),FP2)
@@ -669,9 +672,9 @@ DataTable (tsdata,TRUE,-1)
 EndTable
 
 '5min statistics
-DataTable (stats5,TRUE,-1)
+DataTable (stats5,TRUE,24)
   DataInterval (0,STAT_OUT_5,Min,10)
-  CardOut (0,-1)
+  CardOut(0, DAYS*288)
   Sample(1,L,IEEE4)                     'monin obukhov length, meters
   Sample(1,u_star,FP2)                  'friction velocity, m/s  
   Sample(1,tau,FP2)                     'momemtum flux, kg/(m s^2)
@@ -739,9 +742,9 @@ DataTable (stats5,TRUE,-1)
 EndTable
 
 '30min statistics
-DataTable (stats30,TRUE,-1)
+DataTable (stats30,TRUE,10)
   DataInterval (0,STAT_OUT_30,Min,10)
-  CardOut (0,-1)
+  CardOut (0, DAYS*48)
   Sample(1,L,IEEE4)                     'monin obukhov length, meters
   Sample(1,u_star,FP2)                  'friction velocity, m/s  
   Sample(1,tau,FP2)                     'momemtum flux, kg/(m s^2)
@@ -805,9 +808,9 @@ DataTable (stats30,TRUE,-1)
 EndTable
 
 'Daily values
-DataTable (site_daily,TRUE,-1)
+DataTable (site_daily,TRUE,2)
   DataInterval (0,1,Day,10)
-  CardOut(0,60)
+  CardOut(0, DAYS)
   Median(1,(latitude_a + latitude_b/60),DAILY_MEDNUM,IEEE4,(latitude_a=NAN OR latitude_b=NAN))
     FieldNames("latitude_Med")
     Units latitude_Med = decDegreesN
@@ -827,24 +830,24 @@ DataTable (site_daily,TRUE,-1)
   Maximum(1,T_hmp,FP2,T_hmp=NAN,1)
 EndTable
 
-'scan supervisory data
-DataTable(diagnostics,True,-1)
-  DataInterval(0,5,Min,10)
-  CardOut(0,-1)
-  Totalize(1,n,IEEE4,False)
-    FieldNames("total_scans")
-  Totalize(1,n,IEEE4,inbetween_1hz_scan)
-    FieldNames("scans_1hz")
-  Totalize(1,n,IEEE4,inbetween_5s_scan)
-    FieldNames("scans_5s")
-  Sample(1,skipped_10hz_scans,UINT2)
-  Sample(1,skipped_1hz_scans,UINT2)
-  Sample(1,skipped_5s_scans,UINT2)
-  Sample(1,watchdog_errors,UINT2)
-EndTable
+''scan supervisory data
+'DataTable(diagnostics,True,-1)
+'  DataInterval(0,5,Min,10)
+'  CardOut(0, DAYS*288)
+'  Totalize(1,n,IEEE4,False)
+'    FieldNames("total_scans")
+'  Totalize(1,n,IEEE4,inbetween_1hz_scan)
+'    FieldNames("scans_1hz")
+'  Totalize(1,n,IEEE4,inbetween_5s_scan)
+'    FieldNames("scans_5s")
+'  Sample(1,skipped_10hz_scans,UINT2)
+'  Sample(1,skipped_1hz_scans,UINT2)
+'  Sample(1,skipped_5s_scans,UINT2)
+'  Sample(1,watchdog_errors,UINT2)
+'EndTable
 
 'program start-up information
-DataTable (site_info,TRUE,10)
+DataTable (site_info,TRUE,20)
   CardOut(0,1000)
   Sample(1,UTC_OFFSET,FP2)
     FieldNames("UTC_offset")
@@ -874,7 +877,7 @@ EndTable
 'XXXX TODO how should this table be changed?
 #If (LGR_N2O_ENABLED OR PIC_CH4_ENABLED OR NDVIPRI_ENABLED) Then
   DataTable(extra_info,True,10)
-    CardOut(0,1000)
+    'CardOut(0,1000)
     Sample(1,NDVIPRI_ENABLED,Boolean)
       FieldNames("Decagon_NDVI_installed")
     Sample(1,NDVIPRI_ENABLED,Boolean)
@@ -902,7 +905,7 @@ EndTable
 #If (LGR_N2O_ENABLED OR PIC_CH4_ENABLED) Then
   DataTable(tsdata_extra,True,-1)
     DataInterval(0,FAST_INTV,mSec,100)
-    CardOut(0,-1)
+    'CardOut(0,-1)
     Sample(1,lgr_n2o,IEEE4)
     Sample(1,lgr_co,IEEE4)
     Sample(1,lgr_h2o,IEEE4)
@@ -916,7 +919,7 @@ EndTable
 #If (NDVIPRI_ENABLED) Then
   DataTable(stats5_ui,True,-1)
     DataInterval(0,STAT_OUT_5,min,10)
-    CardOut(0,-1) 
+    'CardOut(0,-1) 
     Average(1,dec_ndvi_up1,IEEE4,dec_ndvi_up1=NAN)
     Average(1,dec_ndvi_up2,IEEE4,dec_ndvi_up2=NAN)
     Average(1,dec_ndvi_dn1,IEEE4,dec_ndvi_dn1=NAN)
@@ -931,7 +934,7 @@ EndTable
   
   DataTable(stats30_ui,True,-1)
     DataInterval(0,STAT_OUT_30,min,10)
-    CardOut(0,-1)
+    'CardOut(0,-1)
     Average(1,dec_ndvi_up1,IEEE4,dec_ndvi_up1=NAN)
     Average(1,dec_ndvi_up2,IEEE4,dec_ndvi_up2=NAN)
     Average(1,dec_ndvi_dn1,IEEE4,dec_ndvi_dn1=NAN)
@@ -951,7 +954,6 @@ Include "CPU:email_Enc.cr3"  'contains non-public settings
 Const CRLF = CHR(13) & CHR(10)
 Dim smtp_response As String * 80
 Dim test_email As Boolean
-Dim self As String * 16
 
 Sub send_startup_email()
   Dim subject As String * 40, msg As String * 512
@@ -1459,7 +1461,7 @@ BeginProg
         SetStatus("SkippedSlowScan(2)",0)
         SetStatus("WatchdogErrors", 0)
       EndIf
-      CallTable(diagnostics)
+      'CallTable(diagnostics)
       
     Else
       scan_count = scan_count+1
