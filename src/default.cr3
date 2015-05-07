@@ -121,7 +121,7 @@ Units n = samples
 Dim sensor_shfp As Boolean 'set based on site SN
 
 '----- RETAINED SETTINGS -----
-Const NUM_SETTINGS = {28} 'set to length of settings array
+Const NUM_SETTINGS = {29} 'set to length of settings array
 Const WRITEFILE = 0
 Const READFILE = 1
 
@@ -131,29 +131,30 @@ Alias settings(2)  = NRLite2_sens
 Alias settings(3)  = LI190SB_sens
 Alias settings(4)  = cup_ws_enabled
 Alias settings(5)  = vane_wd_enabled
-Alias settings(6)  = soil_5_enabled
-Alias settings(7)  = soil_6_enabled
-Alias settings(8)  = soil_7_enabled
-Alias settings(9)  = soil_8_enabled
-Alias settings(10) = soil_9_enabled
-Alias settings(11) = hfp1_sens
-Alias settings(12) = hfp1_R
-Alias settings(13) = hfp1_A
-Alias settings(14) = hfp2_sens
-Alias settings(15) = hfp2_R
-Alias settings(16) = hfp2_A
-Alias settings(17) = lgr_n2o_mult
-Alias settings(18) = lgr_n2o_offset
-Alias settings(19) = lgr_co_mult
-Alias settings(20) = lgr_co_offset
-Alias settings(21) = lgr_h2o_mult
-Alias settings(22) = lgr_h2o_offset
-Alias settings(23) = pic_co2_mult
-Alias settings(24) = pic_co2_offset
-Alias settings(25) = pic_ch4_mult
-Alias settings(26) = pic_ch4_offset
-Alias settings(27) = pic_h2o_mult
-Alias settings(28) = pic_h2o_offset
+Alias settings(6)  = rain_enabled
+Alias settings(7)  = soil_5_enabled
+Alias settings(8)  = soil_6_enabled
+Alias settings(9)  = soil_7_enabled
+Alias settings(10) = soil_8_enabled
+Alias settings(11) = soil_9_enabled
+Alias settings(12) = hfp1_sens
+Alias settings(13) = hfp1_R
+Alias settings(14) = hfp1_A
+Alias settings(15) = hfp2_sens
+Alias settings(16) = hfp2_R
+Alias settings(17) = hfp2_A
+Alias settings(18) = lgr_n2o_mult
+Alias settings(19) = lgr_n2o_offset
+Alias settings(20) = lgr_co_mult
+Alias settings(21) = lgr_co_offset
+Alias settings(22) = lgr_h2o_mult
+Alias settings(23) = lgr_h2o_offset
+Alias settings(24) = pic_co2_mult
+Alias settings(25) = pic_co2_offset
+Alias settings(26) = pic_ch4_mult
+Alias settings(27) = pic_ch4_offset
+Alias settings(28) = pic_h2o_mult
+Alias settings(29) = pic_h2o_offset
 
 Units hfp1_sens = uV/W/m^2
 Units hfp1_R = ohms
@@ -172,29 +173,30 @@ Alias choice(2)  = set_NRLite2_sens
 Alias choice(3)  = set_LI190SB_sens
 Alias choice(4)  = set_cup_ws_enabled
 Alias choice(5)  = set_vane_wd_enabled
-Alias choice(6)  = set_soil_5_enabled
-Alias choice(7)  = set_soil_6_enabled
-Alias choice(8)  = set_soil_7_enabled
-Alias choice(9)  = set_soil_8_enabled
-Alias choice(10) = set_soil_9_enabled
-Alias choice(11) = set_hfp1_sens
-Alias choice(12) = set_hfp1_R
-Alias choice(13) = set_hfp1_A
-Alias choice(14) = set_hfp2_sens
-Alias choice(15) = set_hfp2_R
-Alias choice(16) = set_hfp2_A
-Alias choice(17) = set_lgr_n2o_mult
-Alias choice(18) = set_lgr_n2o_offset
-Alias choice(19) = set_lgr_co_mult
-Alias choice(20) = set_lgr_co_offset
-Alias choice(21) = set_lgr_h2o_mult
-Alias choice(22) = set_lgr_h2o_offset
-Alias choice(23) = set_pic_co2_mult
-Alias choice(24) = set_pic_co2_offset
-Alias choice(25) = set_pic_ch4_mult
-Alias choice(26) = set_pic_ch4_offset
-Alias choice(27) = set_pic_h2o_mult
-Alias choice(28) = set_pic_h2o_offset
+Alias choice(6)  = set_rain_enabled
+Alias choice(7)  = set_soil_5_enabled
+Alias choice(8)  = set_soil_6_enabled
+Alias choice(9)  = set_soil_7_enabled
+Alias choice(10) = set_soil_8_enabled
+Alias choice(11) = set_soil_9_enabled
+Alias choice(12) = set_hfp1_sens
+Alias choice(13) = set_hfp1_R
+Alias choice(14) = set_hfp1_A
+Alias choice(15) = set_hfp2_sens
+Alias choice(16) = set_hfp2_R
+Alias choice(17) = set_hfp2_A
+Alias choice(18) = set_lgr_n2o_mult
+Alias choice(19) = set_lgr_n2o_offset
+Alias choice(20) = set_lgr_co_mult
+Alias choice(21) = set_lgr_co_offset
+Alias choice(22) = set_lgr_h2o_mult
+Alias choice(23) = set_lgr_h2o_offset
+Alias choice(24) = set_pic_co2_mult
+Alias choice(25) = set_pic_co2_offset
+Alias choice(26) = set_pic_ch4_mult
+Alias choice(27) = set_pic_ch4_offset
+Alias choice(28) = set_pic_h2o_mult
+Alias choice(29) = set_pic_h2o_offset
 
 '----- SELF-MONITORING -----
 Dim SkippedScans(3)
@@ -1018,6 +1020,7 @@ Sub set_default_choices()
   set_LI190SB_sens   = 0
   set_cup_ws_enabled = False
   set_vane_wd_enabled = False
+  set_rain_enabled   = False
   set_soil_5_enabled = False
   set_soil_6_enabled = False
   set_soil_7_enabled = False
@@ -1150,6 +1153,10 @@ DisplayMenu("REACCH DAQ", -1) 'add submenu to main
       MenuItem("Enable WS?", set_cup_ws_enabled)
         MenuPick(Yes, No)
       MenuItem("Enable WD?", set_vane_wd_enabled)
+        MenuPick(Yes, No)
+    EndSubMenu
+    SubMenu("Rain gage")
+      MenuItem("Enable?", set_rain_enabled)
         MenuPick(Yes, No)
     EndSubMenu
     SubMenu("Soil moisture probes")
@@ -1305,6 +1312,7 @@ BeginProg
     
     '== TE525 rain gage acquisition
     PulseCount(Rain_mm,1,TE525_PULSE,2,0,TE525_MULT,TE525_OFFSET)
+    If (NOT rain_enabled) Then Rain_mm = NAN
     
     '== EC100/EC150/CSAT3A irga/sonic acquisition 
     EC100 (sonic_irga_raw(1),EC100_SDM_ADDR,1)

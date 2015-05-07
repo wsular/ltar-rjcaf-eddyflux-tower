@@ -48,8 +48,8 @@ Next version
       which are not used
     * Can only be changed via 'Initial setup' menu or ConstTable; triggers
       recompilation
-* Use boolean settings to enable/disable: cup and vane wind set, soil moisture 
-  probes
+* Use boolean settings to enable/disable: cup and vane wind set, rain gage,
+  soil moisture probes
     * Data tables are unchanged but if disabled, only NANs are recorded
     * Can be modified via 'Settings' menu or Public table; made effective
       by changing `save_changes` to True
