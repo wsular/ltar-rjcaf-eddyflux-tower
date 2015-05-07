@@ -1491,9 +1491,13 @@ BeginProg
     
     '== LI190SB 
     VoltDiff (PAR_mV,1,mV20,LI190_DIFF,True,0,INTEG,1,0) 'MULT/OFF applied below
-    If (PAR_mV < 0) Then (PAR_mV = 0)
-    PAR_flxdens = PAR_mV*li190_dens_mult
-    PAR_totflx = PAR_mV*li190_tot_mult
+    If (PAR_mV > 0) Then
+      PAR_flxdens = PAR_mV*li190_dens_mult
+      PAR_totflx = PAR_mV*li190_tot_mult
+    Else
+      PAR_flxdens = NAN
+      PAR_totflx = NAN
+    EndIf
 
     #If (NDVIPRI_ENABLED) Then
       SDI12Recorder(dec_ndvi_up1,SDI_COM_ADDR,DEC_NDVI_UP_SDI_ADDR,"M!",1.0,0)

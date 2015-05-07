@@ -59,6 +59,7 @@ Next version
     * Reduces memory consumption because of fewer variables being cached
       for public display
 * Notify by email when program starts up or whenever test email is sent
+* Exclude known-bad data from PAR sensor (0 or negative voltages)
 
 
 ### Other Changes
