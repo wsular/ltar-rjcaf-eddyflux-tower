@@ -990,14 +990,7 @@ Sub send_daily_email()
   Dim subject As String * 40, msg As String * 512
   subject = "Daily notice from " & self & " CR3000"
   
-  If (site_daily.Output(1,1)) Then
-    GetRecord(out_daily(1),site_daily,1)
-  Else 'load with fake data
-    min_tmpr = -7999
-    max_tmpr = Status.PanelTemp
-    min_battery = -7999
-    max_battery = Status.Battery
-  EndIf
+  GetRecord(out_daily(1),site_daily,1)
   msg = "Good morning. Yesterday the temperature ranged from "
   msg &= FormatFloat(min_tmpr, "%3g") & " to "
   msg &= FormatFloat(max_tmpr, "%3g") & " degC. Power input varied from "

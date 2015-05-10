@@ -1,6 +1,15 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+Next release
+------------
+
+### Issues Fixed
+
+* Use min/max battery & temperature data from `site_daily` table, as intended,
+  instead of -7999/PanelTemp/Battery values in daily update email
+
+
 v1.0 (2015-05-08)
 -----------------
 
