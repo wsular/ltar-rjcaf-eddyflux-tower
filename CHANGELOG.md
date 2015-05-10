@@ -1,8 +1,8 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
-Next release
-------------
+v1.0.1 (2015-05-09)
+-------------------
 
 ### Issues Fixed
 
