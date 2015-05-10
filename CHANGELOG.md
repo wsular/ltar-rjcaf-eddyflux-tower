@@ -1,8 +1,8 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
-Next version
-------------
+v1.0 (2015-05-08)
+-----------------
 
 > <div style="border: 1px solid red; padding: 4px">**Security advisement**  
 > A minimum of level 1 datalogger security is **required** for safe operation
