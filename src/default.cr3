@@ -4,6 +4,10 @@
 ' https://bitbucket.org/wsular/2015-vineyard-tower-logger
 '
 '==========================  SEMI-EDITABLE VALUES  ======================================
+
+'manually update prior to pushing but do not check-in with other than empty string!
+Const GIT_TAG = ""
+
 '----- TIMEZONE -----
 'This must be set as a constant for use with GPS instruction. It cannot be dynamically 
 'assigned based on logger's serial # because of this fact.
@@ -877,6 +881,8 @@ DataTable (site_info,TRUE,20)
     FieldNames("RunSig")
   Sample(1,Status.ProgSignature,UINT2)
     FieldNames("ProgSig")
+  Sample(1,GIT_TAG,String)
+    FieldNames("GitRepoTag")
   Sample(1,sensor_shfp,Boolean)
     FieldNames("hfp_installed")
 EndTable

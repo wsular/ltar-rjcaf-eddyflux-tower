@@ -9,6 +9,10 @@ Next release
 * Use min/max battery & temperature data from `site_daily` table, as intended,
   instead of -7999/PanelTemp/Battery values in daily update email
 
+### Data Table Changes
+
+* New column `GitRepoTag` in the `site_info` table, after `ProgSig`
+
 
 v1.0 (2015-05-08)
 -----------------
