@@ -1009,6 +1009,14 @@ EndSub
 '============================= SCADABR INTEGRATION ==================================
 Include("CPU:scadabr_Enc.cr3")
 
+Dim rtime(9)
+Function scadabr_timestamp() As String * 16
+  Dim ret As String * 16
+  RealTime(rtime)
+  Sprintf(ret,"%4u%2u%2u%2u%2u%2u", rtime(1),rtime(2),rtime(3),rtime(4),rtime(5),rtime(6))
+  Return ret 'YYYY MM DD HH mm ss
+EndFunction
+
 
 '===============================  FUNCTIONS  ============================================
 Function Topp_equation( dielectric )
