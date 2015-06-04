@@ -1006,6 +1006,10 @@ Sub send_daily_email()
 EndSub
 
 
+'============================= SCADABR INTEGRATION ==================================
+Include("CPU:scadabr_Enc.cr3")
+
+
 '===============================  FUNCTIONS  ============================================
 Function Topp_equation( dielectric )
   Return 4.3e-6*dielectric^3 - 5.5e-4*dielectric^2 + 2.92e-2*dielectric - 5.3e-2

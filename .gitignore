@@ -4,6 +4,11 @@
 /src/email.cr3
 /src/email_Enc.cr3
 
+# Ignore settings file for reports
+# to ScadaBR
+/src/scadabr.cr3
+/src/scadabr_Enc.cr3
+
 Thumbs.db
 
 # CSI table definition file
