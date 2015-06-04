@@ -615,6 +615,7 @@ DataTable(debug,True,2)
   Sample(4,hfp(1),IEEE4)
   Sample(8,decagon(1),IEEE4)
   Sample(1,smtp_response,String)
+  Sample(1,scadabr_resp,String)
 EndTable
 
 
@@ -1008,6 +1009,7 @@ EndSub
 
 '============================= SCADABR INTEGRATION ==================================
 Include("CPU:scadabr_Enc.cr3")
+Public test_scadabr As Boolean
 
 Dim rtime(9)
 Function scadabr_timestamp() As String * 16
@@ -1015,6 +1017,18 @@ Function scadabr_timestamp() As String * 16
   RealTime(rtime)
   Sprintf(ret,"%4u%2u%2u%2u%2u%2u", rtime(1),rtime(2),rtime(3),rtime(4),rtime(5),rtime(6))
   Return ret 'YYYY MM DD HH mm ss
+EndFunction
+
+Dim scadabr_socket As Long
+Dim scadabr_resp As String * 256
+Function send_test_ScadaBR()
+  Dim uri As String * 512
+  Dim tstamp As String * 16
+
+  tstamp = scadabr_timestamp()
+  uri  = REPORT_URL & "?__device=" & REPORT_KEY & "&__time=" & tstamp
+  uri &= "&TestListen=0"
+  scadabr_socket = HTTPGet(uri, scadabr_resp, "")
 EndFunction
 
 
@@ -1300,6 +1314,8 @@ DisplayMenu("REACCH DAQ", -1) 'add submenu to main
       MenuPick(Disable,Enable)
     MenuItem("Test email", test_email)
       MenuPick(Cancel,Yes)
+    MenuItem("Test ScadaBR", test_scadabr)
+      MenuPick(Cancel,Yes)
   EndSubMenu
 EndMenu
 
@@ -1570,13 +1586,17 @@ BeginProg
     just_had_1hz_scan = TRUE
   NextScan
 
-  '============================ EMAIL THREAD =================================
+  '========================== REPORTING THREAD ===============================
   SlowSequence
   Scan (1,Sec,2,0)
     'HINT: this is the only scan email events should be sent from!
     If (test_email) Then
       test_email = False
       send_test_email()
+    EndIf
+    If (test_scadabr) Then
+      test_scadabr = False
+      send_test_ScadaBR()
     EndIf
     If TimeIntoInterval(6,24,hr) Then
       send_daily_email()
