@@ -614,6 +614,7 @@ DataTable(debug,True,2)
   Sample(2,fiveTM(13),IEEE4)
   Sample(4,hfp(1),IEEE4)
   Sample(8,decagon(1),IEEE4)
+  Sample(1,smtp_response,String)
 EndTable
 
 
@@ -967,7 +968,6 @@ EndTable
 Include "CPU:email_Enc.cr3"  'contains non-public settings
 Const CRLF = CHR(13) & CHR(10)
 Dim smtp_response As String * 80
-Dim test_email As Boolean
 
 Sub send_startup_email()
   Dim subject As String * 40, msg As String * 512
@@ -1116,6 +1116,9 @@ Const No = False
 Const Cancel = False
 Public save_changes As Boolean
 Dim recompile As Boolean
+
+'HINT define after `save_changes` so these appear below it in Public table
+Public test_email As Boolean
 
 DisplayMenu("REACCH DAQ", -1) 'add submenu to main
   SubMenu("Initial Setup")

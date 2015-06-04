@@ -9,6 +9,12 @@ Next version
 * Update email settings file instructions to reflect f11ee6a626 [Encrypt email
   settings before deployment]
 
+### Enhancements
+
+* Trigger test emails via Public table by changing `test_email` to "true"; 
+  SMTP server responses can be viewed in `debug` table. Same functionality as
+  provided by debug menu
+
 
 v1.0.1 (2015-05-09)
 -------------------
