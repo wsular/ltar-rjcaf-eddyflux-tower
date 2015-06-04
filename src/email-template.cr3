@@ -19,9 +19,9 @@
 ' Before sending to datalogger, copy `email_Enc.cr3` to its CPU: drive
 '
 
-Const SMTP = "192.168.1.1:25"          'IP of SMTP server possibly with port#
-Const USER = "cr3000@example.com"      'SMTP account name
-Const PASSWORD = "the_email_password"  'SMTP account password
-Const TO_ADDR = "user@example.com"     'message recipient
-Const FROM_ADDR = USER                 'message sender
+Const SMTP_SERV = "192.168.1.1:25"      'SMTP server optionally with port#
+Const SMTP_USER = "cr3000@example.com"  'SMTP account name
+Const SMTP_PASS = "the_email_password"  'SMTP account password
+Const EMAIL_TO  = "user@example.com"    'message recipient
+Const EMAIL_FROM = SMTP_USER            'message sender
 
