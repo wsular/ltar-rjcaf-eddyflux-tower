@@ -1,7 +1,7 @@
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 ' Vineyard Pilot Study (2015)
 ' 
-' "Secrets file" containing important non-public information
+' Email settings file
 '
 ' Laboratory for Atmospheric Research
 ' Department of Civil & Environmental Engineering
@@ -11,8 +11,13 @@
 
 '                     THIS FILE IS A TEMPLATE
 '
-' Update these values to reflect actual set-up and load onto datalogger 
-' into CPU memory space with the file name `email.cr3`.
+' File contains dummy values! Update as necessary and save as `email.cr3`
+'
+' Before compiling `default.cr3`, open `email.cr3` in CRBasic Editor, go
+' File > Save and Encrypt... and save with default name `email_Enc.cr3` 
+'
+' Before sending to datalogger, copy `email_Enc.cr3` to its CPU: drive
+'
 
 Const SMTP = "192.168.1.1:25"          'IP of SMTP server possibly with port#
 Const USER = "cr3000@example.com"      'SMTP account name
