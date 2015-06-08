@@ -1021,16 +1021,17 @@ EndFunction
 
 Dim scadabr_socket As Long
 Dim scadabr_resp As String * 256
-Function send_test_ScadaBR()
+Sub send_scadabr_data(payload)
+  Dim payload As String * 256
   Dim uri As String * 512
-  Dim tstamp As String * 16
-
-  tstamp = scadabr_timestamp()
-  uri  = REPORT_URL & "?__device=" & REPORT_KEY & "&__time=" & tstamp
-  uri &= "&TestListen=0"
+  Sprintf(uri, REPORT_URL, scadabr_timestamp())
+  uri &= payload
   scadabr_socket = HTTPGet(uri, scadabr_resp, "")
-EndFunction
+EndSub
 
+Sub send_test_ScadaBR()
+  send_scadabr_data("&testlisten=0")
+EndSub
 
 '===============================  FUNCTIONS  ============================================
 Function Topp_equation( dielectric )

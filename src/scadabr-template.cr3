@@ -20,8 +20,15 @@
 '
 
 ' URI to ScadaBR HTTP receiver; just the document, no query punctuation
-Const REPORT_URL = "http://yourserver.tld:8080/ScadaBR/httpds"
+Const _SERVER_URL = "http://yourserver.tld:8080/ScadaBR/httpds"
 
 ' Set to "Device name" used by HTTP Receiver
-Const REPORT_KEY = "device-name"
+Const _DEVICE_KEY = "device-name"
+
+'Base URI is the same except for timestamp
+#If (Len(_DEVICE_KEY)) Then
+  Const REPORT_URL = (_SERVER_URL & "?__device=" & _DEVICE_KEY & "&__time=%s")
+#Else
+  Const REPORT_URL = (_SERVER_URL & "&__time=%s")
+#EndIf
 
