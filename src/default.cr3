@@ -1605,7 +1605,7 @@ BeginProg
     If TimeIntoInterval(0,5,Min) Then
       skipped_10hz_scans = Status.SkippedScan(1,1)
       skipped_1hz_scans = Status.SkippedSlowScan(1,1)
-      skipped_5s_scans = Status.SkippedSlowScan(2,1)
+      skipped_5s_scans = Status.SkippedSlowScan(3,1)
       watchdog_errors = Status.WatchdogErrors(1,1)
       send_5min_report()
     EndIf

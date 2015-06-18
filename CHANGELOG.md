@@ -1,6 +1,15 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+next release
+------------
+
+### Issues Fixed
+
+* Fix correct regression introduced by 1176377a2d (introduced in v1.0): 
+  variable `skipped_5s_scans` reflects reporting scan, not soil (5sec) scan
+
+
 v1.1 (2015-06-19)
 -----------------
 
