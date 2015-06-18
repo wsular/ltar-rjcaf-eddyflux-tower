@@ -845,22 +845,6 @@ DataTable (site_daily,TRUE,2)
   Maximum(1,T_hmp,FP2,T_hmp=NAN,1)
 EndTable
 
-''scan supervisory data
-'DataTable(diagnostics,True,-1)
-'  DataInterval(0,5,Min,10)
-'  CardOut(0, DAYS*288)
-'  Totalize(1,n,IEEE4,False)
-'    FieldNames("total_scans")
-'  Totalize(1,n,IEEE4,inbetween_1hz_scan)
-'    FieldNames("scans_1hz")
-'  Totalize(1,n,IEEE4,inbetween_5s_scan)
-'    FieldNames("scans_5s")
-'  Sample(1,skipped_10hz_scans,UINT2)
-'  Sample(1,skipped_1hz_scans,UINT2)
-'  Sample(1,skipped_5s_scans,UINT2)
-'  Sample(1,watchdog_errors,UINT2)
-'EndTable
-
 'program start-up information
 DataTable (site_info,TRUE,20)
   CardOut(0,1000)
@@ -1029,11 +1013,20 @@ Sub send_scadabr_data(payload)
   Sprintf(uri, REPORT_URL, scadabr_timestamp())
   uri &= payload
   scadabr_socket = HTTPGet(uri, scadabr_resp, "")
-  scadabr_success = (scadabr_socket > 100)
+  scadabr_success = (scadabr_socket > 100)  
 EndSub
 
 Sub send_test_ScadaBR()
   send_scadabr_data("&testlisten=0")
+EndSub
+
+Sub send_5min_report()
+  Dim msg As String * 512
+  msg  = "&skipped_10hz_scans=" & skipped_10hz_scans
+  msg &= "&skipped_1hz_scans=" & skipped_1hz_scans
+  msg &= "&skipped_5s_scans=" & skipped_5s_scans
+  msg &= "&watchdog_errors=" & watchdog_errors
+  send_scadabr_data(msg)
 EndSub
 
 '===============================  FUNCTIONS  ============================================
@@ -1518,19 +1511,6 @@ BeginProg
         just_had_soil_scan = FALSE
         inbetween_5s_scan = FALSE
       EndIf
-        
-      If TimeIntoInterval(0,5,Min) Then
-        skipped_10hz_scans = Status.SkippedScan(1,1)
-        skipped_1hz_scans = Status.SkippedSlowScan(1,1)
-        skipped_5s_scans = Status.SkippedSlowScan(2,1)
-        watchdog_errors = Status.WatchdogErrors(1,1)
-        SetStatus("SkippedScan",0)
-        SetStatus("SkippedSlowScan(1)",0)
-        SetStatus("SkippedSlowScan(2)",0)
-        SetStatus("WatchdogErrors", 0)
-      EndIf
-      'CallTable(diagnostics)
-      
     Else
       scan_count = scan_count+1
     EndIf
@@ -1605,6 +1585,15 @@ BeginProg
     If TimeIntoInterval(6,24,hr) Then
       send_daily_email()
     EndIf
+
+    If TimeIntoInterval(0,5,Min) Then
+      skipped_10hz_scans = Status.SkippedScan(1,1)
+      skipped_1hz_scans = Status.SkippedSlowScan(1,1)
+      skipped_5s_scans = Status.SkippedSlowScan(2,1)
+      watchdog_errors = Status.WatchdogErrors(1,1)
+      send_5min_report()
+    EndIf
+
   NextScan
 
   '====================== SOIL SCAN INTERVAL =================================
