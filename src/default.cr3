@@ -1029,6 +1029,21 @@ Sub send_5min_report()
   send_scadabr_data(msg)
 EndSub
 
+Sub send_startup_report()
+  Dim msg As String * 512
+  'HINT both CompileResults and CardStatus come with a trailing <CR><LF> but 
+  'CardStatus has a CRLF pair in the middle which must be stripped out
+'  msg &= "&compileresults=" & RTrim(Replace(Status.CompileResults(1), CRLF, " "))
+'  msg &= "cardstatus=" & RTrim(Replace(Status.CardStatus(1), CRLF, " "))
+  msg &= "&progerrors=" & Status.ProgErrors
+  msg &= "&watchdogerrors=" & Status.WatchdogErrors
+  msg &= "&runsignature=" & Status.RunSignature
+  msg &= "&progsignature=" & Status.ProgSignature
+  msg &= "&battery=" & Status.Battery
+  send_scadabr_data(msg)
+EndSub
+
+
 '===============================  FUNCTIONS  ============================================
 Function Topp_equation( dielectric )
   Return 4.3e-6*dielectric^3 - 5.5e-4*dielectric^2 + 2.92e-2*dielectric - 5.3e-2
@@ -1320,6 +1335,7 @@ EndMenu
 BeginProg
   setup()
   send_startup_email()
+  send_startup_report()
 
   Scan (FAST_INTV,mSec,FAST_BUFFER_SIZE,0)
         
