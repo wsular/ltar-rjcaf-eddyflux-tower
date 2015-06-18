@@ -615,6 +615,7 @@ DataTable(debug,True,2)
   Sample(4,hfp(1),IEEE4)
   Sample(8,decagon(1),IEEE4)
   Sample(1,smtp_response,String)
+  Sample(1,scadabr_success,Boolean)
   Sample(1,scadabr_resp,String)
 EndTable
 
@@ -1020,6 +1021,7 @@ Function scadabr_timestamp() As String * 16
 EndFunction
 
 Dim scadabr_socket As Long
+Dim scadabr_success As Boolean
 Dim scadabr_resp As String * 256
 Sub send_scadabr_data(payload)
   Dim payload As String * 256
@@ -1027,6 +1029,7 @@ Sub send_scadabr_data(payload)
   Sprintf(uri, REPORT_URL, scadabr_timestamp())
   uri &= payload
   scadabr_socket = HTTPGet(uri, scadabr_resp, "")
+  scadabr_success = (scadabr_socket > 100)
 EndSub
 
 Sub send_test_ScadaBR()
