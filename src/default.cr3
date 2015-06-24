@@ -1007,7 +1007,7 @@ Sub send_scadabr_data(payload As String * 512)
   Sprintf(tstamp,"%04u%02u%02u%02u%02u%02u", rtime(1),rtime(2),rtime(3),rtime(4),rtime(5),rtime(6))
   uri = REPORT_URL & tstamp & payload
   scadabr_socket = HTTPGet(uri, scadabr_resp, "")
-  scadabr_success = (scadabr_socket > 100)  
+  scadabr_success = NOT (scadabr_socket OR Len(scadabr_resp))
 EndSub
 
 Sub send_test_ScadaBR()

@@ -9,6 +9,9 @@ next release
 * Fix correct regression introduced by 1176377a2d (introduced in v1.0): 
   variable `skipped_5s_scans` reflects reporting scan, not soil (5sec) scan
 * ScadaBR reports are no longer malformed (caused by incorrect parameter type)
+* Correctly detect success of ScadaBR reports - O/S (CR3000.Std.27) has bug
+  whereby HTTP GET responses with empty payloads are wrongly interpreted as
+  failures
 
 
 v1.1 (2015-06-19)
