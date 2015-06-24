@@ -8,6 +8,7 @@ next release
 
 * Fix correct regression introduced by 1176377a2d (introduced in v1.0): 
   variable `skipped_5s_scans` reflects reporting scan, not soil (5sec) scan
+* ScadaBR reports are no longer malformed (caused by incorrect parameter type)
 
 
 v1.1 (2015-06-19)
