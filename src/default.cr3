@@ -996,22 +996,17 @@ EndSub
 Include("CPU:scadabr_Enc.cr3")
 Public test_scadabr As Boolean
 
-Dim rtime(9)
-Function scadabr_timestamp() As String * 16
-  Dim ret As String * 16
-  RealTime(rtime)
-  Sprintf(ret,"%4u%2u%2u%2u%2u%2u", rtime(1),rtime(2),rtime(3),rtime(4),rtime(5),rtime(6))
-  Return ret 'YYYY MM DD HH mm ss
-EndFunction
-
 Dim scadabr_socket As Long
+Dim rtime(9) As Long
 Dim scadabr_success As Boolean
 Dim scadabr_resp As String * 256
 Sub send_scadabr_data(payload)
   Dim payload As String * 256
   Dim uri As String * 512
-  Sprintf(uri, REPORT_URL, scadabr_timestamp())
-  uri &= payload
+  Dim tstamp As String * 18
+  RealTime(rtime)
+  Sprintf(tstamp,"%04u%02u%02u%02u%02u%02u", rtime(1),rtime(2),rtime(3),rtime(4),rtime(5),rtime(6))
+  uri = REPORT_URL & tstamp & payload
   scadabr_socket = HTTPGet(uri, scadabr_resp, "")
   scadabr_success = (scadabr_socket > 100)  
 EndSub

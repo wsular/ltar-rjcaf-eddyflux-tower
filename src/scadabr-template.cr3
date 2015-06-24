@@ -27,8 +27,8 @@ Const _DEVICE_KEY = "device-name"
 
 'Base URI is the same except for timestamp
 #If (Len(_DEVICE_KEY)) Then
-  Const REPORT_URL = (_SERVER_URL & "?__device=" & _DEVICE_KEY & "&__time=%s")
+  Const REPORT_URL = (_SERVER_URL & "?__device=" & _DEVICE_KEY & "&__time=")
 #Else
-  Const REPORT_URL = (_SERVER_URL & "&__time=%s")
+  Const REPORT_URL = (_SERVER_URL & "&__time=")
 #EndIf
 
