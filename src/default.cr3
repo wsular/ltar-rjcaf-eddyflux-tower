@@ -994,12 +994,11 @@ EndSub
 
 '============================= SCADABR INTEGRATION ==================================
 Include("CPU:scadabr_Enc.cr3")
-Public test_scadabr As Boolean
-
 Dim scadabr_socket As Long
 Dim rtime(9) As Long
 Dim scadabr_success As Boolean
 Dim scadabr_resp As String * 256
+
 Sub send_scadabr_data(payload As String * 512)
   Dim uri As String * 512
   Dim tstamp As String * 18
@@ -1151,6 +1150,7 @@ Dim recompile As Boolean
 
 'HINT define after `save_changes` so these appear below it in Public table
 Public test_email As Boolean
+Public test_scadabr As Boolean
 
 DisplayMenu("REACCH DAQ", -1) 'add submenu to main
   SubMenu("Initial Setup")

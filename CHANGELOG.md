@@ -12,6 +12,7 @@ next release
 * Correctly detect success of ScadaBR reports - O/S (CR3000.Std.27) has bug
   whereby HTTP GET responses with empty payloads are wrongly interpreted as
   failures
+* ScadaBR test-trigger variable is relocated to end of Public table
 
 
 v1.1 (2015-06-19)
