@@ -24,3 +24,6 @@ http://manuals.decagon.com/Manuals/14597_SRS_Web.pdf    Decagon SRS Sensors Manu
 http://manuals.decagon.com/Integration%20Guides/SRS-N%20Integrators%20Guide.pdf    Decagon SRS-NDVI Integrators Guide.pdf
 http://manuals.decagon.com/Integration%20Guides/SRS-P%20Integrators%20Guide.pdf    Decagon SRS-PRI Integrators Guide.pdf
 http://static.garmincdn.com/pumac/GPS_16x_tech_specs.pdf    Garmin GPS16x tech specs.pdf
+
+http://public.hortus.net.au/Portals/0/Page%20Content/H2Pro/Hortus%20Soil%20moisture%20probe%20installation%20instructions.pdf    Hortus Soil moisture probe installation instructions.pdf
+http://mea.com.au/upload/NEW/PRODUCT_Brochures/B83_Soil-Moisture_Sensor_Installation_Guide_Web.pdf    MEA Soil Moisture Sensor Installation Guide.pdf
