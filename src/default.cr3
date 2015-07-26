@@ -948,194 +948,6 @@ EndTable
       FieldNames("tblcalls_Tot")
   EndTable
 #EndIf
-  
-
-'================================= EMAIL =====================================
-Include "CPU:email_Enc.cr3"  'contains non-public settings
-Const CRLF = CHR(13) & CHR(10)
-Dim smtp_response As String * 80
-
-Sub send_startup_email()
-  Dim subject As String * 40, msg As String * 512
-  subject = "Start-up notice from " & self & " CR3000"
-  msg = ("This is the " & self & " CR3000. Starting up..." & CRLF & CRLF)
-  'HINT both CompileResults and CardStatus come with a trailing <CR><LF> but 
-  'CardStatus has a CRLF pair in the middle which must be stripped out
-  msg &= "Compile results: " & RTrim(Status.CompileResults(1))
-  msg &= "Card status: " & RTrim(Replace(Status.CardStatus(1), CRLF, " "))
-  msg &= CRLF & "Program error count: " & Status.ProgErrors & CRLF
-  msg &= "Watchdog error count: " & Status.WatchdogErrors & CRLF
-  msg &= "Run signature: " & Status.RunSignature & CRLF
-  msg &= "Program signature: " & Status.ProgSignature & CRLF
-  msg &= "Power input (Volts): " & Status.Battery & CRLF
-  EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,subject,msg,"",SMTP_USER,SMTP_PASS,smtp_response)
-EndSub
-
-Sub send_test_email()
-  Dim subject As String * 40, msg As String * 512
-  subject = "Test email from " & self & " CR3000"
-  msg = "This is the " & self & " CR3000. Testing 1.. 2.. 3.." & CRLF
-  EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,subject,msg,"",SMTP_USER,SMTP_PASS,smtp_response)
-EndSub
-
-Sub send_daily_email()
-  Dim subject As String * 40, msg As String * 512
-  subject = "Daily notice from " & self & " CR3000"
-  
-  GetRecord(out_daily(1),site_daily,1)
-  msg = "Good morning. Yesterday the temperature ranged from "
-  msg &= FormatFloat(min_tmpr, "%3g") & " to "
-  msg &= FormatFloat(max_tmpr, "%3g") & " degC. Power input varied from "
-  msg &= FormatFloat(min_battery, "%3g") & " to "
-  msg &= FormatFloat(max_battery, "%3g") & " volts." & CRLF
-  EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,subject,msg,"",SMTP_USER,SMTP_PASS,smtp_response)
-EndSub
-
-
-'============================= SCADABR INTEGRATION ==================================
-Include("CPU:scadabr_Enc.cr3")
-Dim scadabr_socket As Long
-Dim rtime(9) As Long
-Dim scadabr_success As Boolean
-Dim scadabr_resp As String * 256
-
-Sub send_scadabr_data(payload As String * 512)
-  Dim uri As String * 512
-  Dim tstamp As String * 18
-  RealTime(rtime)
-  Sprintf(tstamp,"%04u%02u%02u%02u%02u%02u", rtime(1),rtime(2),rtime(3),rtime(4),rtime(5),rtime(6))
-  uri = REPORT_URL & tstamp & payload
-  scadabr_socket = HTTPGet(uri, scadabr_resp, "")
-  scadabr_success = NOT (scadabr_socket OR Len(scadabr_resp))
-EndSub
-
-Sub send_test_ScadaBR()
-  send_scadabr_data("&testlisten=0")
-EndSub
-
-Sub send_5min_report()
-  Dim msg As String * 512
-  msg  = "&skipped_10hz_scans=" & skipped_10hz_scans
-  msg &= "&skipped_1hz_scans=" & skipped_1hz_scans
-  msg &= "&skipped_5s_scans=" & skipped_5s_scans
-  msg &= "&watchdog_errors=" & watchdog_errors
-  send_scadabr_data(msg)
-EndSub
-
-Sub send_startup_report()
-  Dim msg As String * 512
-  'HINT both CompileResults and CardStatus come with a trailing <CR><LF> but 
-  'CardStatus has a CRLF pair in the middle which must be stripped out
-'  msg &= "&compileresults=" & RTrim(Replace(Status.CompileResults(1), CRLF, " "))
-'  msg &= "cardstatus=" & RTrim(Replace(Status.CardStatus(1), CRLF, " "))
-  msg &= "&progerrors=" & Status.ProgErrors
-  msg &= "&watchdogerrors=" & Status.WatchdogErrors
-  msg &= "&runsignature=" & Status.RunSignature
-  msg &= "&progsignature=" & Status.ProgSignature
-  msg &= "&battery=" & Status.Battery
-  send_scadabr_data(msg)
-EndSub
-
-
-'===============================  FUNCTIONS  ============================================
-Function Topp_equation( dielectric )
-  Return 4.3e-6*dielectric^3 - 5.5e-4*dielectric^2 + 2.92e-2*dielectric - 5.3e-2
-EndFunction
-
-
-'===============================  SUBROUTINES  ==========================================
-Sub set_default_choices()
-  set_sonic_azimuth  = NAN
-  set_NRLite2_sens   = 0
-  set_LI190SB_sens   = 0
-  set_cup_ws_enabled = False
-  set_vane_wd_enabled = False
-  set_rain_enabled   = False
-  set_soil_5_enabled = False
-  set_soil_6_enabled = False
-  set_soil_7_enabled = False
-  set_soil_8_enabled = False
-  set_soil_9_enabled = False
-  set_hfp1_sens      = 0
-  set_hfp1_R         = 0
-  set_hfp1_A         = 0
-  set_hfp2_sens      = 0
-  set_hfp2_R         = 0
-  set_hfp2_A         = 0
-  set_lgr_n2o_mult   = 1.0
-  set_lgr_n2o_offset = 0
-  set_lgr_co_mult    = 1.0
-  set_lgr_co_offset  = 0
-  set_lgr_h2o_mult   = 1.0
-  set_lgr_h2o_offset = 0
-  set_pic_co2_mult   = 1.0
-  set_pic_co2_offset = 0
-  set_pic_ch4_mult   = 1.0
-  set_pic_ch4_offset = 0
-  set_pic_h2o_mult   = 1.0
-  set_pic_h2o_offset = 0
-EndSub
-
-Sub populate_choices()
-  Move(choice(1),NUM_SETTINGS,settings(1),NUM_SETTINGS)
-EndSub
-
-Sub save_current_choices()
-  'input validation
-
-  Move(settings(1),NUM_SETTINGS,choice(1),NUM_SETTINGS)
-  Calfile(settings,NUM_SETTINGS,SETTINGS_FILE,WRITEFILE)
-
-  'update dependent variables
-  nrlite_mult = 1000/NRLite2_sens
-  li190_dens_mult = 1000/(LI190SB_sens*0.604)
-  li190_tot_mult = (1/(LI190SB_sens*0.604))*(FAST_INTV/1000)
-  If (NOT soil_5_enabled) Then Move(fiveTM(1),3,NAN,1)
-  If (NOT soil_6_enabled) Then Move(fiveTM(4),3,NAN,1)
-  If (NOT soil_7_enabled) Then Move(fiveTM(7),3,NAN,1)
-  If (NOT soil_8_enabled) Then Move(fiveTM(10),3,NAN,1)
-  If (NOT soil_9_enabled) Then Move(fiveTM(13),3,NAN,1)
-  #If (SHFP_ENABLED) Then
-    soil_hfp1_sensitivity = 1000/hfp1_sens
-    soil_hfp2_sensitivity = 1000/hfp2_sens
-    hfp1_selfcal_mult = hfp1_R / (2 * HFP_R_CUR^2 * hfp1_A)
-    hfp2_selfcal_mult = hfp2_R / (2 * HFP_R_CUR^2 * hfp2_A)
-  #Else
-    soil_hfp1_heat_flux = NAN
-    soil_hfp1_sensitivity = 0
-    soil_hfp2_heat_flux = NAN
-    soil_hfp2_sensitivity = 0
-  #EndIf
-  #If (LGR_N2O_ENABLED) Then
-    Move(lgrn2oco(1),3,NAN,1)
-  #EndIf
-  #If (PIC_CH4_ENABLED) Then
-    Move(picco2ch4(1),3,NAN,1)
-  #EndIf
-EndSub
-
-Sub setup()
-  filehandle = FileOpen(SETTINGS_FILE,"rb",0) ' attempt to open file
-  FileClose(filehandle)
-  If (filehandle = 0) Then 'if file not found
-    set_default_choices()
-  Else    
-    Calfile(settings,NUM_SETTINGS,SETTINGS_FILE,READFILE)
-    populate_choices()
-  EndIf
-  save_current_choices()
-
-  CallTable (site_info)
-  #If (LGR_N2O_ENABLED OR PIC_CH4_ENABLED OR NDVIPRI_ENABLED) Then
-    CallTable(extra_info)
-  #EndIf
-
-  Move(lgrn2oco(1),3,NAN,1)
-  Move(picco2ch4(1),3,NAN,1)
-  Move(fiveTM(1),15,NAN,1)
-  SDMSpeed (SDM_PER)
-  self = Status.StationName
-EndSub
 
 
 '================================  MENU  ================================================
@@ -1324,6 +1136,196 @@ DisplayMenu("REACCH DAQ", -1) 'add submenu to main
       MenuPick(Cancel,Yes)
   EndSubMenu
 EndMenu
+
+
+'================================= EMAIL =====================================
+Include "CPU:email_Enc.cr3"  'contains non-public settings
+Const CRLF = CHR(13) & CHR(10)
+Dim smtp_response As String * 80
+
+Sub send_startup_email()
+  Dim subject As String * 40, msg As String * 512
+  subject = "Start-up notice from " & self & " CR3000"
+  msg = ("This is the " & self & " CR3000. Starting up..." & CRLF & CRLF)
+  'HINT both CompileResults and CardStatus come with a trailing <CR><LF> but 
+  'CardStatus has a CRLF pair in the middle which must be stripped out
+  msg &= "Compile results: " & RTrim(Status.CompileResults(1))
+  msg &= "Card status: " & RTrim(Replace(Status.CardStatus(1), CRLF, " "))
+  msg &= CRLF & "Program error count: " & Status.ProgErrors & CRLF
+  msg &= "Watchdog error count: " & Status.WatchdogErrors & CRLF
+  msg &= "Run signature: " & Status.RunSignature & CRLF
+  msg &= "Program signature: " & Status.ProgSignature & CRLF
+  msg &= "Power input (Volts): " & Status.Battery & CRLF
+  EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,subject,msg,"",SMTP_USER,SMTP_PASS,smtp_response)
+EndSub
+
+Sub send_test_email()
+  Dim subject As String * 40, msg As String * 512
+  subject = "Test email from " & self & " CR3000"
+  msg = "This is the " & self & " CR3000. Testing 1.. 2.. 3.." & CRLF
+  EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,subject,msg,"",SMTP_USER,SMTP_PASS,smtp_response)
+EndSub
+
+Sub send_daily_email()
+  Dim subject As String * 40, msg As String * 512
+  subject = "Daily notice from " & self & " CR3000"
+  
+  GetRecord(out_daily(1),site_daily,1)
+  msg = "Good morning. Yesterday the temperature ranged from "
+  msg &= FormatFloat(min_tmpr, "%3g") & " to "
+  msg &= FormatFloat(max_tmpr, "%3g") & " degC. Power input varied from "
+  msg &= FormatFloat(min_battery, "%3g") & " to "
+  msg &= FormatFloat(max_battery, "%3g") & " volts." & CRLF
+  EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,subject,msg,"",SMTP_USER,SMTP_PASS,smtp_response)
+EndSub
+
+
+'============================= SCADABR INTEGRATION ==================================
+Include("CPU:scadabr_Enc.cr3")
+Dim scadabr_socket As Long
+Dim rtime(9) As Long
+Dim scadabr_success As Boolean
+Dim scadabr_resp As String * 256
+
+Sub send_scadabr_data(payload As String * 512)
+  Dim uri As String * 512
+  Dim tstamp As String * 18
+  RealTime(rtime)
+  Sprintf(tstamp,"%04u%02u%02u%02u%02u%02u", rtime(1),rtime(2),rtime(3),rtime(4),rtime(5),rtime(6))
+  uri = REPORT_URL & tstamp & payload
+  scadabr_socket = HTTPGet(uri, scadabr_resp, "")
+  scadabr_success = NOT (scadabr_socket OR Len(scadabr_resp))
+EndSub
+
+Sub send_test_ScadaBR()
+  send_scadabr_data("&testing=0")
+  test_scadabr = False
+EndSub
+
+Sub send_5min_report()
+  Dim msg As String * 512
+  msg  = "&skipped_10hz_scans=" & skipped_10hz_scans
+  msg &= "&skipped_1hz_scans=" & skipped_1hz_scans
+  msg &= "&skipped_5s_scans=" & skipped_5s_scans
+  msg &= "&watchdog_errors=" & watchdog_errors
+  send_scadabr_data(msg)
+EndSub
+
+Sub send_startup_report()
+  Dim msg As String * 512
+  'HINT both CompileResults and CardStatus come with a trailing <CR><LF> but 
+  'CardStatus has a CRLF pair in the middle which must be stripped out
+'  msg &= "&compileresults=" & RTrim(Replace(Status.CompileResults(1), CRLF, " "))
+'  msg &= "cardstatus=" & RTrim(Replace(Status.CardStatus(1), CRLF, " "))
+  msg &= "&progerrors=" & Status.ProgErrors
+  msg &= "&watchdogerrors=" & Status.WatchdogErrors
+  msg &= "&runsignature=" & Status.RunSignature
+  msg &= "&progsignature=" & Status.ProgSignature
+  msg &= "&battery=" & Status.Battery
+  send_scadabr_data(msg)
+EndSub
+
+
+'===============================  FUNCTIONS  ============================================
+Function Topp_equation( dielectric )
+  Return 4.3e-6*dielectric^3 - 5.5e-4*dielectric^2 + 2.92e-2*dielectric - 5.3e-2
+EndFunction
+
+
+'===============================  SUBROUTINES  ==========================================
+Sub set_default_choices()
+  set_sonic_azimuth  = NAN
+  set_NRLite2_sens   = 0
+  set_LI190SB_sens   = 0
+  set_cup_ws_enabled = False
+  set_vane_wd_enabled = False
+  set_rain_enabled   = False
+  set_soil_5_enabled = False
+  set_soil_6_enabled = False
+  set_soil_7_enabled = False
+  set_soil_8_enabled = False
+  set_soil_9_enabled = False
+  set_hfp1_sens      = 0
+  set_hfp1_R         = 0
+  set_hfp1_A         = 0
+  set_hfp2_sens      = 0
+  set_hfp2_R         = 0
+  set_hfp2_A         = 0
+  set_lgr_n2o_mult   = 1.0
+  set_lgr_n2o_offset = 0
+  set_lgr_co_mult    = 1.0
+  set_lgr_co_offset  = 0
+  set_lgr_h2o_mult   = 1.0
+  set_lgr_h2o_offset = 0
+  set_pic_co2_mult   = 1.0
+  set_pic_co2_offset = 0
+  set_pic_ch4_mult   = 1.0
+  set_pic_ch4_offset = 0
+  set_pic_h2o_mult   = 1.0
+  set_pic_h2o_offset = 0
+EndSub
+
+Sub populate_choices()
+  Move(choice(1),NUM_SETTINGS,settings(1),NUM_SETTINGS)
+EndSub
+
+Sub save_current_choices()
+  'input validation
+
+  Move(settings(1),NUM_SETTINGS,choice(1),NUM_SETTINGS)
+  Calfile(settings,NUM_SETTINGS,SETTINGS_FILE,WRITEFILE)
+
+  'update dependent variables
+  nrlite_mult = 1000/NRLite2_sens
+  li190_dens_mult = 1000/(LI190SB_sens*0.604)
+  li190_tot_mult = (1/(LI190SB_sens*0.604))*(FAST_INTV/1000)
+  If (NOT soil_5_enabled) Then Move(fiveTM(1),3,NAN,1)
+  If (NOT soil_6_enabled) Then Move(fiveTM(4),3,NAN,1)
+  If (NOT soil_7_enabled) Then Move(fiveTM(7),3,NAN,1)
+  If (NOT soil_8_enabled) Then Move(fiveTM(10),3,NAN,1)
+  If (NOT soil_9_enabled) Then Move(fiveTM(13),3,NAN,1)
+  #If (SHFP_ENABLED) Then
+    soil_hfp1_sensitivity = 1000/hfp1_sens
+    soil_hfp2_sensitivity = 1000/hfp2_sens
+    hfp1_selfcal_mult = hfp1_R / (2 * HFP_R_CUR^2 * hfp1_A)
+    hfp2_selfcal_mult = hfp2_R / (2 * HFP_R_CUR^2 * hfp2_A)
+  #Else
+    soil_hfp1_heat_flux = NAN
+    soil_hfp1_sensitivity = 0
+    soil_hfp2_heat_flux = NAN
+    soil_hfp2_sensitivity = 0
+  #EndIf
+  #If (LGR_N2O_ENABLED) Then
+    Move(lgrn2oco(1),3,NAN,1)
+  #EndIf
+  #If (PIC_CH4_ENABLED) Then
+    Move(picco2ch4(1),3,NAN,1)
+  #EndIf
+EndSub
+
+Sub setup()
+  filehandle = FileOpen(SETTINGS_FILE,"rb",0) ' attempt to open file
+  FileClose(filehandle)
+  If (filehandle = 0) Then 'if file not found
+    set_default_choices()
+  Else    
+    Calfile(settings,NUM_SETTINGS,SETTINGS_FILE,READFILE)
+    populate_choices()
+  EndIf
+  save_current_choices()
+
+  CallTable (site_info)
+  #If (LGR_N2O_ENABLED OR PIC_CH4_ENABLED OR NDVIPRI_ENABLED) Then
+    CallTable(extra_info)
+  #EndIf
+
+  Move(lgrn2oco(1),3,NAN,1)
+  Move(picco2ch4(1),3,NAN,1)
+  Move(fiveTM(1),15,NAN,1)
+  SDMSpeed (SDM_PER)
+  self = Status.StationName
+EndSub
+
 
 '================================  PROGRAM  =============================================
 BeginProg
@@ -1589,7 +1591,6 @@ BeginProg
       send_test_email()
     EndIf
     If (test_scadabr) Then
-      test_scadabr = False
       send_test_ScadaBR()
     EndIf
     If TimeIntoInterval(6,24,hr) Then

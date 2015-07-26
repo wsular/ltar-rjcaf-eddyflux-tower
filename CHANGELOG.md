@@ -14,6 +14,14 @@ next release
   failures
 * ScadaBR test-trigger variable is relocated to end of Public table
 
+### Enhancements
+
+* ScadaBR test-trigger variable is not reset until test request is completed
+
+### Other Changes
+
+* Destination test variable in ScadaBR renamed `testlisten` -> `testing`
+
 
 v1.1 (2015-06-19)
 -----------------
