@@ -132,7 +132,7 @@ Const READFILE = 1
 Dim settings(NUM_SETTINGS) 'values retained via file written to datalogger CPU
 Alias settings(1)  = sonic_azimuth
 Alias settings(2)  = NRLite2_sens
-Alias settings(3)  = LI190SB_sens
+Alias settings(3)  = LI190_mult
 Alias settings(4)  = cup_ws_enabled
 Alias settings(5)  = vane_wd_enabled
 Alias settings(6)  = rain_enabled
@@ -169,12 +169,12 @@ Units hfp2_A = m^2
 'ignore mults & offsets
 Units sonic_azimuth = degEofTN
 Units NRLite2_sens = uV/W/m^2
-Units LI190SB_sens = uA/mmol/s/m^2
+Units LI190_mult = mmol/s/m^2/mV
 
 Public choice(NUM_SETTINGS)
 Alias choice(1)  = set_sonic_azimuth
 Alias choice(2)  = set_NRLite2_sens
-Alias choice(3)  = set_LI190SB_sens
+Alias choice(3)  = set_LI190_mult
 Alias choice(4)  = set_cup_ws_enabled
 Alias choice(5)  = set_vane_wd_enabled
 Alias choice(6)  = set_rain_enabled
@@ -347,6 +347,10 @@ Dim hor_wind_raw
 '**********  LI190SB quantum PAR sensor  ***********
 Dim li190_dens_mult
 Dim li190_tot_mult
+Dim LI190SB_sens
+Dim LI190R_mult
+Units LI190SB_sens = uA/mmol/s/m^2
+Units LI190R_mult = mmol/s/m^2/mV
 
 Dim par(3)
 Alias par(1) = PAR_mV
@@ -603,7 +607,7 @@ Alias out_daily(16) = max_tmpr
 DataTable(debug,True,2)
   Sample(2,hmp(1),IEEE4)
   Sample(2,nrlite(1),IEEE4)
-  Sample(2,par(1),IEEE4)
+  Sample(3,par(1),IEEE4)
   Sample(2,oh34B(1),IEEE4)
   Sample(1,Rain_mm,IEEE4)
   Sample(15,gps_data(1),IEEE4)
@@ -854,6 +858,7 @@ DataTable (site_info,TRUE,20)
   Sample(1,sonic_azimuth,FP2)
   Sample(1,NRLite2_sens,FP2)
   Sample(1,LI190SB_sens,FP2)
+  Sample(1,LI190R_mult,FP2)
   Sample(1,soil_hfp1_sensitivity,IEEE4)            'heat flux plate #1 info
     FieldNames("HFP_1_sens")
     Units HFP_1_SENS = W/m^2/mV
@@ -994,7 +999,7 @@ DisplayMenu("REACCH DAQ", -1) 'add submenu to main
   SubMenu("Settings")
     MenuItem("Sonic azimuth", set_sonic_azimuth)
     MenuItem("NR sensitivity", set_NRLite2_sens)
-    MenuItem("PAR sensitivity", set_LI190SB_sens)
+    MenuItem("PAR multiplier", set_LI190_mult)
     SubMenu("Cup & vane windset")
       MenuItem("Enable WS?", set_cup_ws_enabled)
         MenuPick(Yes, No)
@@ -1081,6 +1086,7 @@ DisplayMenu("REACCH DAQ", -1) 'add submenu to main
       DisplayValue("NR Rn meas", Rn_meas)
       DisplayValue("PAR mV", PAR_mV)
       DisplayValue("PAR flx dens", PAR_flxdens)
+      DisplayValue("PAR total flx", PAR_totflx)
       DisplayValue("034B WS", WS_ms)
       DisplayValue("034B WD", WindDir)
       DisplayValue("Rain", Rain_mm)
@@ -1236,7 +1242,7 @@ EndFunction
 Sub set_default_choices()
   set_sonic_azimuth  = NAN
   set_NRLite2_sens   = 0
-  set_LI190SB_sens   = 0
+  set_LI190_mult     = -0.200 'mnfctr standard for -SMV sensors
   set_cup_ws_enabled = False
   set_vane_wd_enabled = False
   set_rain_enabled   = False
@@ -1277,8 +1283,10 @@ Sub save_current_choices()
 
   'update dependent variables
   nrlite_mult = 1000/NRLite2_sens
-  li190_dens_mult = 1000/(LI190SB_sens*0.604)
-  li190_tot_mult = (1/(LI190SB_sens*0.604))*(SLOW_INTV/1)
+  li190_dens_mult = 1000*LI190_mult
+  li190_tot_mult = LI190_mult*(SLOW_INTV/1)
+  LI190R_mult = LI190_mult 'XXXX
+  LI190SB_sens = NAN 'HACK
   If (NOT soil_5_enabled) Then Move(fiveTM(1),3,NAN,1)
   If (NOT soil_6_enabled) Then Move(fiveTM(4),3,NAN,1)
   If (NOT soil_7_enabled) Then Move(fiveTM(7),3,NAN,1)
@@ -1550,14 +1558,9 @@ BeginProg
     EndIf
     
     '== LI190SB 
-    VoltDiff (PAR_mV,1,mV20,LI190_DIFF,True,0,INTEG,1,0) 'MULT/OFF applied below
-    If (PAR_mV > 0) Then
-      PAR_flxdens = PAR_mV*li190_dens_mult
-      PAR_totflx = PAR_mV*li190_tot_mult
-    Else
-      PAR_flxdens = NAN
-      PAR_totflx = NAN
-    EndIf
+    VoltDiff (PAR_mV,1,mV20,LI190_DIFF,True,0,_60Hz,1,0) 'MULT/OFF applied below
+    PAR_flxdens = PAR_mV*li190_dens_mult
+    PAR_totflx = PAR_mV*li190_tot_mult
 
     #If (NDVIPRI_ENABLED) Then
       SDI12Recorder(dec_ndvi_up1,SDI_COM_ADDR,DEC_NDVI_UP_SDI_ADDR,"M!",1.0,0)
