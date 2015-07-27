@@ -1278,7 +1278,7 @@ Sub save_current_choices()
   'update dependent variables
   nrlite_mult = 1000/NRLite2_sens
   li190_dens_mult = 1000/(LI190SB_sens*0.604)
-  li190_tot_mult = (1/(LI190SB_sens*0.604))*(FAST_INTV/1000)
+  li190_tot_mult = (1/(LI190SB_sens*0.604))*(SLOW_INTV/1)
   If (NOT soil_5_enabled) Then Move(fiveTM(1),3,NAN,1)
   If (NOT soil_6_enabled) Then Move(fiveTM(4),3,NAN,1)
   If (NOT soil_7_enabled) Then Move(fiveTM(7),3,NAN,1)
