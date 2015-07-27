@@ -57,6 +57,8 @@ Const DEC_5TM_IDC_SDI_ADDR = "C"
 '------ OPTIONAL SENSORS ANALOG INPUT MAP -----
 Const HFP_1_SGNL_DIFF = 6    'heat flux plate sensor signal diff input chan #
 Const HFP_2_SGNL_DIFF = 7    '   plate #2
+Const SS109_001_SE    = 27   'Model 109SS (CSI) #001
+Const SS109_002_SE    = 28   '                  #002
 Const LGR_N2O_DIFF    = 8    'Los Gatos N2O diff input chan #
 Const LGR_CO_DIFF     = 9    'Los Gatos CO diff input chan #
 Const LGR_H2O_DIFF    = 10   'Los Gatos H2O diff input chan #
@@ -499,6 +501,12 @@ Units lgr_n2o = scale-dependent
 Units lgr_co = scale-dependent
 Units lgr_h2o = scale-dependent
 
+'**********  Model 109SS temp probes **********
+Dim m109ss(2)
+Alias m109ss(1) = soil_109SS_1_T
+Alias m109ss(2) = soil_109SS_2_T
+Units m109ss = degC
+
 '**********  Picarro CO2/CH4 analyzer  **********
 Dim picco2ch4(3) As Float
 Alias picco2ch4(1) = pic_co2
@@ -616,6 +624,7 @@ DataTable(debug,True,2)
   Sample(15,gps_data(1),IEEE4)
   Sample(24,fiveTM(1),FP2)
   Sample(4,hfp(1),IEEE4)
+  Sample(2,m109ss(1),IEEE4)
   Sample(8,decagon(1),IEEE4)
   Sample(1,smtp_response,String)
   Sample(1,scadabr_success,Boolean)
@@ -1152,6 +1161,8 @@ DisplayMenu("Vineyard DAQ", -1) 'add submenu to main
       DisplayValue("SHFP 1 sens", soil_hfp1_sensitivity)
       DisplayValue("SHFP 2 flux", soil_hfp2_heat_flux)
       DisplayValue("SHFP 2 sens", soil_hfp2_sensitivity)
+      DisplayValue("109SS 1 tmpr",soil_109SS_1_T)
+      DisplayValue("109SS 2 tmpr",soil_109SS_2_T)
       DisplayValue("5TM #5 e", soil_5TM_ID5_E)
       DisplayValue("5TM #5 tmpr", soil_5TM_ID5_T)
       DisplayValue("5TM #6 e", soil_5TM_ID6_E)
@@ -1763,6 +1774,8 @@ BeginProg
                                                   soil_hfp1_sensitivity,0)
       VoltDiff(soil_hfp2_heat_flux,1,mv200,HFP_2_SGNL_DIFF,TRUE,0,INTEG, _
                                                   soil_hfp2_sensitivity,0)
+      Therm109(soil_109SS_1_T,1,27,VX3,0,250,1,0)
+      Therm109(soil_109SS_2_T,1,28,VX4,0,250,1,0)
     #EndIf
     
     CallTable(soil)
