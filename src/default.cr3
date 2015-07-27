@@ -50,6 +50,9 @@ Const DEC_5TM_ID6_SDI_ADDR = 6   ' ...
 Const DEC_5TM_ID7_SDI_ADDR = 7   ' ...
 Const DEC_5TM_ID8_SDI_ADDR = 8   ' ...
 Const DEC_5TM_ID9_SDI_ADDR = 9   ' fifth 5TM sensor address
+Const DEC_5TM_IDA_SDI_ADDR = "A"
+Const DEC_5TM_IDB_SDI_ADDR = "B"
+Const DEC_5TM_IDC_SDI_ADDR = "C"
 
 '------ OPTIONAL SENSORS ANALOG INPUT MAP -----
 Const HFP_1_SGNL_DIFF = 6    'heat flux plate sensor signal diff input chan #
@@ -121,7 +124,7 @@ Units n = samples
 Dim sensor_shfp As Boolean 'set based on site SN
 
 '----- RETAINED SETTINGS -----
-Const NUM_SETTINGS = {25} 'set to length of settings array
+Const NUM_SETTINGS = {36} 'set to length of settings array
 Const WRITEFILE = 0
 Const READFILE = 1
 
@@ -137,20 +140,39 @@ Alias settings(8)  = soil_6_enabled
 Alias settings(9)  = soil_7_enabled
 Alias settings(10) = soil_8_enabled
 Alias settings(11) = soil_9_enabled
-Alias settings(12) = hfp1_sens
-Alias settings(13) = hfp2_sens
-Alias settings(14) = lgr_n2o_mult
-Alias settings(15) = lgr_n2o_offset
-Alias settings(16) = lgr_co_mult
-Alias settings(17) = lgr_co_offset
-Alias settings(18) = lgr_h2o_mult
-Alias settings(19) = lgr_h2o_offset
-Alias settings(20) = pic_co2_mult
-Alias settings(21) = pic_co2_offset
-Alias settings(22) = pic_ch4_mult
-Alias settings(23) = pic_ch4_offset
-Alias settings(24) = pic_h2o_mult
-Alias settings(25) = pic_h2o_offset
+Alias settings(12) = soil_A_enabled
+Alias settings(13) = soil_B_enabled
+Alias settings(14) = soil_C_enabled
+Alias settings(15) = soil_5_depth
+Alias settings(16) = soil_6_depth
+Alias settings(17) = soil_7_depth
+Alias settings(18) = soil_8_depth
+Alias settings(19) = soil_9_depth
+Alias settings(20) = soil_A_depth
+Alias settings(21) = soil_B_depth
+Alias settings(22) = soil_C_depth
+Alias settings(23) = hfp1_sens
+Alias settings(24) = hfp2_sens
+Alias settings(25) = lgr_n2o_mult
+Alias settings(26) = lgr_n2o_offset
+Alias settings(27) = lgr_co_mult
+Alias settings(28) = lgr_co_offset
+Alias settings(29) = lgr_h2o_mult
+Alias settings(30) = lgr_h2o_offset
+Alias settings(31) = pic_co2_mult
+Alias settings(32) = pic_co2_offset
+Alias settings(33) = pic_ch4_mult
+Alias settings(34) = pic_ch4_offset
+Alias settings(35) = pic_h2o_mult
+Alias settings(36) = pic_h2o_offset
+Units soil_5_depth = cm
+Units soil_6_depth = cm
+Units soil_7_depth = cm
+Units soil_8_depth = cm
+Units soil_9_depth = cm
+Units soil_A_depth = cm
+Units soil_B_depth = cm
+Units soil_C_depth = cm
 Units hfp1_sens = uV/W/m^2
 Units hfp2_sens = uV/W/m^2
 'ignore mults & offsets
@@ -170,20 +192,31 @@ Alias choice(8)  = set_soil_6_enabled
 Alias choice(9)  = set_soil_7_enabled
 Alias choice(10) = set_soil_8_enabled
 Alias choice(11) = set_soil_9_enabled
-Alias choice(12) = set_hfp1_sens
-Alias choice(13) = set_hfp2_sens
-Alias choice(14) = set_lgr_n2o_mult
-Alias choice(15) = set_lgr_n2o_offset
-Alias choice(16) = set_lgr_co_mult
-Alias choice(17) = set_lgr_co_offset
-Alias choice(18) = set_lgr_h2o_mult
-Alias choice(19) = set_lgr_h2o_offset
-Alias choice(20) = set_pic_co2_mult
-Alias choice(21) = set_pic_co2_offset
-Alias choice(22) = set_pic_ch4_mult
-Alias choice(23) = set_pic_ch4_offset
-Alias choice(24) = set_pic_h2o_mult
-Alias choice(25) = set_pic_h2o_offset
+Alias choice(12) = set_soil_A_enabled
+Alias choice(13) = set_soil_B_enabled
+Alias choice(14) = set_soil_C_enabled
+Alias choice(15) = set_soil_5_depth
+Alias choice(16) = set_soil_6_depth
+Alias choice(17) = set_soil_7_depth
+Alias choice(18) = set_soil_8_depth
+Alias choice(19) = set_soil_9_depth
+Alias choice(20) = set_soil_A_depth
+Alias choice(21) = set_soil_B_depth
+Alias choice(22) = set_soil_C_depth
+Alias choice(23) = set_hfp1_sens
+Alias choice(24) = set_hfp2_sens
+Alias choice(25) = set_lgr_n2o_mult
+Alias choice(26) = set_lgr_n2o_offset
+Alias choice(27) = set_lgr_co_mult
+Alias choice(28) = set_lgr_co_offset
+Alias choice(29) = set_lgr_h2o_mult
+Alias choice(30) = set_lgr_h2o_offset
+Alias choice(31) = set_pic_co2_mult
+Alias choice(32) = set_pic_co2_offset
+Alias choice(33) = set_pic_ch4_mult
+Alias choice(34) = set_pic_ch4_offset
+Alias choice(35) = set_pic_h2o_mult
+Alias choice(36) = set_pic_h2o_offset
 
 '----- SELF-MONITORING -----
 Dim SkippedScans(3)
@@ -394,7 +427,7 @@ Units nmbr_clock_change = occurrences
 
 '**********  Decagon 5TM soil moisture/temp **********
 ' Required so soil table can record NAN if probes are not used.
-Dim fiveTM(15)
+Dim fiveTM(24)
 Alias fiveTM(1)  = soil_5TM_ID5_E
 Alias fiveTM(2)  = soil_5TM_ID5_T
 Alias fiveTM(3)  = soil_5TM_ID5_VWC
@@ -410,6 +443,15 @@ Alias fiveTM(12) = soil_5TM_ID8_VWC
 Alias fiveTM(13) = soil_5TM_ID9_E
 Alias fiveTM(14) = soil_5TM_ID9_T
 Alias fiveTM(15) = soil_5TM_ID9_VWC
+Alias fiveTM(16) = soil_5TM_IDA_E
+Alias fiveTM(17) = soil_5TM_IDA_T
+Alias fiveTM(18) = soil_5TM_IDA_VWC
+Alias fiveTM(19) = soil_5TM_IDB_E
+Alias fiveTM(20) = soil_5TM_IDB_T
+Alias fiveTM(21) = soil_5TM_IDB_VWC
+Alias fiveTM(22) = soil_5TM_IDC_E
+Alias fiveTM(23) = soil_5TM_IDC_T
+Alias fiveTM(24) = soil_5TM_IDC_VWC
 Units soil_5TM_ID5_E   = dimless
 Units soil_5TM_ID5_T   = C
 Units soil_5TM_ID5_VWC = v/v
@@ -425,6 +467,15 @@ Units soil_5TM_ID8_VWC = v/v
 Units soil_5TM_ID9_E   = dimless
 Units soil_5TM_ID9_T   = C
 Units soil_5TM_ID9_VWC = v/v
+Units soil_5TM_IDA_E   = dimless
+Units soil_5TM_IDA_T   = C
+Units soil_5TM_IDA_VWC = v/v
+Units soil_5TM_IDB_E   = dimless
+Units soil_5TM_IDB_T   = C
+Units soil_5TM_IDB_VWC = v/v
+Units soil_5TM_IDC_E   = dimless
+Units soil_5TM_IDC_T   = C
+Units soil_5TM_IDC_VWC = v/v
 
 
 '**********  HFP01SC heat flux plate  **********
@@ -563,11 +614,7 @@ DataTable(debug,True,2)
   Sample(2,oh34B(1),IEEE4)
   Sample(1,Rain_mm,IEEE4)
   Sample(15,gps_data(1),IEEE4)
-  Sample(2,fiveTM(1),IEEE4)
-  Sample(2,fiveTM(4),IEEE4)
-  Sample(2,fiveTM(7),IEEE4)
-  Sample(2,fiveTM(10),IEEE4)
-  Sample(2,fiveTM(13),IEEE4)
+  Sample(24,fiveTM(1),FP2)
   Sample(4,hfp(1),IEEE4)
   Sample(8,decagon(1),IEEE4)
   Sample(1,smtp_response,String)
@@ -906,6 +953,40 @@ EndTable
   EndTable
 #EndIf
 
+DataTable(soil,True,100)
+  DataInterval(0,5,Min,4)
+  CardOut(0,DAYS*288)
+  Average(1,soil_hfp1_heat_flux,IEEE4,soil_hfp1_heat_flux=NAN))
+  Average(1,soil_hfp2_heat_flux,IEEE4,soil_hfp2_heat_flux=NAN))
+  Average(1,soil_109SS_1_T,IEEE4,soil_109SS_1_T=NAN)
+  Average(1,soil_109SS_2_T,IEEE4,soil_109SS_2_T=NAN)
+  Average(1,soil_5TM_ID5_T,FP2,soil_5TM_ID5_T=NAN)
+  Average(1,soil_5TM_ID6_T,FP2,soil_5TM_ID6_T=NAN)
+  Average(1,soil_5TM_ID7_T,FP2,soil_5TM_ID7_T=NAN)
+  Average(1,soil_5TM_ID8_T,FP2,soil_5TM_ID8_T=NAN)
+  Average(1,soil_5TM_ID9_T,FP2,soil_5TM_ID9_T=NAN)
+  Average(1,soil_5TM_IDA_T,FP2,soil_5TM_IDA_T=NAN)
+  Average(1,soil_5TM_IDB_T,FP2,soil_5TM_IDB_T=NAN)
+  Average(1,soil_5TM_IDC_T,FP2,soil_5TM_IDC_T=NAN)
+  Average(1,soil_5TM_ID5_E,IEEE4,soil_5TM_ID5_E=NAN)
+  Average(1,soil_5TM_ID6_E,IEEE4,soil_5TM_ID6_E=NAN)
+  Average(1,soil_5TM_ID7_E,IEEE4,soil_5TM_ID7_E=NAN)
+  Average(1,soil_5TM_ID8_E,IEEE4,soil_5TM_ID8_E=NAN)
+  Average(1,soil_5TM_ID9_E,IEEE4,soil_5TM_ID9_E=NAN)
+  Average(1,soil_5TM_IDA_E,IEEE4,soil_5TM_IDA_E=NAN)
+  Average(1,soil_5TM_IDB_E,IEEE4,soil_5TM_IDB_E=NAN)
+  Average(1,soil_5TM_IDC_E,IEEE4,soil_5TM_IDC_E=NAN)
+  Average(1,soil_5TM_ID5_VWC,FP2,soil_5TM_ID5_VWC=NAN)
+  Average(1,soil_5TM_ID6_VWC,FP2,soil_5TM_ID6_VWC=NAN)
+  Average(1,soil_5TM_ID7_VWC,FP2,soil_5TM_ID7_VWC=NAN)
+  Average(1,soil_5TM_ID8_VWC,FP2,soil_5TM_ID8_VWC=NAN)
+  Average(1,soil_5TM_ID9_VWC,FP2,soil_5TM_ID9_VWC=NAN)
+  Average(1,soil_5TM_IDA_VWC,FP2,soil_5TM_IDA_VWC=NAN)
+  Average(1,soil_5TM_IDB_VWC,FP2,soil_5TM_IDB_VWC=NAN)
+  Average(1,soil_5TM_IDC_VWC,FP2,soil_5TM_IDC_VWC=NAN)
+EndTable
+
+
 
 '================================  MENU  ================================================
 Const Enable = True
@@ -965,14 +1046,28 @@ DisplayMenu("Vineyard DAQ", -1) 'add submenu to main
     SubMenu("Soil moisture probes")
       MenuItem("Enable 5 ?", set_soil_5_enabled)
         MenuPick(Yes, No)
+      MenuItem("#5 depth", set_soil_5_depth)
       MenuItem("Enable 6 ?", set_soil_6_enabled)
         MenuPick(Yes, No)
+      MenuItem("#6 depth", set_soil_6_depth)
       MenuItem("Enable 7 ?", set_soil_7_enabled)
         MenuPick(Yes, No)
+      MenuItem("#7 depth", set_soil_7_depth)
       MenuItem("Enable 8 ?", set_soil_8_enabled)
         MenuPick(Yes, No)
+      MenuItem("#8 depth", set_soil_8_depth)
       MenuItem("Enable 9 ?", set_soil_9_enabled)
         MenuPick(Yes, No)
+      MenuItem("#9 depth", set_soil_9_depth)
+      MenuItem("Enable A ?", set_soil_A_enabled)
+        MenuPick(Yes, No)
+      MenuItem("#A depth", set_soil_A_depth)
+      MenuItem("Enable B ?", set_soil_B_enabled)
+        MenuPick(Yes, No)
+      MenuItem("#B depth", set_soil_B_depth)
+      MenuItem("Enable C ?", set_soil_C_enabled)
+        MenuPick(Yes, No)
+      MenuItem("#C depth", set_soil_C_depth)
     EndSubMenu
     #If (SHFP_ENABLED) Then
       SubMenu("Soil heat flux plate")
@@ -1053,6 +1148,10 @@ DisplayMenu("Vineyard DAQ", -1) 'add submenu to main
       DisplayValue("GPS ready", gps_ready)
       DisplayValue("GPS max adj", max_clock_change)
       DisplayValue("GPS num adj", nmbr_clock_change)
+      DisplayValue("SHFP 1 flux", soil_hfp1_heat_flux)
+      DisplayValue("SHFP 1 sens", soil_hfp1_sensitivity)
+      DisplayValue("SHFP 2 flux", soil_hfp2_heat_flux)
+      DisplayValue("SHFP 2 sens", soil_hfp2_sensitivity)
       DisplayValue("5TM #5 e", soil_5TM_ID5_E)
       DisplayValue("5TM #5 tmpr", soil_5TM_ID5_T)
       DisplayValue("5TM #6 e", soil_5TM_ID6_E)
@@ -1063,10 +1162,12 @@ DisplayMenu("Vineyard DAQ", -1) 'add submenu to main
       DisplayValue("5TM #8 tmpr", soil_5TM_ID8_T)
       DisplayValue("5TM #9 e", soil_5TM_ID9_E)
       DisplayValue("5TM #9 tmpr", soil_5TM_ID9_T)
-      DisplayValue("SHFP 1 flux", soil_hfp1_heat_flux)
-      DisplayValue("SHFP 1 sens", soil_hfp1_sensitivity)
-      DisplayValue("SHFP 2 flux", soil_hfp2_heat_flux)
-      DisplayValue("SHFP 2 sens", soil_hfp2_sensitivity)
+      DisplayValue("5TM #A e", soil_5TM_IDA_E)
+      DisplayValue("5TM #A tmpr", soil_5TM_IDA_T)
+      DisplayValue("5TM #B e", soil_5TM_IDB_E)
+      DisplayValue("5TM #B tmpr", soil_5TM_IDB_T)
+      DisplayValue("5TM #C e", soil_5TM_IDC_E)
+      DisplayValue("5TM #C tmpr", soil_5TM_IDC_T)
       DisplayValue("LGR N2O", lgr_n2o)
       DisplayValue("LGR CO", lgr_co)
       DisplayValue("LGR H2O", lgr_h2o)
@@ -1194,11 +1295,22 @@ Sub set_default_choices()
   set_cup_ws_enabled = False
   set_vane_wd_enabled = False
   set_rain_enabled   = False
-  set_soil_5_enabled = False
-  set_soil_6_enabled = False
-  set_soil_7_enabled = False
-  set_soil_8_enabled = False
-  set_soil_9_enabled = False
+  set_soil_5_enabled = True
+  set_soil_6_enabled = True
+  set_soil_7_enabled = True
+  set_soil_8_enabled = True
+  set_soil_9_enabled = True
+  set_soil_A_enabled = True
+  set_soil_B_enabled = True
+  set_soil_C_enabled = True
+  set_soil_5_depth   = 0
+  set_soil_6_depth   = 0
+  set_soil_7_depth   = 0
+  set_soil_8_depth   = 0
+  set_soil_9_depth   = 0
+  set_soil_A_depth   = 0
+  set_soil_B_depth   = 0
+  set_soil_C_depth   = 0
   set_hfp1_sens      = 0
   set_hfp2_sens      = 0
   set_lgr_n2o_mult   = 1.0
@@ -1236,6 +1348,10 @@ Sub save_current_choices()
   If (NOT soil_7_enabled) Then Move(fiveTM(7),3,NAN,1)
   If (NOT soil_8_enabled) Then Move(fiveTM(10),3,NAN,1)
   If (NOT soil_9_enabled) Then Move(fiveTM(13),3,NAN,1)
+  If (NOT soil_A_enabled) Then Move(fiveTM(16),3,NAN,1)
+  If (NOT soil_B_enabled) Then Move(fiveTM(19),3,NAN,1)
+  If (NOT soil_C_enabled) Then Move(fiveTM(22),3,NAN,1)
+
   #If (SHFP_ENABLED) Then
     soil_hfp1_sensitivity = 1000/hfp1_sens
     soil_hfp2_sensitivity = 1000/hfp2_sens
@@ -1271,7 +1387,7 @@ Sub setup()
 
   Move(lgrn2oco(1),3,NAN,1)
   Move(picco2ch4(1),3,NAN,1)
-  Move(fiveTM(1),15,NAN,1)
+  Move(fiveTM(1),24,NAN,1)
   SDMSpeed (SDM_PER)
   self = Status.StationName
 EndSub
@@ -1563,48 +1679,83 @@ BeginProg
     '== Decagon soil moisture probes
     If (soil_5_enabled) Then
       SDI12Recorder(soil_5TM_ID5_E,SDI_COM_ADDR,DEC_5TM_ID5_SDI_ADDR,"M!",1.0,0)
-      If (soil_5TM_ID5_E = NAN) Then 
-        soil_5TM_ID5_T = NAN
+      If (soil_5TM_ID5_E < 1 OR soil_5TM_ID5_E > 80) Then
+        soil_5TM_ID5_E = NAN
         soil_5TM_ID5_VWC = NAN
       Else
         soil_5TM_ID5_VWC = Topp_equation(soil_5TM_ID5_E)
       EndIf
+      If (soil_5TM_ID5_T < -40 OR soil_5TM_ID5_T > 50) Then soil_5TM_ID5_T = NAN
     EndIf
     If (soil_6_enabled) Then
       SDI12Recorder(soil_5TM_ID6_E,SDI_COM_ADDR,DEC_5TM_ID6_SDI_ADDR,"M!",1.0,0)
-      If (soil_5TM_ID6_E = NAN) Then 
-        soil_5TM_ID6_T = NAN
+      If (soil_5TM_ID6_E < 1 OR soil_5TM_ID6_E > 80) Then
+        soil_5TM_ID6_E = NAN
         soil_5TM_ID6_VWC = NAN
       Else
         soil_5TM_ID6_VWC = Topp_equation(soil_5TM_ID6_E)
       EndIf
+      If (soil_5TM_ID6_T < -40 OR soil_5TM_ID6_T > 50) Then soil_5TM_ID6_T = NAN
     EndIf
     If (soil_7_enabled) Then
       SDI12Recorder(soil_5TM_ID7_E,SDI_COM_ADDR,DEC_5TM_ID7_SDI_ADDR,"M!",1.0,0)
-      If (soil_5TM_ID7_E = NAN) Then 
-        soil_5TM_ID7_T = NAN
+      If (soil_5TM_ID7_E < 1 OR soil_5TM_ID7_E > 80) Then
+        soil_5TM_ID7_E = NAN
         soil_5TM_ID7_VWC = NAN
       Else
         soil_5TM_ID7_VWC = Topp_equation(soil_5TM_ID7_E)
       EndIf
+      If (soil_5TM_ID7_T < -40 OR soil_5TM_ID7_T > 50) Then soil_5TM_ID7_T = NAN
     EndIf
     If (soil_8_enabled) Then
       SDI12Recorder(soil_5TM_ID8_E,SDI_COM_ADDR,DEC_5TM_ID8_SDI_ADDR,"M!",1.0,0)
-      If (soil_5TM_ID8_E = NAN) Then 
-        soil_5TM_ID8_T = NAN
+      If (soil_5TM_ID8_E < 1 OR soil_5TM_ID8_E > 80) Then
+        soil_5TM_ID8_E = NAN
         soil_5TM_ID8_VWC = NAN
       Else
         soil_5TM_ID8_VWC = Topp_equation(soil_5TM_ID8_E)
       EndIf
+      If (soil_5TM_ID8_T < -40 OR soil_5TM_ID8_T > 50) Then soil_5TM_ID8_T = NAN
     EndIf
     If (soil_9_enabled) Then
       SDI12Recorder(soil_5TM_ID9_E,SDI_COM_ADDR,DEC_5TM_ID9_SDI_ADDR,"M!",1.0,0)
-      If (soil_5TM_ID9_E = NAN) Then 
-        soil_5TM_ID9_T = NAN
+      If (soil_5TM_ID9_E < 1 OR soil_5TM_ID8_E > 80) Then 
+        soil_5TM_ID9_E = NAN
         soil_5TM_ID9_VWC = NAN
       Else
         soil_5TM_ID9_VWC = Topp_equation(soil_5TM_ID9_E)
       EndIf
+      If (soil_5TM_ID9_T < -40 OR soil_5TM_ID9_T > 50) Then soil_5TM_ID9_T = NAN
+    EndIf    
+    If (soil_A_enabled) Then
+      SDI12Recorder(soil_5TM_IDA_E,SDI_COM_ADDR,DEC_5TM_IDA_SDI_ADDR,"M!",1.0,0)
+      If (soil_5TM_IDA_E < 1 OR soil_5TM_IDA_E > 80) Then 
+        soil_5TM_IDA_E = NAN
+        soil_5TM_IDA_VWC = NAN
+      Else
+        soil_5TM_IDA_VWC = Topp_equation(soil_5TM_IDA_E)
+      EndIf
+      If (soil_5TM_IDA_T < -40 OR soil_5TM_IDA_T > 50) Then soil_5TM_IDA_T = NAN
+    EndIf
+    If (soil_B_enabled) Then
+      SDI12Recorder(soil_5TM_IDB_E,SDI_COM_ADDR,DEC_5TM_IDB_SDI_ADDR,"M!",1.0,0)
+      If (soil_5TM_IDB_E < 1 OR soil_5TM_IDB_E > 80) Then 
+        soil_5TM_IDB_E = NAN
+        soil_5TM_IDB_VWC = NAN
+      Else
+        soil_5TM_IDB_VWC = Topp_equation(soil_5TM_IDB_E)
+      EndIf
+      If (soil_5TM_IDB_T < -40 OR soil_5TM_IDB_T > 50) Then soil_5TM_IDB_T = NAN
+    EndIf    
+    If (soil_C_enabled) Then
+      SDI12Recorder(soil_5TM_IDC_E,SDI_COM_ADDR,DEC_5TM_IDC_SDI_ADDR,"M!",1.0,0)
+      If (soil_5TM_IDC_E < 1 OR soil_5TM_IDC_E > 80) Then 
+        soil_5TM_IDC_E = NAN
+        soil_5TM_IDC_VWC = NAN
+      Else
+        soil_5TM_IDC_VWC = Topp_equation(soil_5TM_IDC_E)
+      EndIf
+      If (soil_5TM_IDC_T < -40 OR soil_5TM_IDC_T > 50) Then soil_5TM_IDC_T = NAN
     EndIf
 
     #If (SHFP_ENABLED) Then
@@ -1614,6 +1765,7 @@ BeginProg
                                                   soil_hfp2_sensitivity,0)
     #EndIf
     
+    CallTable(soil)
     just_had_soil_scan = TRUE
   NextScan
 EndProg
