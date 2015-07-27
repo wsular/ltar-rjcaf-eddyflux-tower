@@ -21,10 +21,9 @@ Const STAT_OUT_5 = 5   	  'stats output interval #1, minutes
 Const STAT_OUT_30 = 30		  'stats output interval #2, minutes; use multiple of STAT_INT1
 Const SDM_PER = 30         'default SDM clock speed
 Const INTEG = 250          'analog measurement integration time (250/_50hz/_60hz)
-Const HFP_CAL_INTERVAL = 6*60*60      'frequency of cal. interval, seconds
 
 '----- PROGRAM OPERATION -----
-Const SETTINGS_FILE = "CPU:obj2_settings.dat"
+Const SETTINGS_FILE = "CPU:wine_settings.dat"
 Const FAST_BUFFER_SIZE = 600  '= 60sec = 1min buffer
 Const SLOW_BUFFER_SIZE = 60  '= 1min buffer
 Const SOIL_BUFFER_SIZE = 24  '= 2min buffer
@@ -55,9 +54,6 @@ Const DEC_5TM_ID9_SDI_ADDR = 9   ' fifth 5TM sensor address
 '------ OPTIONAL SENSORS ANALOG INPUT MAP -----
 Const HFP_1_SGNL_DIFF = 6    'heat flux plate sensor signal diff input chan #
 Const HFP_2_SGNL_DIFF = 7    '   plate #2
-Const HFP_1_HEAT_SE   = 27   'hfp heater signal SE input chan # = D14H 
-Const HFP_2_HEAT_SE   = 28   '   plate #2                       = D14L
-Const HFP_HEAT_SW12   = 1    'hfp heater power source SW-12V # (1 or 2)
 Const LGR_N2O_DIFF    = 8    'Los Gatos N2O diff input chan #
 Const LGR_CO_DIFF     = 9    'Los Gatos CO diff input chan #
 Const LGR_H2O_DIFF    = 10   'Los Gatos H2O diff input chan #
@@ -73,7 +69,7 @@ Const DEC_PRI_UP_SDI_ADDR = 2
 Const DEC_PRI_DN_SDI_ADDR = 3
 
 ConstTable
-  Const SHFP_ENABLED = False
+  Const SHFP_ENABLED = True
   Const NDVIPRI_ENABLED = False
   Const LGR_N2O_ENABLED = False
   Const PIC_CH4_ENABLED = False
@@ -125,7 +121,7 @@ Units n = samples
 Dim sensor_shfp As Boolean 'set based on site SN
 
 '----- RETAINED SETTINGS -----
-Const NUM_SETTINGS = {29} 'set to length of settings array
+Const NUM_SETTINGS = {25} 'set to length of settings array
 Const WRITEFILE = 0
 Const READFILE = 1
 
@@ -142,30 +138,21 @@ Alias settings(9)  = soil_7_enabled
 Alias settings(10) = soil_8_enabled
 Alias settings(11) = soil_9_enabled
 Alias settings(12) = hfp1_sens
-Alias settings(13) = hfp1_R
-Alias settings(14) = hfp1_A
-Alias settings(15) = hfp2_sens
-Alias settings(16) = hfp2_R
-Alias settings(17) = hfp2_A
-Alias settings(18) = lgr_n2o_mult
-Alias settings(19) = lgr_n2o_offset
-Alias settings(20) = lgr_co_mult
-Alias settings(21) = lgr_co_offset
-Alias settings(22) = lgr_h2o_mult
-Alias settings(23) = lgr_h2o_offset
-Alias settings(24) = pic_co2_mult
-Alias settings(25) = pic_co2_offset
-Alias settings(26) = pic_ch4_mult
-Alias settings(27) = pic_ch4_offset
-Alias settings(28) = pic_h2o_mult
-Alias settings(29) = pic_h2o_offset
-
+Alias settings(13) = hfp2_sens
+Alias settings(14) = lgr_n2o_mult
+Alias settings(15) = lgr_n2o_offset
+Alias settings(16) = lgr_co_mult
+Alias settings(17) = lgr_co_offset
+Alias settings(18) = lgr_h2o_mult
+Alias settings(19) = lgr_h2o_offset
+Alias settings(20) = pic_co2_mult
+Alias settings(21) = pic_co2_offset
+Alias settings(22) = pic_ch4_mult
+Alias settings(23) = pic_ch4_offset
+Alias settings(24) = pic_h2o_mult
+Alias settings(25) = pic_h2o_offset
 Units hfp1_sens = uV/W/m^2
-Units hfp1_R = ohms
-Units hfp1_A = m^2
 Units hfp2_sens = uV/W/m^2
-Units hfp2_R = ohms
-Units hfp2_A = m^2
 'ignore mults & offsets
 Units sonic_azimuth = degEofTN
 Units NRLite2_sens = uV/W/m^2
@@ -184,23 +171,19 @@ Alias choice(9)  = set_soil_7_enabled
 Alias choice(10) = set_soil_8_enabled
 Alias choice(11) = set_soil_9_enabled
 Alias choice(12) = set_hfp1_sens
-Alias choice(13) = set_hfp1_R
-Alias choice(14) = set_hfp1_A
-Alias choice(15) = set_hfp2_sens
-Alias choice(16) = set_hfp2_R
-Alias choice(17) = set_hfp2_A
-Alias choice(18) = set_lgr_n2o_mult
-Alias choice(19) = set_lgr_n2o_offset
-Alias choice(20) = set_lgr_co_mult
-Alias choice(21) = set_lgr_co_offset
-Alias choice(22) = set_lgr_h2o_mult
-Alias choice(23) = set_lgr_h2o_offset
-Alias choice(24) = set_pic_co2_mult
-Alias choice(25) = set_pic_co2_offset
-Alias choice(26) = set_pic_ch4_mult
-Alias choice(27) = set_pic_ch4_offset
-Alias choice(28) = set_pic_h2o_mult
-Alias choice(29) = set_pic_h2o_offset
+Alias choice(13) = set_hfp2_sens
+Alias choice(14) = set_lgr_n2o_mult
+Alias choice(15) = set_lgr_n2o_offset
+Alias choice(16) = set_lgr_co_mult
+Alias choice(17) = set_lgr_co_offset
+Alias choice(18) = set_lgr_h2o_mult
+Alias choice(19) = set_lgr_h2o_offset
+Alias choice(20) = set_pic_co2_mult
+Alias choice(21) = set_pic_co2_offset
+Alias choice(22) = set_pic_ch4_mult
+Alias choice(23) = set_pic_ch4_offset
+Alias choice(24) = set_pic_h2o_mult
+Alias choice(25) = set_pic_h2o_offset
 
 '----- SELF-MONITORING -----
 Dim SkippedScans(3)
@@ -454,38 +437,7 @@ Units soil_hfp1_heat_flux = W/m^2
 Units soil_hfp2_heat_flux = W/m^2
 Units soil_hfp1_sensitivity = W/m^2/mV
 Units soil_hfp2_sensitivity = W/m^2/mV
-Dim hfp_isCalibrating As Boolean = {False}
   
-#If (SHFP_ENABLED) Then  
-  Const HFP_CAL_RUNAVG = 20/SOIL_INTV   'use 20 sec running averages
-  Const HFP_CAL_T_START = 120            'starting time into cal. interval, seconds
-  Const HFP_CAL_T_HEATON = HFP_CAL_T_START + 20
-  Const HFP_CAL_T_END = HFP_CAL_T_START + 190
-  Const HFP_CAL_T_HEATOFF = HFP_CAL_T_START + 200
-  Const HFP_CAL_T_FINISH = HFP_CAL_T_START + 380
-  Const HFP_R_CUR = 10                  'current sensing resistor = 10 Ohm, 1%, 1/4 W
-  Dim hfp1_selfcal_mult
-  Dim hfp2_selfcal_mult
-  
-  Dim hfp_sw12_isOn As Boolean
-  Dim hfp_selfcal(8,2)
-  Alias hfp_selfcal(1,1) = hfp1_mVs          'inst. value of soil heat flux
-  Alias hfp_selfcal(2,1) = hfp1_mVs_runavg   'run avg of soil heat flux
-  Alias hfp_selfcal(3,1) = hfp1_mVs_t0       'soil heat flux @ start of cal cycle
-  Alias hfp_selfcal(4,1) = hfp1_mVs_th       'soil heat flux after heating in cal cycle
-  Alias hfp_selfcal(5,1) = hfp1_mVs_te       'soil heat flux symmetrically after cal cycle
-  Alias hfp_selfcal(6,1) = hfp1_Vh           'inst. ref voltage
-  Alias hfp_selfcal(7,1) = hfp1_Vh_runavg    'run avg of ref voltage
-  Alias hfp_selfcal(8,1) = hfp1_Vh_th        'ref voltage after heating in cal cycle
-  Alias hfp_selfcal(1,2) = hfp2_mVs          'inst. value of soil heat flux
-  Alias hfp_selfcal(2,2) = hfp2_mVs_runavg   'run avg of soil heat flux
-  Alias hfp_selfcal(3,2) = hfp2_mVs_t0       'soil heat flux @ start of cal cycle
-  Alias hfp_selfcal(4,2) = hfp2_mVs_th       'soil heat flux after heating in cal cycle
-  Alias hfp_selfcal(5,2) = hfp2_mVs_te       'soil heat flux symmetrically after cal cycle
-  Alias hfp_selfcal(6,2) = hfp2_Vh           'inst. ref voltage
-  Alias hfp_selfcal(7,2) = hfp2_Vh_runavg    'run avg of ref voltage
-  Alias hfp_selfcal(8,2) = hfp2_Vh_th        'ref voltage after heating in cal cycle
-#EndIf
 
 '**********  Los Gatos N2O/CO analyzer  **********
 Dim lgrn2oco(3)                          'data variables
@@ -752,9 +704,9 @@ DataTable (stats5,TRUE,24)
   Average(1,soil_5TM_ID9_E,  IEEE4,(inbetween_5s_scan OR soil_5TM_ID9_E=NAN))
   Average(1,soil_5TM_ID9_T,  FP2,  (inbetween_5s_scan OR soil_5TM_ID9_T=NAN))
   Average(1,soil_5TM_ID9_VWC,FP2,  (inbetween_5s_scan OR soil_5TM_ID9_VWC=NAN))
-  Average(1,soil_hfp1_heat_flux,  IEEE4,(inbetween_5s_scan OR hfp_isCalibrating OR soil_hfp1_heat_flux=NAN))
+  Average(1,soil_hfp1_heat_flux,  IEEE4,(inbetween_5s_scan OR soil_hfp1_heat_flux=NAN))
   Sample (1,soil_hfp1_sensitivity,IEEE4)
-  Average(1,soil_hfp2_heat_flux,  IEEE4,(inbetween_5s_scan OR hfp_isCalibrating OR soil_hfp2_heat_flux=NAN))
+  Average(1,soil_hfp2_heat_flux,  IEEE4,(inbetween_5s_scan OR soil_hfp2_heat_flux=NAN))
   Sample (1,soil_hfp2_sensitivity,IEEE4)
   Average(1,panel_tmpr,FP2,(inbetween_1hz_scan OR panel_tmpr=NAN))
   Average(1,batt_volt,FP2,(inbetween_1hz_scan OR batt_volt=NAN))
@@ -818,9 +770,9 @@ DataTable (stats30,TRUE,10)
   Average(1,soil_5TM_ID9_E,  IEEE4,(inbetween_5s_scan OR soil_5TM_ID9_E=NAN))
   Average(1,soil_5TM_ID9_T,  FP2,  (inbetween_5s_scan OR soil_5TM_ID9_T=NAN))
   Average(1,soil_5TM_ID9_VWC,FP2,  (inbetween_5s_scan OR soil_5TM_ID9_VWC=NAN))
-  Average(1,soil_hfp1_heat_flux,  IEEE4,(inbetween_5s_scan OR hfp_isCalibrating OR soil_hfp1_heat_flux=NAN))
+  Average(1,soil_hfp1_heat_flux,  IEEE4,(inbetween_5s_scan OR soil_hfp1_heat_flux=NAN))
   Sample (1,soil_hfp1_sensitivity,IEEE4)
-  Average(1,soil_hfp2_heat_flux,  IEEE4,(inbetween_5s_scan OR hfp_isCalibrating OR soil_hfp2_heat_flux=NAN))
+  Average(1,soil_hfp2_heat_flux,  IEEE4,(inbetween_5s_scan OR soil_hfp2_heat_flux=NAN))
   Sample (1,soil_hfp2_sensitivity,IEEE4)
   Average(1,panel_tmpr,FP2,(inbetween_1hz_scan OR panel_tmpr=NAN))
   Average(1,batt_volt,FP2,(inbetween_1hz_scan OR batt_volt=NAN))
@@ -969,11 +921,11 @@ Dim recompile As Boolean
 Public test_email As Boolean
 Public test_scadabr As Boolean
 
-DisplayMenu("REACCH DAQ", -1) 'add submenu to main
+DisplayMenu("Vineyard DAQ", -1) 'add submenu to main
   SubMenu("Initial Setup")
     SubMenu("Soil heat flux plate")
       MenuItem("Enable?", SHFP_ENABLED)
-        MenuPick(No, Yes)
+        MenuPick(Yes, No)
     EndSubMenu
     SubMenu("Decagon NDVI/PRI")
       MenuItem("Enable?", NDVIPRI_ENABLED)
@@ -1026,12 +978,8 @@ DisplayMenu("REACCH DAQ", -1) 'add submenu to main
       SubMenu("Soil heat flux plate")
         DisplayLine("Plate #1 (DF 6):")
         MenuItem("Sensitivity", set_hfp1_sens)
-        MenuItem("Resistance", set_hfp1_R)
-        MenuItem("Area", set_hfp1_A)
         DisplayLine("Plate #2 (DF 7):")
         MenuItem("Sensitivity", set_hfp2_sens)
-        MenuItem("Resistance", set_hfp2_R)
-        MenuItem("Area", set_hfp2_A)
       EndSubMenu
     #Else
       DisplayLine("SHFP disabled")
@@ -1252,11 +1200,7 @@ Sub set_default_choices()
   set_soil_8_enabled = False
   set_soil_9_enabled = False
   set_hfp1_sens      = 0
-  set_hfp1_R         = 0
-  set_hfp1_A         = 0
   set_hfp2_sens      = 0
-  set_hfp2_R         = 0
-  set_hfp2_A         = 0
   set_lgr_n2o_mult   = 1.0
   set_lgr_n2o_offset = 0
   set_lgr_co_mult    = 1.0
@@ -1295,8 +1239,6 @@ Sub save_current_choices()
   #If (SHFP_ENABLED) Then
     soil_hfp1_sensitivity = 1000/hfp1_sens
     soil_hfp2_sensitivity = 1000/hfp2_sens
-    hfp1_selfcal_mult = hfp1_R / (2 * HFP_R_CUR^2 * hfp1_A)
-    hfp2_selfcal_mult = hfp2_R / (2 * HFP_R_CUR^2 * hfp2_A)
   #Else
     soil_hfp1_heat_flux = NAN
     soil_hfp1_sensitivity = 0
@@ -1666,51 +1608,10 @@ BeginProg
     EndIf
 
     #If (SHFP_ENABLED) Then
-      VoltDiff(hfp1_mVs,1,mv200,HFP_1_SGNL_DIFF,TRUE,0,INTEG,1,0)    'millivolts
-      VoltDiff(hfp2_mVs,1,mv200,HFP_2_SGNL_DIFF,TRUE,0,INTEG,1,0)
-      VoltSe(hfp1_Vh,1,mv5000,HFP_1_HEAT_SE,TRUE,0,INTEG,(1/1000),0)
-      VoltSe(hfp2_Vh,1,mv5000,HFP_2_HEAT_SE,TRUE,0,INTEG,(1/1000),0) 'volts
-      PortSet(9,hfp_sw12_isOn)
-
-      soil_hfp1_heat_flux = hfp1_mVs * soil_hfp1_sensitivity
-      soil_hfp2_heat_flux = hfp2_mVs * soil_hfp2_sensitivity
-      AvgRun(hfp1_mVs_runavg,1,hfp1_mVs,HFP_CAL_RUNAVG)
-      AvgRun(hfp2_mVs_runavg,1,hfp2_mVs,HFP_CAL_RUNAVG)
-      AvgRun(hfp1_Vh_runavg,1,hfp1_Vh,HFP_CAL_RUNAVG)
-      AvgRun(hfp2_Vh_runavg,1,hfp2_Vh,HFP_CAL_RUNAVG)
-      
-      If TimeIntoInterval(HFP_CAL_T_START,HFP_CAL_INTERVAL,sec) Then
-        hfp_isCalibrating = TRUE
-        hfp1_mVs_t0 = hfp1_mVs_runavg
-        hfp2_mVs_t0 = hfp2_mVs_runavg
-      EndIf
-      
-      If TimeIntoInterval(HFP_CAL_T_HEATON,HFP_CAL_INTERVAL,sec) Then 
-        hfp_sw12_isOn = TRUE
-      EndIf
-      
-      If TimeIntoInterval(HFP_CAL_T_END,HFP_CAL_INTERVAL,sec) Then
-        hfp1_mVs_th   = hfp1_mVs_runavg
-        hfp1_Vh_th = hfp1_Vh_runavg
-        hfp2_mVs_th   = hfp2_mVs_runavg
-        hfp2_Vh_th = hfp2_Vh_runavg
-      EndIf
-      
-      If TimeIntoInterval(HFP_CAL_T_HEATOFF,HFP_CAL_INTERVAL,sec) Then
-        hfp_sw12_isOn  = FALSE
-        soil_hfp1_sensitivity = (hfp1_Vh_th*hfp1_Vh_th*hfp1_selfcal_mult) / ABS(hfp1_mVs_t0 - hfp1_mVs_th) 
-        If ( ABS((soil_hfp1_sensitivity / (1000/hfp1_sens)) - 1) >= 0.25 ) Then
-          soil_hfp1_sensitivity = 1000/hfp1_sens
-        EndIf
-        soil_hfp2_sensitivity = (hfp2_Vh_th*hfp2_Vh_th*hfp2_selfcal_mult) / ABS(hfp2_mVs_t0 - hfp2_mVs_th)
-        If ( ABS((soil_hfp2_sensitivity / (1000/hfp2_sens)) - 1) >= 0.25 ) Then
-          soil_hfp2_sensitivity = 1000/hfp2_sens
-        EndIf
-      EndIf
-
-      If TimeIntoInterval(HFP_CAL_T_FINISH,HFP_CAL_INTERVAL,sec) Then
-        hfp_isCalibrating = FALSE
-      EndIf
+      VoltDiff(soil_hfp1_heat_flux,1,mv200,HFP_1_SGNL_DIFF,TRUE,0,INTEG, _
+                                                  soil_hfp1_sensitivity,0)
+      VoltDiff(soil_hfp2_heat_flux,1,mv200,HFP_2_SGNL_DIFF,TRUE,0,INTEG, _
+                                                  soil_hfp2_sensitivity,0)
     #EndIf
     
     just_had_soil_scan = TRUE
