@@ -16,7 +16,7 @@ Const UTC_OFFSET = -8    'offset from UTC as +/- hours; PST = -8
 '----- PROGRAM TIMING -----
 Const FAST_INTV = 100     'length of primary scan interval, milliseconds
 Const SLOW_INTV = 1       'length of secondary scan interval, seconds
-Const SOIL_INTV = 15      'length of slowest sensors (soil probes, gps, shfp)
+Const SOIL_INTV = 30      'length of slowest sensors (soil probes, gps, shfp)
 Const STAT_OUT_5 = 5   	  'stats output interval #1, minutes
 Const STAT_OUT_30 = 30		  'stats output interval #2, minutes; use multiple of STAT_INT1
 Const SDM_PER = 30         'default SDM clock speed
