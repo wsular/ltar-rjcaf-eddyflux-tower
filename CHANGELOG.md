@@ -1,8 +1,8 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
-next release
-------------
+v1.2 (2015-07-28)
+-----------------
 
 ### Issues Fixed
 
@@ -10,13 +10,25 @@ next release
     * Only total flux, not flux density was affected
     * Multiplier was 10x too small
     * Issue has existed since initial deployment (surfaced in fc4c5d446c)
-* Fix correct regression introduced by 1176377a2d (introduced in v1.0): 
+* Correct regression introduced by 1176377a2d (introduced in v1.0): 
   variable `skipped_5s_scans` reflects reporting scan, not soil (5sec) scan
 * ScadaBR reports are no longer malformed (caused by incorrect parameter type)
 * Correctly detect success of ScadaBR reports - O/S (CR3000.Std.27) has bug
   whereby HTTP GET responses with empty payloads are wrongly interpreted as
   failures
 * ScadaBR test-trigger variable is relocated to end of Public table
+
+### Data Table Changes
+
+* New column `LI190R_mult` after `LI190SB_sens` in table `site_info`. The old
+  column is retained to distinguish the values and for backward-compatibility 
+  with REACCH processing scripts
+
+### Instrumentation Changes
+
+* PAR sensor (LI190SB) with faults in cable is replaced with equivalent model 
+  equipped with different shunt resistor (LI190R-SMV); now, settings specify
+  sensor multiplier (mmol/s/m^2/mV) instead of sensitivity. 
 
 ### Enhancements
 
