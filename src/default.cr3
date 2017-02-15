@@ -17,8 +17,7 @@ Const UTC_OFFSET = -8    'offset from UTC as +/- hours; PST = -8
 Const FAST_INTV = 100     'length of primary scan interval, milliseconds
 Const SLOW_INTV = 1       'length of secondary scan interval, seconds
 Const SOIL_INTV = 30      'length of slowest sensors (soil probes, gps, shfp)
-Const STAT_OUT_5 = 5   	  'stats output interval #1, minutes
-Const STAT_OUT_30 = 30		  'stats output interval #2, minutes; use multiple of STAT_INT1
+Const STAT_OUT_30 = 30		 'stats output interval minutes
 Const SDM_PER = 30         'default SDM clock speed
 Const INTEG = 250          'analog measurement integration time (250/_50hz/_60hz)
 
@@ -638,27 +637,6 @@ DataTable(work_delay_ec100,TRUE,OFFSET) 'handles lagging CSAT+IRGA data
   Sample(12,sonic_irga_raw(1),IEEE4)
 EndTable
 
-DataTable(work_5min,TRUE,1)
-  TableHide
-  DataInterval(0,STAT_OUT_5,Min,1)
-  Covariance(4,cov_array_sonic(1,1),IEEE4,sonic_disable_f,10)
-  WindVector(1,-1*Uy,Ux,IEEE4,sonic_disable_f,0,1,2)
-  Totalize(1,n,IEEE4,sonic_disable_f)
-    FieldNames("sonic_total")
-  Covariance(4,cov_array_cs(1,1),IEEE4,irga_disable_f,4)
-  Covariance(4,cov_array_cs(2,1),IEEE4,irga_disable_f,4)
-  Covariance(4,cov_array_cs(3,1),IEEE4,irga_disable_f,4)
-  Average(1,CO2,IEEE4,irga_disable_f)
-  Average(1,H2O,IEEE4,irga_disable_f)
-  Average(1,amb_press,IEEE4,irga_disable_f)
-  Average(1,Tc,IEEE4,irga_disable_f)
-  Totalize(1,n,IEEE4,irga_disable_f)
-    FieldNames("irga_total")
-  Average(1,e_hmp,IEEE4,(inbetween_1hz_scan OR e_hmp=NAN))
-  Average(1,e_sat_hmp,IEEE4,(inbetween_1hz_scan OR e_sat_hmp=NAN))
-  Totalize(1,n,IEEE4,False)
-EndTable
-
 DataTable(work_30min,TRUE,1)
   TableHide
   DataInterval(0,STAT_OUT_30,Min,1)
@@ -696,76 +674,6 @@ DataTable (tsdata,TRUE,600
     FieldNames ("CO2,H2O,diag_irga,amb_tmpr,amb_press")
   Sample (2,sonic_irga_raw(11),FP2)
     FieldNames ("CO2_signal,H2O_signal")
-EndTable
-
-'5min statistics
-DataTable (stats5,TRUE,24)
-  DataInterval (0,STAT_OUT_5,Min,10)
-  CardOut(0, DAYS*288)
-  Sample(1,L,IEEE4)                     'monin obukhov length, meters
-  Sample(1,u_star,FP2)                  'friction velocity, m/s  
-  Sample(1,tau,FP2)                     'momemtum flux, kg/(m s^2)
-  Sample(1,Fc_wpl,IEEE4)                'density-corrected (WPL) CO2 flux, mg/m3
-  Sample(1,LE_wpl,FP2)                  'density-corrected (WPL) latent heat flux, W/m2
-  Sample(1,Hc,FP2)                      'density-corrected sensible heat flux, W/m2
-  Average(1,Ts,FP2,sonic_disable_f)     'mean sonic temperature, degC
-  Sample(1,Ts_Std,FP2)                  'stdev of sonic temp, degC
-  Sample(1,Tc_Avg,FP2)                 'mean of corrected sonic temp, degC
-  Sample(1,Uz_Std,FP2)                  'stdev of vertical wind, m/s
-  Sample(1,wnd_spd,FP2)                 'mean scalar wind speed, m/s
-  Sample(1,rslt_wnd_spd,FP2)            'vector mean wind speed, m/s
-  Sample(1,rslt_wnd_dir,FP2)         'mean wind direction rel2 north, degrees
-  Sample(1,std_wnd_dir,FP2)             'scalar stdev of wind direction, degrees
-  Sample(1,sonic_uptime,FP2)
-  Average(1,CO2_ppm,FP2,irga_disable_f)
-  Sample (1,CO2_mg_m3_Avg,FP2)                'mean of CO2 conc, mg/m3
-  Sample (1,CO2_mg_m3_Std,FP2)               'stdev of CO2 conc, mg/m3
-  Average(1,CO2_signal,FP2,irga_disable_f)
-  Average(1,(Xv / MU_WPL),FP2,irga_disable_f)
-    FieldNames("H2O_g_kg_Avg")
-    Units H2O_g_kg_Avg = g/kg
-  Sample (1,H2O_g_m3_Avg,FP2)                'mean of H2O conc, g/m3
-  Sample (1,H2O_g_m3_Std,FP2)               'stdev of H2O conc, g/m3
-  Average(1,H2O_signal,FP2,irga_disable_f)
-  Average(1,amb_tmpr,IEEE4,irga_disable_f)
-  Sample (1,amb_press_Avg,IEEE4)        'mean of ambient pressure, kPa
-  Sample(1,irga_uptime,FP2)
-  Average(1,T_hmp,IEEE4,(inbetween_1hz_scan OR T_hmp=NAN))
-  Sample (1,RH_hmp_Avg,FP2)             'mean HMP relative humidity, %
-  Sample (1,e_hmp_Avg,FP2)
-  Sample (1,e_sat_hmp_Avg,FP2)
-  Average(1,Rn,FP2,(inbetween_1hz_scan OR Rn=NAN))
-  Average(1,Rn_meas,FP2,inbetween_1hz_scan OR Rn_meas=NAN))
-  Totalize(1,PAR_totflx,FP2,(inbetween_1hz_scan OR PAR_totflx=NAN))
-  Average(1,PAR_flxdens,FP2,(inbetween_1hz_scan OR PAR_flxdens=NAN))
-  WindVector(1,WS_ms,WindDir,FP2,(WS_ms=NAN OR WindDir=NAN),0,0,2)
-    FieldNames("Met1_wnd_spd,Met1_rslt_wnd_spd,Met1_rslt_wnd_dir,Met1_std_wnd_dir")
-    Units Met1_wnd_spd = m/s
-    Units Met1_rslt_wnd_spd = m/s
-    Units Met1_rslt_wnd_dir = degrees
-    Units Met1_std_wnd_dir = degrees
-  Totalize(1,Rain_mm,FP2,Rain_mm=NAN) '10hz loop
-  Average(1,soil_5TM_ID5_E,  IEEE4,(inbetween_5s_scan OR soil_5TM_ID5_E=NAN))
-  Average(1,soil_5TM_ID5_T,  FP2,  (inbetween_5s_scan OR soil_5TM_ID5_T=NAN))
-  Average(1,soil_5TM_ID5_VWC,FP2,  (inbetween_5s_scan OR soil_5TM_ID5_VWC=NAN))
-  Average(1,soil_5TM_ID6_E,  IEEE4,(inbetween_5s_scan OR soil_5TM_ID6_E=NAN))
-  Average(1,soil_5TM_ID6_T,  FP2,  (inbetween_5s_scan OR soil_5TM_ID6_T=NAN))
-  Average(1,soil_5TM_ID6_VWC,FP2,  (inbetween_5s_scan OR soil_5TM_ID6_VWC=NAN))
-  Average(1,soil_5TM_ID7_E,  IEEE4,(inbetween_5s_scan OR soil_5TM_ID7_E=NAN))
-  Average(1,soil_5TM_ID7_T,  FP2,  (inbetween_5s_scan OR soil_5TM_ID7_T=NAN))
-  Average(1,soil_5TM_ID7_VWC,FP2,  (inbetween_5s_scan OR soil_5TM_ID7_VWC=NAN))
-  Average(1,soil_5TM_ID8_E,  IEEE4,(inbetween_5s_scan OR soil_5TM_ID8_E=NAN))
-  Average(1,soil_5TM_ID8_T,  FP2,  (inbetween_5s_scan OR soil_5TM_ID8_T=NAN))
-  Average(1,soil_5TM_ID8_VWC,FP2,  (inbetween_5s_scan OR soil_5TM_ID8_VWC=NAN))
-  Average(1,soil_5TM_ID9_E,  IEEE4,(inbetween_5s_scan OR soil_5TM_ID9_E=NAN))
-  Average(1,soil_5TM_ID9_T,  FP2,  (inbetween_5s_scan OR soil_5TM_ID9_T=NAN))
-  Average(1,soil_5TM_ID9_VWC,FP2,  (inbetween_5s_scan OR soil_5TM_ID9_VWC=NAN))
-  Average(1,soil_hfp1_heat_flux,  IEEE4,(inbetween_5s_scan OR soil_hfp1_heat_flux=NAN))
-  Sample (1,soil_hfp1_sensitivity,IEEE4)
-  Average(1,soil_hfp2_heat_flux,  IEEE4,(inbetween_5s_scan OR soil_hfp2_heat_flux=NAN))
-  Sample (1,soil_hfp2_sensitivity,IEEE4)
-  Average(1,panel_tmpr,FP2,(inbetween_1hz_scan OR panel_tmpr=NAN))
-  Average(1,batt_volt,FP2,(inbetween_1hz_scan OR batt_volt=NAN))
 EndTable
 
 '30min statistics
@@ -931,21 +839,6 @@ EndTable
 #EndIf
 
 #If (NDVIPRI_ENABLED) Then
-  DataTable(stats5_ui,True,-1)
-    DataInterval(0,STAT_OUT_5,min,10)
-    'CardOut(0,-1) 
-    Average(1,dec_ndvi_up1,IEEE4,dec_ndvi_up1=NAN)
-    Average(1,dec_ndvi_up2,IEEE4,dec_ndvi_up2=NAN)
-    Average(1,dec_ndvi_dn1,IEEE4,dec_ndvi_dn1=NAN)
-    Average(1,dec_ndvi_dn2,IEEE4,dec_ndvi_dn2=NAN)
-    Average(1,dec_pri_up1,IEEE4,dec_pri_up1=NAN)
-    Average(1,dec_pri_up2,IEEE4,dec_pri_up2=NAN)
-    Average(1,dec_pri_dn1,IEEE4,dec_pri_dn1=NAN)
-    Average(1,dec_pri_dn2,IEEE4,dec_pri_dn2=NAN)
-    Totalize(1,n,UINT2,FALSE)
-      FieldNames("tblcalls_Tot")
-  EndTable
-  
   DataTable(stats30_ui,True,-1)
     DataInterval(0,STAT_OUT_30,min,10)
     'CardOut(0,-1)
@@ -1496,55 +1389,8 @@ BeginProg
       Move (cov_array_cs(1,2),3,Ux,3)
       Move (cov_array_cs(2,2),3,Ux,3)
       Move (cov_array_cs(3,2),3,Ux,3)
-      
-      '+++++  5 minute statistics  ++++++
-
-      CallTable (work_5min)
-      If ( work_5min.Output(1,1) ) Then
-        GetRecord(work_stats_out(1),work_5min,1)
-        
-        sonic_uptime = sonic_samples/samples_possible
-        irga_uptime = irga_samples/samples_possible
-        
-        'add azimuth to calculated wind dir
-        rslt_wnd_dir = (360 + rslt_wnd_dir + sonic_azimuth) MOD 360
-        tau = SQR ((Ux_Uz_cov*Ux_Uz_cov)+(Uy_Uz_cov*Uy_Uz_cov))
-        u_star = SQR (tau)
-        Ts_Std = SQR (Ts_Std)
-        Ux_Std = SQR (Ux_Std)
-        Uy_Std = SQR (Uy_Std)
-        Uz_Std = SQR (Uz_Std)
-        
-        L=-u_star^3*(Tc_Avg+273.15)/(0.4*9.8*Ts_Uz_cov)   'obukohov length
-        rho_d_mean = (amb_press_Avg/((Tc_Avg+273.15)*RD))-(H2O_g_m3_Avg*MU_WPL)
-        rho_a_mean = (rho_d_mean+H2O_g_m3_Avg)/1000
-        Fc_irga = CO2_Uz_cov                                'online fluxes
-        LE_irga = LV*H2O_Uz_cov
-        CO2_mg_m3_Std = SQR (CO2_mg_m3_Std)                        'stdevs
-        H2O_g_m3_Std = SQR (H2O_g_m3_Std)
-        Tc_stdev = SQR (Tc_stdev)
-        sigma_wpl = H2O_g_m3_Avg/rho_d_mean                   'WPL term
-
-        'EC150 Webb et al. (1980) term for carbon dioxide Eq. (24).
-        CO2_wpl_LE = MU_WPL*CO2_mg_m3_Avg/rho_d_mean*H2O_Uz_cov
-        CO2_wpl_H = (1+(MU_WPL*sigma_wpl))*CO2_mg_m3_Avg/(Tc_Avg+273.15)*Tc_Uz_cov
-        Fc_wpl = Fc_irga+CO2_wpl_LE+CO2_wpl_H
-
-        'EC150 Webb et al. (1980) term for water vapor Eq. (25).
-        H2O_wpl_LE = MU_WPL*sigma_wpl*LE_irga
-        H2O_wpl_H = (1+(MU_WPL*sigma_wpl))*H2O_g_m3_Avg/(Tc_Avg+273.15)*LV*Tc_Uz_cov
-        LE_wpl = LE_irga+H2O_wpl_LE+H2O_wpl_H
-
-        RH_hmp_Avg = 100*e_hmp_Avg/e_sat_hmp_Avg
-
-        Hs = rho_a_mean*CP*Ts_Uz_cov
-        tau = rho_a_mean*tau
-        Hc = rho_a_mean*CP*Tc_Uz_cov
-      EndIf
-      CallTable(stats5)
 
       '+++++ 30 min statistics  +++++
-      
       CallTable (work_30min)
       If ( work_30min.Output(1,1) ) Then
         GetRecord(work_stats_out(1),work_30min,1)
@@ -1636,7 +1482,6 @@ BeginProg
 	    SDI12Recorder(dec_ndvi_dn1,SDI_COM_ADDR,DEC_NDVI_DN_SDI_ADDR,"M!",1.0,0)
       SDI12Recorder(dec_pri_up1,SDI_COM_ADDR,DEC_PRI_UP_SDI_ADDR,"M!",1.0,0)
 	    SDI12Recorder(dec_pri_dn1,SDI_COM_ADDR,DEC_PRI_DN_SDI_ADDR,"M!",1.0,0)
-      CallTable(stats5_ui)
       CallTable(stats30_ui)
     #EndIf
 

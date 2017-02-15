@@ -1,6 +1,14 @@
 Change Log for GHG Monitoring Tower Program
 ===========================================
 
+Next release
+------------
+
+### Data Table Changes
+
+* Remove 5-min flux/met and soil data tables
+
+
 v1.2 (2015-07-28)
 -----------------
 
