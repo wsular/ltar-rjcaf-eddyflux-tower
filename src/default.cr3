@@ -58,13 +58,6 @@ Const HFP_1_SGNL_DIFF = 6    'heat flux plate sensor signal diff input chan #
 Const HFP_2_SGNL_DIFF = 7    '   plate #2
 Const SS109_001_SE    = 27   'Model 109SS (CSI) #001
 Const SS109_002_SE    = 28   '                  #002
-Const LGR_N2O_DIFF    = 8    'Los Gatos N2O diff input chan #
-Const LGR_CO_DIFF     = 9    'Los Gatos CO diff input chan #
-Const LGR_H2O_DIFF    = 10   'Los Gatos H2O diff input chan #
-Const PIC_CO2_DIFF    = 11   'Picarro CO2 diff input chan #
-Const PIC_CH4_DIFF    = 12   'Picarro CH4 diff input chan #
-Const PIC_H2O_DIFF    = 13   'Picarro H2O diff. input chan #
-' 14 is designated as SE27/28 for the heat flux plate
 
 '----- OPTIONAL SENSORS DIGITAL INPUT MAP ------
 Const DEC_NDVI_UP_SDI_ADDR = 0   '2nd gen sensors from decagon (UI team)
@@ -75,8 +68,6 @@ Const DEC_PRI_DN_SDI_ADDR = 3
 ConstTable
   Const SHFP_ENABLED = True
   Const NDVIPRI_ENABLED = False
-  Const LGR_N2O_ENABLED = False
-  Const PIC_CH4_ENABLED = False
 EndConstTable
 
 '----- FIXED CALIBRATION VALUES ------
@@ -125,7 +116,7 @@ Units n = samples
 Dim sensor_shfp As Boolean 'set based on site SN
 
 '----- RETAINED SETTINGS -----
-Const NUM_SETTINGS = {36} 'set to length of settings array
+Const NUM_SETTINGS = {24} 'set to length of settings array
 Const WRITEFILE = 0
 Const READFILE = 1
 
@@ -154,18 +145,6 @@ Alias settings(21) = soil_B_depth
 Alias settings(22) = soil_C_depth
 Alias settings(23) = hfp1_sens
 Alias settings(24) = hfp2_sens
-Alias settings(25) = lgr_n2o_mult
-Alias settings(26) = lgr_n2o_offset
-Alias settings(27) = lgr_co_mult
-Alias settings(28) = lgr_co_offset
-Alias settings(29) = lgr_h2o_mult
-Alias settings(30) = lgr_h2o_offset
-Alias settings(31) = pic_co2_mult
-Alias settings(32) = pic_co2_offset
-Alias settings(33) = pic_ch4_mult
-Alias settings(34) = pic_ch4_offset
-Alias settings(35) = pic_h2o_mult
-Alias settings(36) = pic_h2o_offset
 Units soil_5_depth = cm
 Units soil_6_depth = cm
 Units soil_7_depth = cm
@@ -176,7 +155,6 @@ Units soil_B_depth = cm
 Units soil_C_depth = cm
 Units hfp1_sens = uV/W/m^2
 Units hfp2_sens = uV/W/m^2
-'ignore mults & offsets
 Units sonic_azimuth = degEofTN
 Units NRLite2_sens = uV/W/m^2
 Units LI190_mult = mmol/s/m^2/mV
@@ -206,18 +184,6 @@ Alias choice(21) = set_soil_B_depth
 Alias choice(22) = set_soil_C_depth
 Alias choice(23) = set_hfp1_sens
 Alias choice(24) = set_hfp2_sens
-Alias choice(25) = set_lgr_n2o_mult
-Alias choice(26) = set_lgr_n2o_offset
-Alias choice(27) = set_lgr_co_mult
-Alias choice(28) = set_lgr_co_offset
-Alias choice(29) = set_lgr_h2o_mult
-Alias choice(30) = set_lgr_h2o_offset
-Alias choice(31) = set_pic_co2_mult
-Alias choice(32) = set_pic_co2_offset
-Alias choice(33) = set_pic_ch4_mult
-Alias choice(34) = set_pic_ch4_offset
-Alias choice(35) = set_pic_h2o_mult
-Alias choice(36) = set_pic_h2o_offset
 
 '----- SELF-MONITORING -----
 Dim SkippedScans(3)
@@ -489,31 +455,12 @@ Units soil_hfp1_heat_flux = W/m^2
 Units soil_hfp2_heat_flux = W/m^2
 Units soil_hfp1_sensitivity = W/m^2/mV
 Units soil_hfp2_sensitivity = W/m^2/mV
-  
-
-'**********  Los Gatos N2O/CO analyzer  **********
-Dim lgrn2oco(3)                          'data variables
-Alias lgrn2oco(1) = lgr_n2o
-Alias lgrn2oco(2) = lgr_co
-Alias lgrn2oco(3) = lgr_h2o
-Units lgr_n2o = scale-dependent
-Units lgr_co = scale-dependent
-Units lgr_h2o = scale-dependent
 
 '**********  Model 109SS temp probes **********
 Dim m109ss(2)
 Alias m109ss(1) = soil_109SS_1_T
 Alias m109ss(2) = soil_109SS_2_T
 Units m109ss = degC
-
-'**********  Picarro CO2/CH4 analyzer  **********
-Dim picco2ch4(3) As Float
-Alias picco2ch4(1) = pic_co2
-Alias picco2ch4(2) = pic_ch4
-Alias picco2ch4(3) = pic_h2o
-Units pic_co2 = scale-dependent
-Units pic_ch4 = scale-dependent
-Units pic_h2o = scale-dependent
 
 '**********  Decagon 2nd gen. sensors (UI) **********
 Dim decagon(8) As Float
@@ -624,7 +571,9 @@ DataTable(debug,True,2)
   Sample(24,fiveTM(1),FP2)
   Sample(4,hfp(1),IEEE4)
   Sample(2,m109ss(1),IEEE4)
-  Sample(8,decagon(1),IEEE4)
+  #If (NDVIPRI_ENABLED) Then
+    Sample(8,decagon(1),IEEE4)
+  #EndIf
   Sample(1,smtp_response,String)
   Sample(1,scadabr_success,Boolean)
   Sample(1,scadabr_resp,String)
@@ -797,47 +746,17 @@ EndTable
 
 'metadata pertaining to optional sensors
 'XXXX TODO how should this table be changed?
-#If (LGR_N2O_ENABLED OR PIC_CH4_ENABLED OR NDVIPRI_ENABLED) Then
+#If (NDVIPRI_ENABLED) Then
   DataTable(extra_info,True,10)
     'CardOut(0,1000)
     Sample(1,NDVIPRI_ENABLED,Boolean)
       FieldNames("Decagon_NDVI_installed")
     Sample(1,NDVIPRI_ENABLED,Boolean)
       FieldNames("Decagon_PRI_installed")
-    Sample(1,LGR_N2O_ENABLED,Boolean)
-      FieldNames("LGR_n2oco_installed")
-    Sample(1,lgr_n2o_mult,IEEE4)
-    Sample(1,lgr_n2o_offset,IEEE4)
-    Sample(1,lgr_co_mult,IEEE4)
-    Sample(1,lgr_co_offset,IEEE4)
-    Sample(1,lgr_h2o_mult,IEEE4)
-    Sample(1,lgr_h2o_offset,IEEE4)
-    Sample(1,PIC_CH4_ENABLED,Boolean)
-      FieldNames("Picarro_co2ch4_installed")
-    Sample(1,pic_co2_mult,IEEE4)
-    Sample(1,pic_co2_offset,IEEE4)
-    Sample(1,pic_ch4_mult,IEEE4)
-    Sample(1,pic_ch4_offset,IEEE4)
-    Sample(1,pic_h2o_mult,IEEE4)
-    Sample(1,pic_h2o_offset,IEEE4)
   EndTable
 #EndIf
 
 '===========================  SUPPLEMENTAL OUTPUT DATA TABLES  ==========================
-#If (LGR_N2O_ENABLED OR PIC_CH4_ENABLED) Then
-  DataTable(tsdata_extra,True,-1)
-    DataInterval(0,FAST_INTV,mSec,100)
-    'CardOut(0,-1)
-    Sample(1,lgr_n2o,IEEE4)
-    Sample(1,lgr_co,IEEE4)
-    Sample(1,lgr_h2o,IEEE4)
-  
-    Sample (1,pic_co2,IEEE4)
-    Sample (1,pic_ch4,IEEE4)
-    Sample (1,pic_h2o,IEEE4)
-  EndTable
-#EndIf
-
 #If (NDVIPRI_ENABLED) Then
   DataTable(stats30_ui,True,-1)
     DataInterval(0,STAT_OUT_30,min,10)
@@ -919,14 +838,6 @@ DisplayMenu("Vineyard DAQ", -1) 'add submenu to main
       DisplayValue("PRI up-facing", DEC_PRI_UP_SDI_ADDR)
       DisplayValue("PRI down-facing", DEC_PRI_DN_SDI_ADDR)
     EndSubMenu
-    SubMenu("LGR N2O/CO")
-      MenuItem("Enable?", LGR_N2O_ENABLED)
-        MenuPick(No, Yes)
-    EndSubMenu
-    SubMenu("Picarro CO2/CH4")
-      MenuItem("Enable?", PIC_CH4_ENABLED)
-        MenuPick(No, Yes)
-    EndSubMenu
     MenuRecompile("Apply now?", recompile)
       MenuPick(No, Apply) 
   EndSubMenu
@@ -980,30 +891,6 @@ DisplayMenu("Vineyard DAQ", -1) 'add submenu to main
       EndSubMenu
     #Else
       DisplayLine("SHFP disabled")
-    #EndIf
-    #If (LGR_N2O_ENABLED) Then
-      SubMenu("LGR N2O/CO/H2O")
-        MenuItem("N2O Mult. (units/mV)", set_lgr_n2o_mult)
-        MenuItem("N2O Offset (units@0mV)", set_lgr_n2o_offset)
-        MenuItem("CO Mult. (units/mV)", set_lgr_co_mult)
-        MenuItem("CO Offset (units@0mV)", set_lgr_co_offset)
-        MenuItem("H2O Mult. (units/mV)", set_lgr_h2o_mult)
-        MenuItem("H2O Offset (units@0mV)", set_lgr_h2o_offset)
-      EndSubMenu
-    #Else
-      DisplayLine("N2O/CO disabled")
-    #EndIf
-    #If (PIC_CH4_ENABLED) Then
-      SubMenu("Picarro CO2/CH4/H2O")
-        MenuItem("CO2 Mult. (units/mV)", set_pic_co2_mult)
-        MenuItem("CO2 Offset (units@0mV)", set_pic_co2_offset)
-        MenuItem("CH4 Mult. (units/mV)", set_pic_ch4_mult)
-        MenuItem("CH4 Offset (units@0mV)", set_pic_ch4_offset)
-        MenuItem("H2O Mult. (units/mV)", set_pic_h2o_mult)
-        MenuItem("H2O Offset (units@0mV)", set_pic_h2o_offset)
-      EndSubMenu
-    #Else
-      DisplayLine("CH4/CO2 disabled")
     #EndIf
     SubMenu("Save changes")
       MenuItem("Save now?", save_changes)
@@ -1072,12 +959,6 @@ DisplayMenu("Vineyard DAQ", -1) 'add submenu to main
       DisplayValue("5TM #B tmpr", soil_5TM_IDB_T)
       DisplayValue("5TM #C e", soil_5TM_IDC_E)
       DisplayValue("5TM #C tmpr", soil_5TM_IDC_T)
-      DisplayValue("LGR N2O", lgr_n2o)
-      DisplayValue("LGR CO", lgr_co)
-      DisplayValue("LGR H2O", lgr_h2o)
-      DisplayValue("Pic. CO2", pic_co2)
-      DisplayValue("Pic. CH4", pic_ch4)
-      DisplayValue("Pic. H2O", pic_h2o)
       DisplayValue("NDVI up 1", dec_ndvi_up1)
       DisplayValue("NDVI up 2", dec_ndvi_up2)
       DisplayValue("NDVI dn 1", dec_ndvi_dn1)
@@ -1217,18 +1098,6 @@ Sub set_default_choices()
   set_soil_C_depth   = 0
   set_hfp1_sens      = 0
   set_hfp2_sens      = 0
-  set_lgr_n2o_mult   = 1.0
-  set_lgr_n2o_offset = 0
-  set_lgr_co_mult    = 1.0
-  set_lgr_co_offset  = 0
-  set_lgr_h2o_mult   = 1.0
-  set_lgr_h2o_offset = 0
-  set_pic_co2_mult   = 1.0
-  set_pic_co2_offset = 0
-  set_pic_ch4_mult   = 1.0
-  set_pic_ch4_offset = 0
-  set_pic_h2o_mult   = 1.0
-  set_pic_h2o_offset = 0
 EndSub
 
 Sub populate_choices()
@@ -1265,12 +1134,6 @@ Sub save_current_choices()
     soil_hfp2_heat_flux = NAN
     soil_hfp2_sensitivity = 0
   #EndIf
-  #If (LGR_N2O_ENABLED) Then
-    Move(lgrn2oco(1),3,NAN,1)
-  #EndIf
-  #If (PIC_CH4_ENABLED) Then
-    Move(picco2ch4(1),3,NAN,1)
-  #EndIf
 EndSub
 
 Sub setup()
@@ -1285,12 +1148,10 @@ Sub setup()
   save_current_choices()
 
   CallTable (site_info)
-  #If (LGR_N2O_ENABLED OR PIC_CH4_ENABLED OR NDVIPRI_ENABLED) Then
+  #If (NDVIPRI_ENABLED) Then
     CallTable(extra_info)
   #EndIf
 
-  Move(lgrn2oco(1),3,NAN,1)
-  Move(picco2ch4(1),3,NAN,1)
   Move(fiveTM(1),24,NAN,1)
   SDMSpeed (SDM_PER)
   self = Status.StationName
@@ -1331,22 +1192,6 @@ BeginProg
     '== NR-Lite2 correction factor calc
     hor_wind_raw = SQR (sonic_irga_raw(1)*sonic_irga_raw(1)+sonic_irga_raw(2)*sonic_irga_raw(2))
     AvgRun (hor_wind,1,hor_wind_raw,NMBR_WND_SAMPLES) '3-sec running mean of horiz. WS
-
-    '== optional LGR N2O/CO acquisition
-    #If (LGR_N2O_ENABLED) Then
-      VoltDiff(lgr_n2o,1,mv5000,LGR_N2O_DIFF,TRUE,0,INTEG,lgr_n2o_mult,lgr_n2o_offset)
-      VoltDiff(lgr_co,1,mv5000,LGR_CO_DIFF,TRUE,0,INTEG,lgr_co_mult,lgr_co_offset)
-      VoltDiff(lgr_h2o,1,mv5000,LGR_H2O_DIFF,TRUE,0,INTEG,lgr_h2o_mult,lgr_h2o_offset)
-    #EndIf
-    '== optional Picarro CO2/CH4 acquisition
-    #If (PIC_CH4_ENABLED) Then
-      VoltDiff(pic_co2,1,mv5000,PIC_CO2_DIFF,TRUE,0,INTEG,pic_co2_mult,pic_co2_offset)
-      VoltDiff(pic_ch4,1,mv5000,PIC_CH4_DIFF,TRUE,0,INTEG,pic_ch4_mult,pic_ch4_offset)
-      VoltDiff(pic_h2o,1,mv5000,PIC_H2O_DIFF,TRUE,0,INTEG,pic_h2o_mult,pic_h2o_offset)
-    #EndIf
-    #If (LGR_N2O_ENABLED OR PIC_CH4_ENABLED) Then
-      CallTable(tsdata_extra)
-    #EndIf
 
     If ( scan_count >= OFFSET ) Then  'IF HAVE ENUF SCANS TO DO STATS,
       
@@ -1491,7 +1336,7 @@ BeginProg
       save_changes = False 'reset b4 we forget
       save_current_choices()
       CallTable(site_info)
-      #If (LGR_N2O_ENABLED OR PIC_CH4_ENABLED OR NDVIPRI_ENABLED) Then
+      #If (NDVIPRI_ENABLED) Then
         CallTable(extra_info)
       #EndIf
     EndIf

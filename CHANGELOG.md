@@ -7,6 +7,8 @@ Next release
 ### Data Table Changes
 
 * Remove 5-min flux/met and soil data tables
+* Remove references to Picarro or Los Gatos instruments from `extra_info` table
+* Remove conditionally-included data table `tsdata_extra`
 
 
 v1.2 (2015-07-28)
