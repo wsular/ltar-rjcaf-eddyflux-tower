@@ -16,6 +16,8 @@ Next release
 ### Instrumentation Changes
 
 * Remove soil temp/moisture probes (8x Decagon Devices 5TM)
+* Change soil temperature probes in layer above soil heat flux plates 
+  (2x CSI model 109 probes &rarr; 1x CSI averaging thermocouple)
 
 ### Other changes
 

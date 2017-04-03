@@ -48,8 +48,8 @@ Const SDI_COM_ADDR = 5   'serial port reserved for SDI communications = Com3
 '------ OPTIONAL SENSORS ANALOG INPUT MAP -----
 Const HFP_1_SGNL_DIFF = 6    'heat flux plate sensor signal diff input chan #
 Const HFP_2_SGNL_DIFF = 7    '   plate #2
-Const SS109_001_SE    = 27   'Model 109SS (CSI) #001
-Const SS109_002_SE    = 28   '                  #002
+
+Const TCAV_DIFF = 8           'averaging thermcouple diff input chan #
 
 '----- OPTIONAL SENSORS DIGITAL INPUT MAP ------
 Const DEC_NDVI_UP_SDI_ADDR = 0   '2nd gen sensors from decagon (UI team)
@@ -345,11 +345,10 @@ Units soil_hfp2_heat_flux = W/m^2
 Units soil_hfp1_sensitivity = W/m^2/mV
 Units soil_hfp2_sensitivity = W/m^2/mV
 
-'**********  Model 109SS temp probes **********
-Dim m109ss(2)
-Alias m109ss(1) = soil_109SS_1_T
-Alias m109ss(2) = soil_109SS_2_T
-Units m109ss = degC
+'**********  Averaging thermocouple **********
+Dim tcav(1)
+Alias tcav(1) = tcav_T
+Units tcav = degC
 
 '**********  Decagon 2nd gen. sensors (UI) **********
 Dim decagon(8) As Float
@@ -452,7 +451,7 @@ DataTable(debug,True,2)
   Sample(1,Rain_mm,IEEE4)
   Sample(15,gps_data(1),IEEE4)
   Sample(4,hfp(1),IEEE4)
-  Sample(2,m109ss(1),IEEE4)
+  Sample(1,tcav(1),IEEE4)
   #If (NDVIPRI_ENABLED) Then
     Sample(8,decagon(1),IEEE4)
   #EndIf
@@ -643,8 +642,7 @@ DataTable(soil,True,100)
   CardOut(0,DAYS*288)
   Average(1,soil_hfp1_heat_flux,IEEE4,soil_hfp1_heat_flux=NAN))
   Average(1,soil_hfp2_heat_flux,IEEE4,soil_hfp2_heat_flux=NAN))
-  Average(1,soil_109SS_1_T,IEEE4,soil_109SS_1_T=NAN)
-  Average(1,soil_109SS_2_T,IEEE4,soil_109SS_2_T=NAN)
+  Average(1,tcav_T,IEEE4,tcav_T=NAN)
 EndTable
 
 
@@ -751,8 +749,7 @@ DisplayMenu("Vineyard DAQ", -1) 'add submenu to main
       DisplayValue("SHFP 1 sens", soil_hfp1_sensitivity)
       DisplayValue("SHFP 2 flux", soil_hfp2_heat_flux)
       DisplayValue("SHFP 2 sens", soil_hfp2_sensitivity)
-      DisplayValue("109SS 1 tmpr",soil_109SS_1_T)
-      DisplayValue("109SS 2 tmpr",soil_109SS_2_T)
+      DisplayValue("TCAV tmpr", tcav_T)
       DisplayValue("NDVI up 1", dec_ndvi_up1)
       DisplayValue("NDVI up 2", dec_ndvi_up2)
       DisplayValue("NDVI dn 1", dec_ndvi_dn1)
@@ -1033,8 +1030,7 @@ BeginProg
                                                   soil_hfp1_sensitivity,0)
       VoltDiff(soil_hfp2_heat_flux,1,mv200,HFP_2_SGNL_DIFF,TRUE,0,INTEG, _
                                                   soil_hfp2_sensitivity,0)
-      Therm109(soil_109SS_1_T,1,27,VX3,0,250,1,0)
-      Therm109(soil_109SS_2_T,1,28,VX4,0,250,1,0)
+      TCDiff(tcav_T,1,mV50,TCAV_DIFF,TypeE,panel_tmpr,1,0,INTEG,0,1)
     #EndIf
     
     CallTable(soil)
