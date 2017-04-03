@@ -51,15 +51,9 @@ Const HFP_2_SGNL_DIFF = 7    '   plate #2
 
 Const TCAV_DIFF = 8           'averaging thermcouple diff input chan #
 
-'----- OPTIONAL SENSORS DIGITAL INPUT MAP ------
-Const DEC_NDVI_UP_SDI_ADDR = 0   '2nd gen sensors from decagon (UI team)
-Const DEC_NDVI_DN_SDI_ADDR = 1
-Const DEC_PRI_UP_SDI_ADDR = 2
-Const DEC_PRI_DN_SDI_ADDR = 3
 
 ConstTable
   Const SHFP_ENABLED = True
-  Const NDVIPRI_ENABLED = False
 EndConstTable
 
 '----- FIXED CALIBRATION VALUES ------
@@ -350,18 +344,6 @@ Dim tcav(1)
 Alias tcav(1) = tcav_T
 Units tcav = degC
 
-'**********  Decagon 2nd gen. sensors (UI) **********
-Dim decagon(8) As Float
-Alias decagon(1) = dec_ndvi_up1
-Alias decagon(2) = dec_ndvi_up2
-Alias decagon(3) = dec_ndvi_dn1
-Alias decagon(4) = dec_ndvi_dn2
-Alias decagon(5) = dec_pri_up1
-Alias decagon(6) = dec_pri_up2
-Alias decagon(7) = dec_pri_dn1
-Alias decagon(8) = dec_pri_dn2
-Units decagon = unknown
-
 
 '**********  Intermediate variables  **********
 Dim dly_data_out(12)                       'used to temporarily store the lagged record.
@@ -452,9 +434,6 @@ DataTable(debug,True,2)
   Sample(15,gps_data(1),IEEE4)
   Sample(4,hfp(1),IEEE4)
   Sample(1,tcav(1),IEEE4)
-  #If (NDVIPRI_ENABLED) Then
-    Sample(8,decagon(1),IEEE4)
-  #EndIf
 EndTable
 
 
@@ -607,36 +586,7 @@ DataTable (site_info,TRUE,20)
     FieldNames("hfp_installed")
 EndTable
 
-'metadata pertaining to optional sensors
-'XXXX TODO how should this table be changed?
-#If (NDVIPRI_ENABLED) Then
-  DataTable(extra_info,True,10)
-    'CardOut(0,1000)
-    Sample(1,NDVIPRI_ENABLED,Boolean)
-      FieldNames("Decagon_NDVI_installed")
-    Sample(1,NDVIPRI_ENABLED,Boolean)
-      FieldNames("Decagon_PRI_installed")
-  EndTable
-#EndIf
-
 '===========================  SUPPLEMENTAL OUTPUT DATA TABLES  ==========================
-#If (NDVIPRI_ENABLED) Then
-  DataTable(stats30_ui,True,-1)
-    DataInterval(0,STAT_OUT_30,min,10)
-    'CardOut(0,-1)
-    Average(1,dec_ndvi_up1,IEEE4,dec_ndvi_up1=NAN)
-    Average(1,dec_ndvi_up2,IEEE4,dec_ndvi_up2=NAN)
-    Average(1,dec_ndvi_dn1,IEEE4,dec_ndvi_dn1=NAN)
-    Average(1,dec_ndvi_dn2,IEEE4,dec_ndvi_dn2=NAN)
-    Average(1,dec_pri_up1,IEEE4,dec_pri_up1=NAN)
-    Average(1,dec_pri_up2,IEEE4,dec_pri_up2=NAN)
-    Average(1,dec_pri_dn1,IEEE4,dec_pri_dn1=NAN)
-    Average(1,dec_pri_dn2,IEEE4,dec_pri_dn2=NAN)
-    Totalize(1,n,UINT2,FALSE)
-      FieldNames("tblcalls_Tot")
-  EndTable
-#EndIf
-
 DataTable(soil,True,100)
   DataInterval(0,5,Min,4)
   CardOut(0,DAYS*288)
@@ -662,15 +612,6 @@ DisplayMenu("Vineyard DAQ", -1) 'add submenu to main
     SubMenu("Soil heat flux plate")
       MenuItem("Enable?", SHFP_ENABLED)
         MenuPick(Yes, No)
-    EndSubMenu
-    SubMenu("Decagon NDVI/PRI")
-      MenuItem("Enable?", NDVIPRI_ENABLED)
-        MenuPick(No, Yes)
-      DisplayLine("SDI Addresses:")
-      DisplayValue("NDVI up-facing", DEC_NDVI_UP_SDI_ADDR)
-      DisplayValue("NDVI down-facing", DEC_NDVI_DN_SDI_ADDR)
-      DisplayValue("PRI up-facing", DEC_PRI_UP_SDI_ADDR)
-      DisplayValue("PRI down-facing", DEC_PRI_DN_SDI_ADDR)
     EndSubMenu
     MenuRecompile("Apply now?", recompile)
       MenuPick(No, Apply) 
@@ -750,25 +691,11 @@ DisplayMenu("Vineyard DAQ", -1) 'add submenu to main
       DisplayValue("SHFP 2 flux", soil_hfp2_heat_flux)
       DisplayValue("SHFP 2 sens", soil_hfp2_sensitivity)
       DisplayValue("TCAV tmpr", tcav_T)
-      DisplayValue("NDVI up 1", dec_ndvi_up1)
-      DisplayValue("NDVI up 2", dec_ndvi_up2)
-      DisplayValue("NDVI dn 1", dec_ndvi_dn1)
-      DisplayValue("NDVI dn 2", dec_ndvi_dn2)
-      DisplayValue("PRI up 1", dec_pri_up1)
-      DisplayValue("PRI up 2", dec_pri_up2)
-      DisplayValue("PRI dn 1", dec_pri_dn1)
-      DisplayValue("PRI dn 2", dec_pri_dn2)
     EndSubMenu
     MenuItem("Debug table", debug_on)
       MenuPick(Disable,Enable)
   EndSubMenu
 EndMenu
-
-
-'===============================  FUNCTIONS  ============================================
-Function Topp_equation( dielectric )
-  Return 4.3e-6*dielectric^3 - 5.5e-4*dielectric^2 + 2.92e-2*dielectric - 5.3e-2
-EndFunction
 
 
 '===============================  SUBROUTINES  ==========================================
@@ -823,9 +750,6 @@ Sub setup()
   save_current_choices()
 
   CallTable (site_info)
-  #If (NDVIPRI_ENABLED) Then
-    CallTable(extra_info)
-  #EndIf
 
   SDMSpeed (SDM_PER)
   self = Status.StationName
@@ -994,23 +918,12 @@ BeginProg
     PAR_flxdens = PAR_mV*li190_dens_mult
     PAR_totflx = PAR_mV*li190_tot_mult
 
-    #If (NDVIPRI_ENABLED) Then
-      SDI12Recorder(dec_ndvi_up1,SDI_COM_ADDR,DEC_NDVI_UP_SDI_ADDR,"M!",1.0,0)
-	    SDI12Recorder(dec_ndvi_dn1,SDI_COM_ADDR,DEC_NDVI_DN_SDI_ADDR,"M!",1.0,0)
-      SDI12Recorder(dec_pri_up1,SDI_COM_ADDR,DEC_PRI_UP_SDI_ADDR,"M!",1.0,0)
-	    SDI12Recorder(dec_pri_dn1,SDI_COM_ADDR,DEC_PRI_DN_SDI_ADDR,"M!",1.0,0)
-      CallTable(stats30_ui)
-    #EndIf
-
     If (debug_on) Then CallTable debug
 
     If (save_changes) Then
       save_changes = False 'reset b4 we forget
       save_current_choices()
       CallTable(site_info)
-      #If (NDVIPRI_ENABLED) Then
-        CallTable(extra_info)
-      #EndIf
     EndIf
     
     just_had_1hz_scan = TRUE
