@@ -13,6 +13,10 @@ Next release
 * Remove references to Picarro or Los Gatos instruments from `extra_info` table
 * Remove conditionally-included data table `tsdata_extra`
 
+### Instrumentation Changes
+
+* Remove soil temp/moisture probes (8x Decagon Devices 5TM)
+
 ### Other changes
 
 * Remove scheduled reporting to ScadaBR instance
