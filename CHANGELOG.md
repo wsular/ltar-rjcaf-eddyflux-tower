@@ -4,11 +4,18 @@ Change Log for GHG Monitoring Tower Program
 Next release
 ------------
 
+> Previous telemetry integrations (email, ScadaBR) have been removed in this
+> version.
+
 ### Data Table Changes
 
 * Remove 5-min flux/met and soil data tables
 * Remove references to Picarro or Los Gatos instruments from `extra_info` table
 * Remove conditionally-included data table `tsdata_extra`
+
+### Other changes
+
+* Remove scheduled reporting to ScadaBR instance
 
 
 v1.2 (2015-07-28)

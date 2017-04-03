@@ -186,12 +186,6 @@ Alias choice(23) = set_hfp1_sens
 Alias choice(24) = set_hfp2_sens
 
 '----- SELF-MONITORING -----
-Dim SkippedScans(3)
-Alias SkippedScans(1) = skipped_10hz_scans
-Alias SkippedScans(2) = skipped_1hz_scans
-Alias SkippedScans(3) = skipped_5s_scans
-Units SkippedScans = scans
-
 Dim watchdog_errors
 Units watchdog_errors = counts
 
@@ -575,8 +569,6 @@ DataTable(debug,True,2)
     Sample(8,decagon(1),IEEE4)
   #EndIf
   Sample(1,smtp_response,String)
-  Sample(1,scadabr_success,Boolean)
-  Sample(1,scadabr_resp,String)
 EndTable
 
 
@@ -821,7 +813,6 @@ Dim recompile As Boolean
 
 'HINT define after `save_changes` so these appear below it in Public table
 Public test_email As Boolean
-Public test_scadabr As Boolean
 
 DisplayMenu("Vineyard DAQ", -1) 'add submenu to main
   SubMenu("Initial Setup")
@@ -972,8 +963,6 @@ DisplayMenu("Vineyard DAQ", -1) 'add submenu to main
       MenuPick(Disable,Enable)
     MenuItem("Test email", test_email)
       MenuPick(Cancel,Yes)
-    MenuItem("Test ScadaBR", test_scadabr)
-      MenuPick(Cancel,Yes)
   EndSubMenu
 EndMenu
 
@@ -1017,52 +1006,6 @@ Sub send_daily_email()
   msg &= FormatFloat(min_battery, "%3g") & " to "
   msg &= FormatFloat(max_battery, "%3g") & " volts." & CRLF
   EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,subject,msg,"",SMTP_USER,SMTP_PASS,smtp_response)
-EndSub
-
-
-'============================= SCADABR INTEGRATION ==================================
-Include("CPU:scadabr_Enc.cr3")
-Dim scadabr_socket As Long
-Dim rtime(9) As Long
-Dim scadabr_success As Boolean
-Dim scadabr_resp As String * 256
-
-Sub send_scadabr_data(payload As String * 512)
-  Dim uri As String * 512
-  Dim tstamp As String * 18
-  RealTime(rtime)
-  Sprintf(tstamp,"%04u%02u%02u%02u%02u%02u", rtime(1),rtime(2),rtime(3),rtime(4),rtime(5),rtime(6))
-  uri = REPORT_URL & tstamp & payload
-  scadabr_socket = HTTPGet(uri, scadabr_resp, "")
-  scadabr_success = NOT (scadabr_socket OR Len(scadabr_resp))
-EndSub
-
-Sub send_test_ScadaBR()
-  send_scadabr_data("&testing=0")
-  test_scadabr = False
-EndSub
-
-Sub send_5min_report()
-  Dim msg As String * 512
-  msg  = "&skipped_10hz_scans=" & skipped_10hz_scans
-  msg &= "&skipped_1hz_scans=" & skipped_1hz_scans
-  msg &= "&skipped_5s_scans=" & skipped_5s_scans
-  msg &= "&watchdog_errors=" & watchdog_errors
-  send_scadabr_data(msg)
-EndSub
-
-Sub send_startup_report()
-  Dim msg As String * 512
-  'HINT both CompileResults and CardStatus come with a trailing <CR><LF> but 
-  'CardStatus has a CRLF pair in the middle which must be stripped out
-'  msg &= "&compileresults=" & RTrim(Replace(Status.CompileResults(1), CRLF, " "))
-'  msg &= "cardstatus=" & RTrim(Replace(Status.CardStatus(1), CRLF, " "))
-  msg &= "&progerrors=" & Status.ProgErrors
-  msg &= "&watchdogerrors=" & Status.WatchdogErrors
-  msg &= "&runsignature=" & Status.RunSignature
-  msg &= "&progsignature=" & Status.ProgSignature
-  msg &= "&battery=" & Status.Battery
-  send_scadabr_data(msg)
 EndSub
 
 
@@ -1162,7 +1105,6 @@ EndSub
 BeginProg
   setup()
   send_startup_email()
-  send_startup_report()
 
   Scan (FAST_INTV,mSec,FAST_BUFFER_SIZE,0)
         
@@ -1352,21 +1294,9 @@ BeginProg
       test_email = False
       send_test_email()
     EndIf
-    If (test_scadabr) Then
-      send_test_ScadaBR()
-    EndIf
     If TimeIntoInterval(6,24,hr) Then
       send_daily_email()
     EndIf
-
-    If TimeIntoInterval(0,5,Min) Then
-      skipped_10hz_scans = Status.SkippedScan(1,1)
-      skipped_1hz_scans = Status.SkippedSlowScan(1,1)
-      skipped_5s_scans = Status.SkippedSlowScan(3,1)
-      watchdog_errors = Status.WatchdogErrors(1,1)
-      send_5min_report()
-    EndIf
-
   NextScan
 
   '====================== SOIL SCAN INTERVAL =================================
