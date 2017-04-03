@@ -16,6 +16,7 @@ Next release
 ### Other changes
 
 * Remove scheduled reporting to ScadaBR instance
+* Remove automated email reporting
 
 
 v1.2 (2015-07-28)

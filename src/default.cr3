@@ -185,10 +185,6 @@ Alias choice(22) = set_soil_C_depth
 Alias choice(23) = set_hfp1_sens
 Alias choice(24) = set_hfp2_sens
 
-'----- SELF-MONITORING -----
-Dim watchdog_errors
-Units watchdog_errors = counts
-
 
 '***********  CR3000  ************
 Dim panel_tmpr
@@ -547,12 +543,6 @@ Units e_hmp_Avg = kPa
 Units e_sat_hmp_Avg = kPa
 Units samples_possible = samples
 
-Dim out_daily(17)
-Alias out_daily(10) = min_battery
-Alias out_daily(12) = max_battery
-Alias out_daily(14) = min_tmpr
-Alias out_daily(16) = max_tmpr
-
 
 '============================  REMOTE MONITORING  ============================
 DataTable(debug,True,2)
@@ -568,7 +558,6 @@ DataTable(debug,True,2)
   #If (NDVIPRI_ENABLED) Then
     Sample(8,decagon(1),IEEE4)
   #EndIf
-  Sample(1,smtp_response,String)
 EndTable
 
 
@@ -811,9 +800,6 @@ Const Cancel = False
 Public save_changes As Boolean
 Dim recompile As Boolean
 
-'HINT define after `save_changes` so these appear below it in Public table
-Public test_email As Boolean
-
 DisplayMenu("Vineyard DAQ", -1) 'add submenu to main
   SubMenu("Initial Setup")
     SubMenu("Soil heat flux plate")
@@ -961,52 +947,8 @@ DisplayMenu("Vineyard DAQ", -1) 'add submenu to main
     EndSubMenu
     MenuItem("Debug table", debug_on)
       MenuPick(Disable,Enable)
-    MenuItem("Test email", test_email)
-      MenuPick(Cancel,Yes)
   EndSubMenu
 EndMenu
-
-
-'================================= EMAIL =====================================
-Include "CPU:email_Enc.cr3"  'contains non-public settings
-Const CRLF = CHR(13) & CHR(10)
-Dim smtp_response As String * 80
-
-Sub send_startup_email()
-  Dim subject As String * 40, msg As String * 512
-  subject = "Start-up notice from " & self & " CR3000"
-  msg = ("This is the " & self & " CR3000. Starting up..." & CRLF & CRLF)
-  'HINT both CompileResults and CardStatus come with a trailing <CR><LF> but 
-  'CardStatus has a CRLF pair in the middle which must be stripped out
-  msg &= "Compile results: " & RTrim(Status.CompileResults(1))
-  msg &= "Card status: " & RTrim(Replace(Status.CardStatus(1), CRLF, " "))
-  msg &= CRLF & "Program error count: " & Status.ProgErrors & CRLF
-  msg &= "Watchdog error count: " & Status.WatchdogErrors & CRLF
-  msg &= "Run signature: " & Status.RunSignature & CRLF
-  msg &= "Program signature: " & Status.ProgSignature & CRLF
-  msg &= "Power input (Volts): " & Status.Battery & CRLF
-  EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,subject,msg,"",SMTP_USER,SMTP_PASS,smtp_response)
-EndSub
-
-Sub send_test_email()
-  Dim subject As String * 40, msg As String * 512
-  subject = "Test email from " & self & " CR3000"
-  msg = "This is the " & self & " CR3000. Testing 1.. 2.. 3.." & CRLF
-  EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,subject,msg,"",SMTP_USER,SMTP_PASS,smtp_response)
-EndSub
-
-Sub send_daily_email()
-  Dim subject As String * 40, msg As String * 512
-  subject = "Daily notice from " & self & " CR3000"
-  
-  GetRecord(out_daily(1),site_daily,1)
-  msg = "Good morning. Yesterday the temperature ranged from "
-  msg &= FormatFloat(min_tmpr, "%3g") & " to "
-  msg &= FormatFloat(max_tmpr, "%3g") & " degC. Power input varied from "
-  msg &= FormatFloat(min_battery, "%3g") & " to "
-  msg &= FormatFloat(max_battery, "%3g") & " volts." & CRLF
-  EmailSend(SMTP_SERV,EMAIL_TO,EMAIL_FROM,subject,msg,"",SMTP_USER,SMTP_PASS,smtp_response)
-EndSub
 
 
 '===============================  FUNCTIONS  ============================================
@@ -1104,7 +1046,6 @@ EndSub
 '================================  PROGRAM  =============================================
 BeginProg
   setup()
-  send_startup_email()
 
   Scan (FAST_INTV,mSec,FAST_BUFFER_SIZE,0)
         
@@ -1286,18 +1227,6 @@ BeginProg
     just_had_1hz_scan = TRUE
   NextScan
 
-  '========================== REPORTING THREAD ===============================
-  SlowSequence
-  Scan (1,Sec,2,0)
-    'HINT: this is the only scan email events should be sent from!
-    If (test_email) Then
-      test_email = False
-      send_test_email()
-    EndIf
-    If TimeIntoInterval(6,24,hr) Then
-      send_daily_email()
-    EndIf
-  NextScan
 
   '====================== SOIL SCAN INTERVAL =================================
   SlowSequence
