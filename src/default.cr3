@@ -608,7 +608,10 @@ DisplayMenu("Vineyard DAQ", -1) 'add submenu to main
   EndSubMenu
 
   SubMenu("Settings")
-    MenuItem("Sonic azimuth", set_sonic_azimuth)
+    SubMenu("Sonic anemometer")
+      MenuItem("Azmiuth", set_sonic_azimuth)
+      DisplayLine("  degE of True North")
+    EndSubMenu
     SubMenu("Net radiometer")
       MenuItem("Sensitivity", set_NRLite2_sens)
       DisplayLine("            uV/W/m^2")

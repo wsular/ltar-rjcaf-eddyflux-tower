@@ -26,7 +26,7 @@ Next release
 
 * Remove scheduled reporting to ScadaBR instance
 * Remove automated email reporting
-* Improved user interface for sensors with unique calibration values
+* Improved settings menu provides guidance on units where appropriate
 
 
 v1.2 (2015-07-28)
