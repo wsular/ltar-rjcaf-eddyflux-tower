@@ -19,6 +19,8 @@ Next release
 * Change soil temperature probes in layer above soil heat flux plates 
   (2x CSI model 109 probes &rarr; 1x CSI averaging thermocouple)
 * Remove prototype NDVI/PRI sensors (Decagon Devices)
+* Change PAR sensor back to LI190SB with Campbell Scientific-specific cabling
+  (versus Licor direct-purchase LI190R unit)
 
 ### Other changes
 

@@ -109,7 +109,7 @@ Const READFILE = 1
 Dim settings(NUM_SETTINGS) 'values retained via file written to datalogger CPU
 Alias settings(1)  = sonic_azimuth
 Alias settings(2)  = NRLite2_sens
-Alias settings(3)  = LI190_mult
+Alias settings(3)  = LI190SB_sens
 Alias settings(4)  = cup_ws_enabled
 Alias settings(5)  = vane_wd_enabled
 Alias settings(6)  = rain_enabled
@@ -119,12 +119,12 @@ Units hfp1_sens = uV/W/m^2
 Units hfp2_sens = uV/W/m^2
 Units sonic_azimuth = degEofTN
 Units NRLite2_sens = uV/W/m^2
-Units LI190_mult = mmol/s/m^2/mV
+Units LI190SB_sens = uA/mmol/m^2/s
 
 Public choice(NUM_SETTINGS)
 Alias choice(1)  = set_sonic_azimuth
 Alias choice(2)  = set_NRLite2_sens
-Alias choice(3)  = set_LI190_mult
+Alias choice(3)  = set_LI190SB_sens
 Alias choice(4)  = set_cup_ws_enabled
 Alias choice(5)  = set_vane_wd_enabled
 Alias choice(6)  = set_rain_enabled
@@ -266,17 +266,13 @@ Dim hor_wind_raw
 '**********  LI190SB quantum PAR sensor  ***********
 Dim li190_dens_mult
 Dim li190_tot_mult
-Dim LI190SB_sens
-Dim LI190R_mult
-Units LI190SB_sens = uA/mmol/s/m^2
-Units LI190R_mult = mmol/s/m^2/mV
 
 Dim par(3)
 Alias par(1) = PAR_mV
 Alias par(2) = PAR_flxdens
 Alias par(3) = PAR_totflx
 Units PAR_mV = mV
-Units PAR_flxdens = umol/s/m^2
+Units PAR_flxdens = umol/m^2/s
 Units PAR_totflx = mmol/m^2
 
 
@@ -565,7 +561,6 @@ DataTable (site_info,TRUE,20)
   Sample(1,sonic_azimuth,FP2)
   Sample(1,NRLite2_sens,FP2)
   Sample(1,LI190SB_sens,FP2)
-  Sample(1,LI190R_mult,FP2)
   Sample(1,soil_hfp1_sensitivity,IEEE4)            'heat flux plate #1 info
     FieldNames("HFP_1_sens")
     Units HFP_1_SENS = W/m^2/mV
@@ -620,7 +615,7 @@ DisplayMenu("Vineyard DAQ", -1) 'add submenu to main
   SubMenu("Settings")
     MenuItem("Sonic azimuth", set_sonic_azimuth)
     MenuItem("NR sensitivity", set_NRLite2_sens)
-    MenuItem("PAR multiplier", set_LI190_mult)
+    MenuItem("PAR sensitivity", set_LI190SB_sens)
     SubMenu("Cup & vane windset")
       MenuItem("Enable WS?", set_cup_ws_enabled)
         MenuPick(Yes, No)
@@ -702,7 +697,7 @@ EndMenu
 Sub set_default_choices()
   set_sonic_azimuth  = NAN
   set_NRLite2_sens   = 0
-  set_LI190_mult     = -0.200 'mnfctr standard for -SMV sensors
+  set_LI190SB_sens   = 0
   set_cup_ws_enabled = False
   set_vane_wd_enabled = False
   set_rain_enabled   = False
@@ -722,10 +717,8 @@ Sub save_current_choices()
 
   'update dependent variables
   nrlite_mult = 1000/NRLite2_sens
-  li190_dens_mult = 1000*LI190_mult
-  li190_tot_mult = LI190_mult*(SLOW_INTV/1)
-  LI190R_mult = LI190_mult 'XXXX
-  LI190SB_sens = NAN 'HACK
+  li190_dens_mult = 1000/(LI190SB_sens*0.604)
+  li190_tot_mult = (1/(LI190SB_sens*0.604))*(SLOW_INTV/1)
 
   #If (SHFP_ENABLED) Then
     soil_hfp1_sensitivity = 1000/hfp1_sens
@@ -914,9 +907,14 @@ BeginProg
     EndIf
     
     '== LI190SB 
-    VoltDiff (PAR_mV,1,mV20,LI190_DIFF,True,0,_60Hz,1,0) 'MULT/OFF applied below
-    PAR_flxdens = PAR_mV*li190_dens_mult
-    PAR_totflx = PAR_mV*li190_tot_mult
+    VoltDiff (PAR_mV,1,mV20,LI190_DIFF,True,0,INTEG,1,0) 'MULT/OFF applied below
+    If (PAR_mV > 0) Then
+      PAR_flxdens = PAR_mV*li190_dens_mult
+      PAR_totflx = PAR_mV*li190_tot_mult
+    Else
+      PAR_flxdens = NAN
+      PAR_totflx = NAN
+    EndIf
 
     If (debug_on) Then CallTable debug
 
