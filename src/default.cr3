@@ -726,6 +726,7 @@ Sub save_current_choices()
   li190_dens_mult = 1000/(LI190SB_sens*0.604)
   li190_tot_mult = (1/(LI190SB_sens*0.604))*(SLOW_INTV/1)
 
+  sensor_shfp = SHFP_ENABLED
   #If (SHFP_ENABLED) Then
     soil_hfp1_sensitivity = 1000/hfp1_sens
     soil_hfp2_sensitivity = 1000/hfp2_sens

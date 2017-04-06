@@ -12,6 +12,8 @@ Next release
 * Remove 5-min flux/met and soil data tables
 * Remove references to Picarro or Los Gatos instruments from `extra_info` table
 * Remove conditionally-included data table `tsdata_extra`
+* Fix issue which caused column `hfp_installed` in data table `site_info` to
+  always be false
 
 ### Instrumentation Changes
 
