@@ -65,14 +65,7 @@ Const oh34B_WD_MULT    = 720                '720/0 as specified in CSI manual:
 Const oh34B_WD_OFFSET  = 0                  ' Met One 034B Windset rev3/12, pg 6
 Const oh34B_WS_MULT    = 0.7989             '0.7989/0.28 as specified in above CSI manual
 Const oh34B_WS_OFFSET  = 0.28
-'  ** NRLITE_MULT
-Const NRLITE_OFFSET    = 0
-'  ** LI190_DENS_MULT  
-'  ** LI190_TOT_MULT   
-Const TE525_MULT       = 0.254 
-Const TE525_OFFSET     = 0
-' **These values depend on site-specific values; assignment is deferred
-'   to program execution time.
+Const TE525_MULT       = 0.254              'Table 7-2, CSI manual rev 8/16
 
 
 '==========================  NO USER-SERVICEABLE PARTS BELOW  ===========================
@@ -560,7 +553,9 @@ DataTable (site_info,TRUE,20)
     Units UTC_OFFSET = hours
   Sample(1,sonic_azimuth,FP2)
   Sample(1,NRLite2_sens,FP2)
+    FieldNames("NR_sens")
   Sample(1,LI190SB_sens,FP2)
+    FieldNames("PAR_sens")
   Sample(1,soil_hfp1_sensitivity,IEEE4)            'heat flux plate #1 info
     FieldNames("HFP_1_sens")
     Units HFP_1_SENS = W/m^2/mV
@@ -614,8 +609,14 @@ DisplayMenu("Vineyard DAQ", -1) 'add submenu to main
 
   SubMenu("Settings")
     MenuItem("Sonic azimuth", set_sonic_azimuth)
-    MenuItem("NR sensitivity", set_NRLite2_sens)
-    MenuItem("PAR sensitivity", set_LI190SB_sens)
+    SubMenu("Net radiometer")
+      MenuItem("Sensitivity", set_NRLite2_sens)
+      DisplayLine("            uV/W/m^2")
+    EndSubMenu
+    SubMenu("PAR sensor")
+      MenuItem("Sensitivity", set_LI190SB_sens)
+      DisplayLine("       uA/mmol/m^s/s")
+    EndSubMenu
     SubMenu("Cup & vane windset")
       MenuItem("Enable WS?", set_cup_ws_enabled)
         MenuPick(Yes, No)
@@ -630,8 +631,10 @@ DisplayMenu("Vineyard DAQ", -1) 'add submenu to main
       SubMenu("Soil heat flux plate")
         DisplayLine("Plate #1 (DF 6):")
         MenuItem("Sensitivity", set_hfp1_sens)
+        DisplayLine("            uV/W/m^2")
         DisplayLine("Plate #2 (DF 7):")
         MenuItem("Sensitivity", set_hfp2_sens)
+        DisplayLine("            uV/W/m^2")
       EndSubMenu
     #Else
       DisplayLine("SHFP disabled")
@@ -770,7 +773,7 @@ BeginProg
     EndIf
     
     '== TE525 rain gage acquisition
-    PulseCount(Rain_mm,1,TE525_PULSE,2,0,TE525_MULT,TE525_OFFSET)
+    PulseCount(Rain_mm,1,TE525_PULSE,2,0,TE525_MULT,0)
     If (NOT rain_enabled) Then Rain_mm = NAN
     
     '== EC100/EC150/CSAT3A irga/sonic acquisition 
@@ -899,7 +902,7 @@ BeginProg
     SatVP (e_sat_hmp,T_hmp)
 
     '== NR-Lite2 net radiometer, expected range 0-15mV
-    VoltDiff (Rn_meas,1,mV20,NRLITE_DIFF,TRUE,0,INTEG,nrlite_mult,NRLITE_OFFSET)
+    VoltDiff (Rn_meas,1,mV20,NRLITE_DIFF,TRUE,0,INTEG,nrlite_mult,0)
     If ( sonic_irga_raw(5)=0 AND hor_wind>5 ) Then    'sonic_irga_raw(5) = CSAT3 diag word
       Rn = Rn_meas*(1+(0.021286*(hor_wind-5)))
     Else
