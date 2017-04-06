@@ -14,6 +14,13 @@ Next release
 * Remove conditionally-included data table `tsdata_extra`
 * Fix issue which caused column `hfp_installed` in data table `site_info` to
   always be false
+* New columns associated with alt. CO2 flux calculations (see *Other changes*)
+    * `CO2_hf` in `tsdata` is carbon dioxide density derived using high-freq
+      sonic temperature instead of thermistor temperature
+    * in `stats30` table:
+        * `Fc_hf_wpl` is CO2 flux with WPL corrections
+        * `CO2_hf_mg_m3_Avg` is mean CO2 density
+        * `CO2_hf_mg_m3_Std` is standard deviation of CO2 density
 
 ### Instrumentation Changes
 
@@ -29,6 +36,10 @@ Next release
 * Remove scheduled reporting to ScadaBR instance
 * Remove automated email reporting
 * Improved settings menu provides guidance on units where appropriate
+* Produces two carbon dioxide flux estimates: the second value `Fc_hf_wpl` is
+  calculated using CO2 density derived using high-frequency sonic temperature
+  instead of slow-response thermistor temperature; for more information, refer
+  to http://dx.doi.org/10.1016/j.agrformet.2016.07.018
 
 
 v1.2 (2015-07-28)
