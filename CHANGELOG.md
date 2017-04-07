@@ -4,6 +4,8 @@ Change Log for GHG Monitoring Tower Program
 Next release
 ------------
 
+> This release requires operating system `CR3000.Std.31` or newer. 
+
 > Previous telemetry integrations (email, ScadaBR) have been removed in this
 > version.
 
