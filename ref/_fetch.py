@@ -31,7 +31,9 @@ if __name__ == '__main__':
         try:
             url, fname = [s.strip() for s in line.split('    ')]
         except ValueError:
-            print("Could not parse this input: " + line)
+            if len(line.strip()):
+                if not line.lstrip().startswith('#'):
+                    print("Could not parse this input: " + line.strip('\n'))
             continue
         if osp.isfile(fname):
             print('Skipping existing file %s' % fname)
@@ -39,4 +41,4 @@ if __name__ == '__main__':
             print('Downloading %s to %s' % (url, fname))
             urlretrieve(url, fname, report_progress)
 
-    raw_input("Press <enter> to exit.")
+    raw_input("\nPress <enter> to exit.")

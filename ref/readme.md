@@ -15,4 +15,5 @@ public Internet. To retrieve third-party documentation, either:
 
 The document `_sources.txt` contains many lines of url/file name pairs. To be
 parsed correctly: (1) only a single pair is allowed per line and (2) the file
-name must follow the URL separated by *precisely* four spaces.
+name must follow the URL separated by *precisely* four spaces. Blank lines and
+comments (lines beginning with `#`) are ignored.
