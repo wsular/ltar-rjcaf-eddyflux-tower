@@ -71,6 +71,8 @@ Next release
 * Reintroduce vertical profile of soil tmpr/VWC probes (TDR-315L or 5TM)
 * Support for door sensor switch
 * New default is to output single half-hour results table
+* Enable field editing of calibration sensitivity values for net radiomter
+  (NR-Lite2), quantum sensor (LI-190SB), and soil heat flux plate (HFP01)
 
 
 v1.2 (2015-07-28)
