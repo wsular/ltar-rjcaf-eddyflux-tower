@@ -125,6 +125,10 @@ Const SENSOR_034B        = TRUE     'Unique: MetOne 034B cup & vane wind set
 Const SENSOR_GPS16X      = TRUE     'Unique: Garmin GPS16x-HVS GPS receiver
 Const SENSOR_DOOR        = TRUE     'Unique: reed switch enclosure door sensor
 
+'adjust to reflect reality
+Const NMBR_SHFP = 2         'Unique: number of HFP01 or HFP01SC sensors to measure (Maximum is 4) .
+Const NMBR_CS6xx = 1        'Unique: number of CS616, CS650, CS655, TDR-315 or 5TM sensors (Maximum is 2)
+Const NMBR_PROFILE = 6      'Unique: number of T/VWC probes (TDR-315 or 5TM) in profile (Maximum is 6)
 
 'Composite boolean variables for variables above
 Const SENSOR_TMPR_RH     = ((SENSOR_HMP155A) OR (SENSOR_HC2S3) OR (SENSOR_HMP45C))
@@ -132,6 +136,7 @@ Const SENSOR_Rn          = ((SENSOR_CNR4) OR (SENSOR_NR01) OR (SENSOR_NR_LITE))
 Const SENSOR_TE525x      = ((SENSOR_TE525) OR (SENSOR_TE525WS) OR (SENSOR_TE525MM) OR (SENSOR_TE525_wf))
 Const SENSOR_HFP         = ((SENSOR_HFP01) OR (SENSOR_HFP01SC))
 Const SENSOR_CS6XX       = ((SENSOR_CS616) OR (SENSOR_CS65X) OR (SENSOR_TDR315) OR (SENSOR_5TM))
+Const SENSOR_SOIL_T      = ((SENSOR_TCAV) OR (SENSOR_CS65X) OR (SENSOR_TDR315) OR (SENSOR_5TM))
 Const SENSOR_PROFILE     = ((PROFILE_TDR315) OR (PROFILE_5TM))
 
 
@@ -158,7 +163,7 @@ Const SENSOR_PROFILE     = ((PROFILE_TDR315) OR (PROFILE_5TM))
 #If (SENSOR_HFP) Then
 'Soil heat flux plates
 Const SHF_ANALOG_INPUT = 1  'Starting differential analog input channel.
-Const NMBR_SHFP = 2         'Unique: number of HFP01 or HFP01SC sensors to measure (Maximum is 4) .
+'Use `NMBR_SHFP` above to specify number of HFP01 or HFP01SC sensors to measure (Maximum is 4)
 
 Data 1000/SHFP_1_SENS                'Unique: multiplier for HFP01xx #1 (1000/sensitivity).
 #If (NMBR_SHFP >1) Then     'This conditional statement can avoid the confliction with Data statements for the numerical wTs transfer function from Dijk (2002)) if NMBR_SHFP < 2
@@ -407,7 +412,7 @@ Const NMBR_TCAV         = 1          'Unique: number of TCAV (Maximum is 2)
 #EndIf
 #If (SENSOR_CS6XX) Then
 
-Const NMBR_CS6xx = 1                'Unique: number of CS616, CS650, CS655, or TDR-315 sensors (Maximum is 2)
+'Use `NMBR_CS6xx` above to specify number of CS616, CS650, CS655, TDR-315 or 5TM sensors (Maximum is 2)
 
 #If (SENSOR_CS616) Then
 
@@ -483,7 +488,7 @@ Const fiveTM_SDI12_Address_2   = 2     'Unique: SDI address for TDR-315 #2
 #EndIf
 #If (SENSOR_PROFILE) Then
 
-Const NMBR_PROFILE = 6  'number of T/VWC probes in profile
+'Use `NMBR_PROFILE` above to specify number of T/VWC probes in profile (Maximum is 6)
 
 #If (PROFILE_TDR315) Then
 
@@ -636,7 +641,7 @@ Const EC100_SDM_ADDR             = 1             'Unique: SDM address for EC100.
 
 Const ANALOG_INTEGRATION         = _60Hz         'Unique: slowsequence analog measurement integration time, _60Hz (e.g. in US, Canada, etc.) or _50Hz (e.g. in Europe, China, etc.)
 
-Const NMBR_STN_VAR               = (16 - 3*SENSOR_FW -3*((SENSOR_HFP) AND  (SENSOR_CS6XX) AND ((SENSOR_TCAV) OR (SENSOR_CS65X))))            'Number of station variables below
+Const NMBR_STN_VAR               = (16 - 3*SENSOR_FW -3*((SENSOR_HFP) AND  (SENSOR_CS6XX) AND (SENSOR_SOIL_T)))            'Number of station variables below
 
 Public stn_conf_array(NMBR_STN_VAR)              'These station parameters are entered using the datalogger keypad after program has compiled and is running.
 Alias stn_conf_array(1)  = sonic_azimuth         'Azimuth angle (degrees) (see Section 3.2.1 CSAT3A Azimuth in the OPEC manual).
@@ -682,7 +687,7 @@ Units separation_y_FW = m
 Units FW_diameter     = m
 #EndIf
 
-#If ((SENSOR_HFP) AND  (SENSOR_CS6XX) AND ((SENSOR_TCAV) OR (SENSOR_CS65X))) Then
+#If ((SENSOR_HFP) AND  (SENSOR_CS6XX) AND (SENSOR_SOIL_T)) Then
 Alias stn_conf_array(17 - 3*SENSOR_FW) = soil_bulk_density   'Soil bulk density (kg/m^3)
 Alias stn_conf_array(18 - 3*SENSOR_FW) = Cds                 'Specific heat of dry mineral soil [J/(kg K)] [Table 8.2 on page 118 in Campbell & Norman (1998)]
 Alias stn_conf_array(19 - 3*SENSOR_FW) = thick_abv_SHFP      'Thickness of soil above soil heat flux plate (m)
@@ -2061,7 +2066,7 @@ Units profile_5TM_tmpr = C
 Units profile_5TM_wc = frac_v_wtr
 '*** End of 5TM profile constants and variables ***
 #EndIf
-#If ((SENSOR_HFP) AND  (SENSOR_CS6XX) AND ((SENSOR_TCAV) OR (SENSOR_CS65X) OR (SENSOR_TDR315))) Then
+#If ((SENSOR_HFP) AND  (SENSOR_CS6XX) AND (SENSOR_SOIL_T)) Then
 
 '*** Beginning of variables for calculation of soil heat flux at soil surface ***
 Const NMBR_SOIL_T_WTR_DEL_SAMPLES = (60*1000)/SLOWSEQUENCE_SCAN_INTERVAL       'Unique: Number of measurements to compute a one-minute mean of soil temperature and water
@@ -2089,7 +2094,7 @@ Dim realtime_array(9)                      'Hold real time data
 Dim Offset_intv_Delta_ht_storage           'time interval offset
 '*** End of variables for calculation of soil heat flux at soil surface ***
 #EndIf
-#If ((SENSOR_Rn) AND (SENSOR_HFP) AND (SENSOR_CS6XX) AND ((SENSOR_TCAV) OR (SENSOR_CS65X) OR (SENSOR_TDR315))) Then
+#If ((SENSOR_Rn) AND (SENSOR_HFP) AND (SENSOR_CS6XX) AND (SENSOR_SOIL_T)) Then
 
 '*** Beginning of energy balance constants and variables ***
 Public energy_closure                  '(LE + H)/(Rn-G_surface)
@@ -2203,7 +2208,7 @@ DisplayMenu ("System Control", TRUE)
     MenuItem ("Meas height",   height_measurement)
     MenuItem ("Canopy height", height_canopy)
 
-    #If ((SENSOR_HFP) AND (SENSOR_CS6XX) AND ((SENSOR_TCAV) OR (SENSOR_CS65X) OR (SENSOR_TDR315))) Then
+    #If ((SENSOR_HFP) AND (SENSOR_CS6XX) AND (SENSOR_SOIL_T)) Then
     MenuItem ("Bulk density", soil_bulk_density)
     MenuItem ("C_dry_soil",   Cds)
     MenuItem ("HFP depth",    thick_abv_SHFP)
@@ -2339,11 +2344,11 @@ DataTable (Flux, TRUE, FLUX_SIZE_CPU)
   Sample (1, Rn, IEEE4)
   '*** End of net radiomete output data ***
   #EndIf
-  #If ((SENSOR_HFP) AND  (SENSOR_CS6XX)) AND ((SENSOR_TCAV) OR (SENSOR_CS65X)))  Then
+  #If ((SENSOR_HFP) AND  (SENSOR_CS6XX)) AND (SENSOR_SOIL_T))  Then
 
   Sample (1, G_surface, IEEE4)       'Soil heat flux at the ground surface
   #EndIf
-  #If ((SENSOR_Rn) AND (SENSOR_HFP) AND (SENSOR_CS6XX) AND  ((SENSOR_TCAV) OR (SENSOR_CS65X)))   Then
+  #If ((SENSOR_Rn) AND (SENSOR_HFP) AND (SENSOR_CS6XX) AND  (SENSOR_SOIL_T))   Then
 
   Sample (1, energy_closure,IEEE4)    'Energy closure
   #EndIf
@@ -4485,7 +4490,7 @@ BeginProg
     FW_diameter     = FW05DIA             'Diameter of fine wire thermocouple
     #EndIf
 
-    #If ((SENSOR_HFP) AND  (SENSOR_CS6XX) AND ((SENSOR_TCAV) OR (SENSOR_CS65X))) Then
+    #If ((SENSOR_HFP) AND  (SENSOR_CS6XX) AND (SENSOR_SOIL_T)) Then
     soil_bulk_density = 1300              'Default soil bulk density (kg/m^3)
     Cds               =  870              'Default specific heat of dry mineral soil [J/(kg K)] [Table 8.2 on page 118 in Campbell & Norman (1998)]
     thick_abv_SHFP    =    0.08           'Default depth of HFP01 or HFP01SC below soil surface (m)
@@ -4548,7 +4553,7 @@ BeginProg
   Next i
   ' *** End of loading transfer function values of Dijk (2002) ***
 
-  #If ((SENSOR_HFP) AND  (SENSOR_CS6XX) AND ((SENSOR_TCAV) OR (SENSOR_CS65X) OR (SENSOR_TDR315))) Then
+  #If ((SENSOR_HFP) AND  (SENSOR_CS6XX) AND (SENSOR_SOIL_T)) Then
   ' Variables used to calculate the number of seconds from the beginning of the program to the end of the first averaging interval (time interval offset)
   RealTime(realtime_array(1))
   Offset_intv_Delta_ht_storage = ((3600*realtime_array(4) + 60*realtime_array(5) + realtime_array(6)) MOD (60*OUTPUT_INTERVAL))
@@ -5408,14 +5413,14 @@ BeginProg
 
         GetRecord (shf_plate_avg(1), stats_SHF, 1)
 
-        #If (((SENSOR_TCAV) OR (SENSOR_CS65X)) AND (SENSOR_CS6XX) OR (SENSOR_TDR315)) Then
+        #If ((SENSOR_CS6XX) AND (SENSOR_SOIL_T)) Then
         AvgSpa(G_surface, NMBR_SHFP, shf_plate_avg(1))                           'G_surface is used as a temporary variable
 
         #If (SENSOR_TCAV) Then
         AvgSpa(Tsoil_current_Avg, NMBR_TCAV, Tsoil_current (1))
         #EndIf
-        #If ((NOT SENSOR_TCAV) AND ((SENSOR_CS65X) OR (SENSOR_TDR315))) Then
-        AvgSpa(Tsoil_current_Avg, NMBR_CS6xx, Tsoil_current (1)) 'XXXX
+        #If ((NOT SENSOR_TCAV) AND (SENSOR_SOIL_T)) Then
+        AvgSpa(Tsoil_current_Avg, NMBR_CS6xx, Tsoil_current (1))
         #EndIf
 
         AvgSpa(soil_wtr_current_Avg, NMBR_CS6xx, soil_wtr_current (1)) 'XXXX
@@ -5664,7 +5669,7 @@ BeginProg
     '*** Beginning of TCAV measurements ***
     TCDiff (Tsoil(1), NMBR_TCAV, AutoRange, TCAV_ANALOG_INPUT, TypeE, panel_tmpr, TRUE, 0, ANALOG_INTEGRATION, 1, 0)
 
-    #If ((SENSOR_HFP) AND  (SENSOR_CS6XX) AND ((SENSOR_TCAV) OR (SENSOR_CS65X) OR (SENSOR_TDR315))) Then
+    #If ((SENSOR_HFP) AND  (SENSOR_CS6XX) AND (SENSOR_SOIL_T)) Then
     AvgRun (Tsoil_current(1), NMBR_TCAV, Tsoil(1), NMBR_SOIL_T_WTR_DEL_SAMPLES)
 
     If (Tsoil_prev_Avg = NaN) Then                         'As soon as program starts
@@ -5729,7 +5734,7 @@ BeginProg
     cs65x_tmpr(2) = cs65x_raw(3)
     #EndIf
 
-    #If ((SENSOR_HFP) AND  (SENSOR_CS6XX) AND ((SENSOR_TCAV) OR (SENSOR_CS65X))) Then
+    #If ((SENSOR_HFP) AND  (SENSOR_CS6XX) AND (SENSOR_SOIL_T)) Then
 
     AvgRun (soil_wtr_current(1), NMBR_CS6xx, cs65x_wc(1), NMBR_SOIL_T_WTR_DEL_SAMPLES)
 
@@ -5766,7 +5771,7 @@ BeginProg
     tdr315_poreEC(2) = tdr315_raw(5)
     #EndIf
     
-    #If ((SENSOR_HFP) AND (SENSOR_CS6XX) AND ((SENSOR_TCAV) OR (SENSOR_TDR315))) Then
+    #If ((SENSOR_HFP) AND (SENSOR_CS6XX) AND (SENSOR_SOIL_T))) Then
 
     AvgRun (soil_wtr_current(1), NMBR_CS6xx, (tdr315_wc(1)/100), NMBR_SOIL_T_WTR_DEL_SAMPLES) 'HINT scale % -> v/v
     
@@ -5799,7 +5804,7 @@ BeginProg
     soil_5TM_wc(2)   = Topp_equation(fiveTM_raw(3))
     #EndIf
     
-    #If ((SENSOR_HFP) AND (SENSOR_CS6XX) AND ((SENSOR_TCAV) OR (SENSOR_5TM))) Then
+    #If ((SENSOR_HFP) AND (SENSOR_CS6XX) AND (SENSOR_SOIL_T)) Then
 
     AvgRun (soil_wtr_current(1), NMBR_CS6xx, soil_5TM_wc(1), NMBR_SOIL_T_WTR_DEL_SAMPLES)
     
