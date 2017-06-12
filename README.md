@@ -47,6 +47,10 @@ and access credentials.
     * ?
 
 
+### LTAR Common Observatory Repository (CORe)
+
+Details [here](doc/ltar_core_table.md). Also available: 
+[JSON field name lookup table](src/ltar_core_lut.json)
 
 ### License ####
 
