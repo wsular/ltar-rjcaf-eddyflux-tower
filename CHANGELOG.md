@@ -31,6 +31,10 @@ Next release
         * `Fc_hf_wpl` is CO2 flux with WPL corrections
         * `CO2_hf_mg_m3_Avg` is mean CO2 density
         * `CO2_hf_mg_m3_Std` is standard deviation of CO2 density
+* New data table `LTAR_CORe` represents 15min meteorology data submission
+  format for sites in the USDA Long-Term Agroecosystem Research (LTAR) program
+    * Covers both Phase 1 & Phase 2 measurements
+    * Anticipates other variables of interest
 
 ### Instrumentation Changes
 
