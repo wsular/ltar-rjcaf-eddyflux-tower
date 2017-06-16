@@ -31,6 +31,10 @@ Next release
         * `Fc_hf_wpl` is CO2 flux with WPL corrections
         * `CO2_hf_mg_m3_Avg` is mean CO2 density
         * `CO2_hf_mg_m3_Std` is standard deviation of CO2 density
+* New data table `LTAR_CORe` represents 15min meteorology data submission
+  format for sites in the USDA Long-Term Agroecosystem Research (LTAR) program
+    * Covers both Phase 1 & Phase 2 measurements
+    * Anticipates other variables of interest
 
 ### Instrumentation Changes
 
@@ -71,6 +75,8 @@ Next release
 * Reintroduce vertical profile of soil tmpr/VWC probes (TDR-315L or 5TM)
 * Support for door sensor switch
 * New default is to output single half-hour results table
+* Enable field editing of calibration sensitivity values for net radiomter
+  (NR-Lite2), quantum sensor (LI-190SB), and soil heat flux plate (HFP01)
 
 
 v1.2 (2015-07-28)
